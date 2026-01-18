@@ -1,0 +1,16 @@
+{
+  "name": "build-tag-release",
+  "version": "1.0.0",
+  "description": "GitHub Action to tag and release based on commit message prefix",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/heronlabs/build-tag-release.git"
+  },
+  "author": "Heron Labs",
+  "license": "MIT",
+  "dependencies": {
+    "gts": "^7.0.0"
+  },
+  "prettier": "gts/.prettierrc.json"
+}

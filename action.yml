@@ -1,0 +1,93 @@
+name: build-tag-release
+
+author: Heron Labs
+
+description: Tag and release based on commit message prefix (major:/minor:/patch:)
+
+branding:
+  icon: tag
+  color: blue
+
+inputs:
+  github-token:
+    description: GitHub token for creating tags and releases
+    required: true
+  working-directory:
+    description: Working directory (for monorepo sub-directories)
+    required: false
+    default: '.'
+  create-release:
+    description: Create a GitHub release after tagging
+    required: false
+    default: 'true'
+  tag-prefix:
+    description: Tag prefix for monorepo (e.g., my-package-v)
+    required: false
+    default: 'v'
+
+outputs:
+  version:
+    description: The released version
+    value: ${{ steps.release.outputs.version }}
+  tag:
+    description: The created tag
+    value: ${{ steps.release.outputs.tag }}
+
+runs:
+  using: composite
+  steps:
+    - name: '[SETUP] | Determine spec'
+      id: spec
+      shell: bash
+      run: |
+        COMMIT_MSG="${{ github.event.head_commit.message }}"
+        if echo "$COMMIT_MSG" | grep -qiE '^major:'; then
+          echo "spec=major" >> "$GITHUB_OUTPUT"
+        elif echo "$COMMIT_MSG" | grep -qiE '^minor:'; then
+          echo "spec=minor" >> "$GITHUB_OUTPUT"
+        elif echo "$COMMIT_MSG" | grep -qiE '^patch:'; then
+          echo "spec=patch" >> "$GITHUB_OUTPUT"
+        else
+          echo "spec=patch" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: '[SETUP] | Config git'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+    - name: '[RUN] | Bump version'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: npm version "${{ steps.spec.outputs.spec }}" --no-git-tag-version
+
+    - name: '[RUN] | Commit and tag'
+      id: release
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        VERSION=$(node -p "require('./package.json').version")
+        TAG="${{ inputs.tag-prefix }}${VERSION}"
+        
+        git add package.json package-lock.json 2>/dev/null || git add package.json
+        git commit -m "[skip ci] bump version"
+        git tag -a "$TAG" -m "Release ${VERSION}"
+        git push --follow-tags
+        
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+        echo "✅ Tagged: $TAG"
+
+    - name: '[RUN] | Create release'
+      if: inputs.create-release == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        gh release create "${{ steps.release.outputs.tag }}" \
+          --title "${{ steps.release.outputs.tag }}" \
+          --generate-notes
+        echo "✅ Released: ${{ steps.release.outputs.tag }}"
