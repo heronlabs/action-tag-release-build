@@ -1,11 +1,11 @@
 {
-  "name": "build-tag-release",
+  "name": "build-tag-release-action",
   "version": "2.0.2",
   "description": "GitHub Action to tag and release based on commit message prefix",
   "private": true,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/heronlabs/build-tag-release.git"
+    "url": "git+https://github.com/heronlabs/build-tag-release-action.git"
   },
   "author": "Heron Labs",
   "license": "MIT",
