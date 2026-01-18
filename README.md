@@ -1,4 +1,6 @@
-# build-tag-release
+# Build Tag Release
+
+[![CI](https://github.com/heronlabs/pipelines-build-tag-release/actions/workflows/ci.yml/badge.svg)](https://github.com/heronlabs/pipelines-build-tag-release/actions/workflows/ci.yml)
 
 Tag and release based on commit message prefix.
 
@@ -65,13 +67,25 @@ Creates tags like `my-package-v1.0.0`.
 | `working-directory` | Sub-directory for monorepos | `.` |
 | `create-release` | Create GitHub release | `true` |
 | `tag-prefix` | Tag prefix (e.g., `my-package-v`) | `v` |
+| `update-major-tag` | Update floating major/minor version tags | `true` |
 
 ## Outputs
 
 | Output | Description |
 |--------|-------------|
-| `version` | Released version |
-| `tag` | Created tag |
+| `version` | Released version (e.g., `1.0.3`) |
+| `tag` | Created tag (e.g., `v1.0.3`) |
+| `major-tag` | Major version tag (e.g., `v1`) |
+| `minor-tag` | Minor version tag (e.g., `v1.0`) |
+
+## Floating Version Tags
+
+When `update-major-tag` is enabled (default), the action creates floating tags that always point to the latest release:
+
+- **Major tag** (`v1`): Points to latest v1.x.x release
+- **Minor tag** (`v1.0`): Points to latest v1.0.x release
+
+This allows consumers to reference `@v1` to always get the latest compatible version.
 
 ## License
 
