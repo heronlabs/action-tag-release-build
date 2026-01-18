@@ -1,6 +1,6 @@
 {
   "name": "build-tag-release",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "GitHub Action to tag and release based on commit message prefix",
   "private": true,
   "repository": {
