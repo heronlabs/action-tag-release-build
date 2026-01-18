@@ -3,6 +3,17 @@ name: CI
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      spec:
+        description: The SEMVER specification.
+        required: true
+        type: choice
+        default: patch
+        options:
+          - 'major'
+          - 'minor'
+          - 'patch'
 
 permissions:
   contents: write
