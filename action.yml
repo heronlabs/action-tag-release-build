@@ -24,6 +24,10 @@ inputs:
     description: Tag prefix for monorepo (e.g., my-package-v)
     required: false
     default: 'v'
+  update-major-tag:
+    description: Update major version tag (e.g., v1) to point to latest release
+    required: false
+    default: 'true'
 
 outputs:
   version:
@@ -32,11 +36,17 @@ outputs:
   tag:
     description: The created tag
     value: ${{ steps.release.outputs.tag }}
+  major-tag:
+    description: The major version tag (e.g., v1)
+    value: ${{ steps.update-major.outputs.major-tag }}
+  minor-tag:
+    description: The minor version tag (e.g., v1.0)
+    value: ${{ steps.update-major.outputs.minor-tag }}
 
 runs:
   using: composite
   steps:
-    - name: '[SETUP] | Determine spec'
+    - name: 'Determine spec'
       id: spec
       shell: bash
       run: |
@@ -51,19 +61,19 @@ runs:
           echo "spec=patch" >> "$GITHUB_OUTPUT"
         fi
 
-    - name: '[SETUP] | Config git'
+    - name: 'Config git'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
 
-    - name: '[RUN] | Bump version'
+    - name: 'Bump version'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: npm version "${{ steps.spec.outputs.spec }}" --no-git-tag-version
 
-    - name: '[RUN] | Commit and tag'
+    - name: 'Commit and tag'
       id: release
       shell: bash
       working-directory: ${{ inputs.working-directory }}
@@ -80,7 +90,37 @@ runs:
         echo "tag=$TAG" >> "$GITHUB_OUTPUT"
         echo "✅ Tagged: $TAG"
 
-    - name: '[RUN] | Create release'
+    - name: 'Update major version tag'
+      id: update-major
+      if: inputs.update-major-tag == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        VERSION="${{ steps.release.outputs.version }}"
+        PREFIX="${{ inputs.tag-prefix }}"
+        
+        # Extract major and minor versions
+        MAJOR=$(echo "$VERSION" | cut -d. -f1)
+        MINOR=$(echo "$VERSION" | cut -d. -f2)
+        
+        MAJOR_TAG="${PREFIX}${MAJOR}"
+        MINOR_TAG="${PREFIX}${MAJOR}.${MINOR}"
+        
+        # Update major tag (e.g., v1) - force update to point to current commit
+        git tag -fa "$MAJOR_TAG" -m "Latest ${MAJOR_TAG}.x.x release"
+        
+        # Update minor tag (e.g., v1.0) - force update to point to current commit
+        git tag -fa "$MINOR_TAG" -m "Latest ${MINOR_TAG}.x release"
+        
+        # Force push the updated tags
+        git push origin "$MAJOR_TAG" --force
+        git push origin "$MINOR_TAG" --force
+        
+        echo "major-tag=$MAJOR_TAG" >> "$GITHUB_OUTPUT"
+        echo "minor-tag=$MINOR_TAG" >> "$GITHUB_OUTPUT"
+        echo "✅ Updated floating tags: $MAJOR_TAG -> $VERSION, $MINOR_TAG -> $VERSION"
+
+    - name: 'Create release'
       if: inputs.create-release == 'true'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
