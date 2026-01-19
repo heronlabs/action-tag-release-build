@@ -83,6 +83,7 @@ runs:
         
         git add package.json package-lock.json 2>/dev/null || git add package.json
         git commit -m "[skip ci] bump version"
+        git pull --rebase origin ${{ github.ref_name }}
         git tag -a "$TAG" -m "Release ${VERSION}"
         git push --follow-tags
         
