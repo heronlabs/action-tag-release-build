@@ -2,7 +2,7 @@ name: build-tag-release
 
 author: Heron Labs
 
-description: Tag and release based on commit message prefix (major:/minor:/patch:)
+description: Tag and release based on semver spec input
 
 branding:
   icon: tag
@@ -12,6 +12,10 @@ inputs:
   github-token:
     description: GitHub token for creating tags and releases
     required: true
+  spec:
+    description: Semver bump type (major, minor, patch)
+    required: false
+    default: 'patch'
   working-directory:
     description: Working directory (for monorepo sub-directories)
     required: false
@@ -46,21 +50,6 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: 'Determine spec'
-      id: spec
-      shell: bash
-      run: |
-        COMMIT_MSG="${{ github.event.head_commit.message }}"
-        if echo "$COMMIT_MSG" | grep -qiE '^major:'; then
-          echo "spec=major" >> "$GITHUB_OUTPUT"
-        elif echo "$COMMIT_MSG" | grep -qiE '^minor:'; then
-          echo "spec=minor" >> "$GITHUB_OUTPUT"
-        elif echo "$COMMIT_MSG" | grep -qiE '^patch:'; then
-          echo "spec=patch" >> "$GITHUB_OUTPUT"
-        else
-          echo "spec=patch" >> "$GITHUB_OUTPUT"
-        fi
-
     - name: 'Config git'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
@@ -71,7 +60,7 @@ runs:
     - name: 'Bump version'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: npm version "${{ steps.spec.outputs.spec }}" --no-git-tag-version
+      run: npm version "${{ inputs.spec }}" --no-git-tag-version
 
     - name: 'Commit and tag'
       id: release
