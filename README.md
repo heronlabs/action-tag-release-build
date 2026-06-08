@@ -1,6 +1,6 @@
 # Build Tag Release
 
-[![CI](https://github.com/heronlabs/pipelines-build-tag-release/actions/workflows/ci.yml/badge.svg)](https://github.com/heronlabs/pipelines-build-tag-release/actions/workflows/ci.yml)
+[![CI](https://github.com/heronlabs/action-tag-release-build/actions/workflows/ci.yml/badge.svg)](https://github.com/heronlabs/action-tag-release-build/actions/workflows/ci.yml)
 
 Tag and release based on commit message prefix.
 
