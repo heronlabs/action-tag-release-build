@@ -29,3 +29,4 @@ jobs:
       - uses: ./
         with:
           github-token: ${{ github.token }}
+          spec: ${{ inputs.spec || 'patch' }}
