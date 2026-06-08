@@ -24,7 +24,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: heronlabs/actions/build-tag-release@v1
+      - uses: heronlabs/action-tag-release-build@v1
         with:
           github-token: ${{ github.token }}
 ```
@@ -32,7 +32,7 @@ jobs:
 ### Tag Only (no release)
 
 ```yaml
-- uses: heronlabs/actions/build-tag-release@v1
+- uses: heronlabs/action-tag-release-build@v1
   with:
     github-token: ${{ github.token }}
     create-release: 'false'
@@ -41,7 +41,7 @@ jobs:
 ### Monorepo
 
 ```yaml
-- uses: heronlabs/actions/build-tag-release@v1
+- uses: heronlabs/action-tag-release-build@v1
   with:
     github-token: ${{ github.token }}
     working-directory: packages/my-package
