@@ -143,6 +143,72 @@ test_tag_release_minor() {
   rm -rf "$root"
 }
 
+test_tag_release_infer_feat_minor() {
+  local root; root="$(build_node_repo)"
+  local origin="$root/origin.git" work="$root/work"
+  git_q "$work" commit --amend -m "feat: add a thing"
+  run_script "$SCRIPT_TAG" "$work" TAG_PREFIX=v REF_NAME=main
+
+  [ "$RUN_RC" -eq 0 ] && ok "tag infer feat: exit 0" || bad "tag infer feat: exit 0" "rc=$RUN_RC out=$RUN_OUT"
+  [ "$(node -p "require('$work/package.json').version" 2>/dev/null)" = "1.1.0" ] && ok "tag infer feat: package.json bumped to 1.1.0 (minor)" || bad "tag infer feat: package.json bumped to 1.1.0 (minor)"
+  origin_has_tag "$origin" v1.1.0 && ok "tag infer feat: tag v1.1.0 pushed to origin" || bad "tag infer feat: tag v1.1.0 pushed to origin"
+  grep -q 'Bump: minor (inferred from commit)' <<<"$RUN_OUT" && ok "tag infer feat: stdout reports inferred minor" || bad "tag infer feat: stdout reports inferred minor" "$RUN_OUT"
+
+  rm -rf "$root"
+}
+
+test_tag_release_infer_breaking_bang_major() {
+  local root; root="$(build_node_repo)"
+  local origin="$root/origin.git" work="$root/work"
+  git_q "$work" commit --amend -m "feat!: drop legacy api"
+  run_script "$SCRIPT_TAG" "$work" TAG_PREFIX=v REF_NAME=main
+
+  [ "$RUN_RC" -eq 0 ] && ok "tag infer feat!: exit 0" || bad "tag infer feat!: exit 0" "rc=$RUN_RC out=$RUN_OUT"
+  [ "$(node -p "require('$work/package.json').version" 2>/dev/null)" = "2.0.0" ] && ok "tag infer feat!: package.json bumped to 2.0.0 (major)" || bad "tag infer feat!: package.json bumped to 2.0.0 (major)"
+  origin_has_tag "$origin" v2.0.0 && ok "tag infer feat!: tag v2.0.0 pushed to origin" || bad "tag infer feat!: tag v2.0.0 pushed to origin"
+
+  rm -rf "$root"
+}
+
+test_tag_release_infer_breaking_footer_major() {
+  local root; root="$(build_node_repo)"
+  local origin="$root/origin.git" work="$root/work"
+  git_q "$work" commit --amend -m "$(printf 'fix: tweak\n\nBREAKING CHANGE: drops support for X')"
+  run_script "$SCRIPT_TAG" "$work" TAG_PREFIX=v REF_NAME=main
+
+  [ "$RUN_RC" -eq 0 ] && ok "tag infer BREAKING CHANGE: exit 0" || bad "tag infer BREAKING CHANGE: exit 0" "rc=$RUN_RC out=$RUN_OUT"
+  [ "$(node -p "require('$work/package.json').version" 2>/dev/null)" = "2.0.0" ] && ok "tag infer BREAKING CHANGE: package.json bumped to 2.0.0 (major)" || bad "tag infer BREAKING CHANGE: package.json bumped to 2.0.0 (major)"
+  origin_has_tag "$origin" v2.0.0 && ok "tag infer BREAKING CHANGE: tag v2.0.0 pushed to origin" || bad "tag infer BREAKING CHANGE: tag v2.0.0 pushed to origin"
+
+  rm -rf "$root"
+}
+
+test_tag_release_infer_fix_patch() {
+  local root; root="$(build_node_repo)"
+  local origin="$root/origin.git" work="$root/work"
+  git_q "$work" commit --amend -m "fix: correct a bug"
+  run_script "$SCRIPT_TAG" "$work" TAG_PREFIX=v REF_NAME=main
+
+  [ "$RUN_RC" -eq 0 ] && ok "tag infer fix: exit 0" || bad "tag infer fix: exit 0" "rc=$RUN_RC out=$RUN_OUT"
+  [ "$(node -p "require('$work/package.json').version" 2>/dev/null)" = "1.0.1" ] && ok "tag infer fix: package.json bumped to 1.0.1 (patch)" || bad "tag infer fix: package.json bumped to 1.0.1 (patch)"
+  origin_has_tag "$origin" v1.0.1 && ok "tag infer fix: tag v1.0.1 pushed to origin" || bad "tag infer fix: tag v1.0.1 pushed to origin"
+
+  rm -rf "$root"
+}
+
+test_tag_release_infer_unclear_patch() {
+  local root; root="$(build_node_repo)"
+  local origin="$root/origin.git" work="$root/work"
+  git_q "$work" commit --amend -m "Merge pull request #7 from heronlabs/topic"
+  run_script "$SCRIPT_TAG" "$work" TAG_PREFIX=v REF_NAME=main
+
+  [ "$RUN_RC" -eq 0 ] && ok "tag infer unclear: exit 0" || bad "tag infer unclear: exit 0" "rc=$RUN_RC out=$RUN_OUT"
+  [ "$(node -p "require('$work/package.json').version" 2>/dev/null)" = "1.0.1" ] && ok "tag infer unclear: package.json bumped to 1.0.1 (patch default)" || bad "tag infer unclear: package.json bumped to 1.0.1 (patch default)"
+  origin_has_tag "$origin" v1.0.1 && ok "tag infer unclear: tag v1.0.1 pushed to origin" || bad "tag infer unclear: tag v1.0.1 pushed to origin"
+
+  rm -rf "$root"
+}
+
 test_update_major_with_prefix() {
   local root; root="$(build_plain_repo)"
   local origin="$root/origin.git" work="$root/work"
@@ -178,6 +244,11 @@ test_create_release_missing_tag
 test_create_release_missing_token
 test_tag_release_patch
 test_tag_release_minor
+test_tag_release_infer_feat_minor
+test_tag_release_infer_breaking_bang_major
+test_tag_release_infer_breaking_footer_major
+test_tag_release_infer_fix_patch
+test_tag_release_infer_unclear_patch
 test_update_major_with_prefix
 test_update_major_empty_prefix
 
