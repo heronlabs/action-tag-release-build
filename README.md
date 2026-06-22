@@ -6,8 +6,11 @@ A GitHub Action that bumps the `package.json` version by an explicit semver `spe
 (`major`, `minor`, or `patch`), commits the bump, creates the matching git tag,
 moves the floating major/minor tags, and optionally publishes a GitHub release.
 
-The bump is driven entirely by the `spec` input — there is **no** commit-message
-parsing.
+The bump is driven by the `spec` input. When `spec` is omitted, the bump is
+**inferred from the merge/HEAD commit** using Conventional Commits — a breaking
+change (`feat!:`, `fix(api)!:`, or a `BREAKING CHANGE:` body) is `major`, a
+`feat:` commit is `minor`, and everything else (including unclear messages) falls
+back to `patch`.
 
 ## Usage
 
@@ -91,7 +94,7 @@ Creates tags like `my-package-v1.1.0`.
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `github-token` | Token used to push tags and create the release. Use a PAT to trigger downstream workflows. | Yes | — |
-| `spec` | Semver bump type: `major`, `minor`, or `patch`. | No | `patch` |
+| `spec` | Semver bump type: `major`, `minor`, or `patch`. When empty, the bump is inferred from the merge/HEAD commit (Conventional Commits), defaulting to `patch` when unclear. | No | `` (inferred) |
 | `working-directory` | Sub-directory to operate in (for monorepos). | No | `.` |
 | `create-release` | Create a GitHub release after tagging. | No | `true` |
 | `tag-prefix` | Tag prefix (e.g. `my-package-v`). | No | `v` |

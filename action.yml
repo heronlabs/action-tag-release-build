@@ -13,9 +13,12 @@ inputs:
     description: GitHub token for creating tags and releases
     required: true
   spec:
-    description: Semver bump type (major, minor, patch)
+    description: >-
+      Semver bump type (major, minor, patch). When empty, the bump is inferred
+      from the merge/HEAD commit using Conventional Commits, defaulting to patch
+      when unclear.
     required: false
-    default: 'patch'
+    default: ''
   working-directory:
     description: Working directory (for monorepo sub-directories)
     required: false
