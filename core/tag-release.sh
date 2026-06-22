@@ -14,7 +14,7 @@ classify_commit() {
   local message="$1" subject
   subject="${message%%$'\n'*}"
 
-  if [[ "$subject" =~ ^[a-zA-Z]+(\([^\)]*\))?! ]] \
+  if [[ "$subject" =~ ^[a-zA-Z]+(\([^\)]*\))?!: ]] \
      || grep -qE '(^|[[:space:]])BREAKING[ -]CHANGE:' <<<"$message"; then
     echo major
   elif [[ "$subject" =~ ^feat(\([^\)]*\))?: ]]; then

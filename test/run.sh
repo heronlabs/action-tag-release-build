@@ -209,6 +209,19 @@ test_tag_release_infer_unclear_patch() {
   rm -rf "$root"
 }
 
+test_tag_release_explicit_overrides_inference() {
+  local root; root="$(build_node_repo)"
+  local origin="$root/origin.git" work="$root/work"
+  git_q "$work" commit --amend -m "feat!: drop legacy api"
+  run_script "$SCRIPT_TAG" "$work" SPEC=patch TAG_PREFIX=v REF_NAME=main
+
+  [ "$RUN_RC" -eq 0 ] && ok "tag explicit overrides inference: exit 0" || bad "tag explicit overrides inference: exit 0" "rc=$RUN_RC out=$RUN_OUT"
+  [ "$(node -p "require('$work/package.json').version" 2>/dev/null)" = "1.0.1" ] && ok "tag explicit overrides inference: package.json bumped to 1.0.1 (explicit patch wins over inferred major)" || bad "tag explicit overrides inference: package.json bumped to 1.0.1 (explicit patch wins over inferred major)"
+  origin_has_tag "$origin" v1.0.1 && ok "tag explicit overrides inference: tag v1.0.1 pushed to origin" || bad "tag explicit overrides inference: tag v1.0.1 pushed to origin"
+
+  rm -rf "$root"
+}
+
 test_update_major_with_prefix() {
   local root; root="$(build_plain_repo)"
   local origin="$root/origin.git" work="$root/work"
@@ -249,6 +262,7 @@ test_tag_release_infer_breaking_bang_major
 test_tag_release_infer_breaking_footer_major
 test_tag_release_infer_fix_patch
 test_tag_release_infer_unclear_patch
+test_tag_release_explicit_overrides_inference
 test_update_major_with_prefix
 test_update_major_empty_prefix
 
