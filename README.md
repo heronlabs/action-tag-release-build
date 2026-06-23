@@ -1,6 +1,6 @@
 # Tag Release Build Action
 
-[![CI](https://github.com/heronlabs/action-tag-release-build/actions/workflows/ci.yml/badge.svg)](https://github.com/heronlabs/action-tag-release-build/actions/workflows/ci.yml)
+[![CI](https://github.com/heronlabs/action-tag-release-build/actions/workflows/continuous-integration.yml/badge.svg)](https://github.com/heronlabs/action-tag-release-build/actions/workflows/continuous-integration.yml)
 
 > Bump the `package.json` version, tag the commit, move the floating major/minor tags, and optionally publish a GitHub release.
 
