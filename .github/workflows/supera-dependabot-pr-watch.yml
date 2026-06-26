@@ -12,7 +12,7 @@
 # Dependabot pull_request.
 #
 # Toolchain note: this repo's CI (Continuous Integration) installs no JS
-# toolchain — it runs shellcheck (preinstalled on the runner) + bash test/run.sh.
+# toolchain — it runs shellcheck (preinstalled on the runner) + bash tests/run.sh.
 # So no pnpm/node setup step is needed here; it mirrors CI exactly.
 name: 'Skill | pr-watch'
 
