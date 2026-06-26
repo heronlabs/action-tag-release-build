@@ -14,7 +14,7 @@
 set -euo pipefail
 
 # shellcheck disable=SC1091
-source "$(dirname "${BASH_SOURCE[0]}")/_inference.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/interfaces/resolve-bump.sh"
 
 BUMP="$(resolve_bump)"
 
