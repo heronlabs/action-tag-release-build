@@ -6,7 +6,14 @@ set -euo pipefail
 : "${REF_NAME:?REF_NAME is required}"
 : "${GITHUB_OUTPUT:?GITHUB_OUTPUT is required}"
 
-# Classify a Conventional Commits message into a semver bump:
+VERSION_FILE="${VERSION_FILE:-version.txt}"
+
+# ---------------------------------------------------------------------------
+# Inference functions — kept here for standalone/documentation use. When the
+# action.yml orchestrates the workflow, bump-version-file.sh (run as a prior
+# step) handles inference directly.
+# ---------------------------------------------------------------------------
+# classify_commit: classify a Conventional Commits message into a semver bump:
 #   major - `!` after the type/scope (feat!:, fix(api)!:) or a BREAKING CHANGE token
 #   minor - a non-breaking feat commit
 #   patch - everything else (the default when the message is unclear)
@@ -24,8 +31,7 @@ classify_commit() {
   fi
 }
 
-# Resolve the effective bump: an explicit SPEC wins verbatim; an omitted/empty
-# SPEC infers the bump from the HEAD (merge) commit message, defaulting to patch.
+# resolve_bump: explicit SPEC wins; omitted/empty infers from HEAD commit.
 resolve_bump() {
   if [[ -n "${SPEC:-}" ]]; then
     echo "${SPEC}"
@@ -34,27 +40,47 @@ resolve_bump() {
   fi
 }
 
-BUMP="$(resolve_bump)"
-if [[ -n "${SPEC:-}" ]]; then
-  echo "ℹ️  Bump: ${BUMP} (explicit spec)"
-else
-  echo "ℹ️  Bump: ${BUMP} (inferred from commit)"
-fi
-
 # Identify the bot author for the bump commit and tag.
 git config user.name "github-actions[bot]"
 git config user.email "github-actions[bot]@users.noreply.github.com"
 
-# Bump the version in package.json without creating a git tag (we tag below).
-npm version "${BUMP}" --no-git-tag-version
+# Read the already-bumped version from the version file.
+if [[ ! -f "$VERSION_FILE" ]]; then
+  echo "error: version file '${VERSION_FILE}' not found — run bump-version-file.sh first" >&2
+  exit 1
+fi
 
-VERSION=$(node -p "require('./package.json').version")
+VERSION="$(< "$VERSION_FILE")"
+# Trim whitespace
+VERSION="$(printf '%s' "$VERSION" | xargs)"
+
+if [[ -z "$VERSION" ]]; then
+  echo "error: version file '${VERSION_FILE}' is empty" >&2
+  exit 1
+fi
+
 TAG="${TAG_PREFIX}${VERSION}"
+
+# Collect additional files that may have been modified by opt-in scripts
+# (bump-package-json.sh, sync-claude-plugin.sh).
+ADDITIONAL_FILES=()
+if [[ -f package.json ]]; then
+  ADDITIONAL_FILES+=( package.json )
+fi
+if [[ -f package-lock.json ]]; then
+  ADDITIONAL_FILES+=( package-lock.json )
+fi
+if [[ -f plugin.json ]]; then
+  ADDITIONAL_FILES+=( plugin.json )
+fi
+if [[ -f marketplace.json ]]; then
+  ADDITIONAL_FILES+=( marketplace.json )
+fi
 
 # Commit the bump, rebase onto the latest remote state, then create an
 # annotated release tag and push the commit and tag together.
-git add package.json package-lock.json 2>/dev/null || git add package.json
-git commit -m "[skip ci] bump version"
+git add "$VERSION_FILE" ${ADDITIONAL_FILES[@]+"${ADDITIONAL_FILES[@]}"}
+git commit -m "[skip ci] bump v${VERSION}"
 git pull --rebase origin "${REF_NAME}"
 git tag -a "${TAG}" -m "Release ${VERSION}"
 git push --follow-tags

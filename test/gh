@@ -2,7 +2,7 @@
 # Minimal `gh` stub for action-tag-release-build offline tests.
 #
 # Emulates only the gh surface the action uses:
-#   gh release create TAG --title TAG --generate-notes  -> no-op (exit 0)
+#   gh release create TAG --title TAG --notes <any>  -> no-op (exit 0)
 #
 # Every invocation is appended (one line, full argv) to $GH_LOG so tests can assert
 # which subcommands ran and with which flags.

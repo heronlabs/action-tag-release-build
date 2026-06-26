@@ -35,6 +35,22 @@ inputs:
     description: Update major version tag (e.g., v1) to point to latest release
     required: false
     default: 'true'
+  version-file:
+    description: File to read/write version
+    required: false
+    default: 'version.txt'
+  update-package-json:
+    description: Also bump package.json version via npm version
+    required: false
+    default: 'false'
+  sync-claude-plugin:
+    description: Sync version into Claude Code plugin files (plugin.json + marketplace.json)
+    required: false
+    default: 'false'
+  plugin-dir:
+    description: Claude plugin directory
+    required: false
+    default: '.'
 
 outputs:
   version:
@@ -53,14 +69,41 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: 'Bump version file'
+      id: bump
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        BUMP: ${{ inputs.spec }}
+        VERSION_FILE: ${{ inputs.version-file }}
+      run: bash ${{ github.action_path }}/core/bump-version-file.sh
+
+    - name: 'Sync package.json'
+      if: inputs.update-package-json == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        BUMP: ${{ inputs.spec }}
+        VERSION_FILE: ${{ inputs.version-file }}
+      run: bash ${{ github.action_path }}/core/bump-package-json.sh
+
+    - name: 'Sync Claude Code plugin'
+      if: inputs.sync-claude-plugin == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        VERSION: ${{ steps.bump.outputs.version }}
+        PLUGIN_DIR: ${{ inputs.plugin-dir }}
+      run: bash ${{ github.action_path }}/core/sync-claude-plugin.sh
+
     - name: 'Tag release'
       id: release
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       env:
-        SPEC: ${{ inputs.spec }}
         TAG_PREFIX: ${{ inputs.tag-prefix }}
         REF_NAME: ${{ github.ref_name }}
+        VERSION_FILE: ${{ inputs.version-file }}
       run: bash ${{ github.action_path }}/core/tag-release.sh
 
     - name: 'Update major version tag'
@@ -80,4 +123,5 @@ runs:
       env:
         GH_TOKEN: ${{ inputs.github-token }}
         TAG: ${{ steps.release.outputs.tag }}
+        TAG_PREFIX: ${{ inputs.tag-prefix }}
       run: bash ${{ github.action_path }}/core/create-release.sh
