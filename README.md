@@ -1,4 +1,4 @@
-# 🏷️ tag-release-build — Bump, tag, release. Pure bash, no Node required.
+# 🏷️ tag-release-build — Bump, tag, release.
 
 [![CI](https://github.com/heronlabs/action-tag-release-build/actions/workflows/continuous-integration.yml/badge.svg)](https://github.com/heronlabs/action-tag-release-build/actions/workflows/continuous-integration.yml)
 
@@ -124,7 +124,7 @@ Creates tags like `my-package-v1.1.0`.
 | `spec` | Semver bump type: `major`, `minor`, or `patch`. When empty, the bump is inferred from the merge/HEAD commit (Conventional Commits), defaulting to `patch` when unclear. | No | `` (inferred) |
 | `working-directory` | Sub-directory to operate in (for monorepos). | No | `.` |
 | `version-file` | File to read and write the version number. | No | `version.txt` |
-| `update-package-json` | Also bump `package.json` using `npm version`. Requires a Node toolchain. | No | `false` |
+| `update-package-json` | Also bump `package.json` using `npm version`. Set up Node with `actions/setup-node` before this step. | No | `false` |
 | `sync-claude-plugin` | Sync the version into Claude Code plugin files (`plugin.json` + `marketplace.json`). Requires `jq`. | No | `false` |
 | `plugin-dir` | Directory containing the Claude plugin files. | No | `.` |
 | `create-release` | Create a GitHub release after tagging. | No | `true` |
@@ -150,7 +150,7 @@ permissions:
 
 ## How it works
 
-1. **Bump version file** — runs `core/bump-version-file.sh` (pure bash, no Node needed) to read `version.txt`, apply the semver bump, and write the new version back.
+1. **Bump version file** — reads `version.txt`, applies the semver bump, and writes the new version back.
 2. **Sync package.json** (optional) — if `update-package-json` is `true`, runs `npm version` to keep `package.json` in sync.
 3. **Sync Claude plugin** (optional) — if `sync-claude-plugin` is `true`, uses `jq` to update version in `plugin.json` and `marketplace.json`.
 4. **Tag release** — commits all changed files as `[skip ci] bump v<version>`, rebases onto the current branch, creates the annotated `<tag-prefix><version>` tag, and pushes with `--follow-tags`.
@@ -159,7 +159,7 @@ permissions:
 
 ## Notes
 
-- **No Node required for the core flow** — the version bump uses pure bash. A Node toolchain is only needed when `update-package-json` is `true`.
+- **Node** — only needed when `update-package-json` is `true`. Set up the toolchain with `actions/setup-node` before this action.
 - **`[skip ci]`** — the bump commit is prefixed `[skip ci]` so it does not re-trigger CI.
 - **Downstream triggers** — a tag pushed with the default `GITHUB_TOKEN` will **not** start other workflows. Pass a PAT as `github-token` (and to `actions/checkout`) when a downstream pipeline must react to the new tag.
 
