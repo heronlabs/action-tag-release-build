@@ -93,23 +93,20 @@ run_in_repo() {
 
 # ---------------------------------------------------------------- tests
 
-@test "create-release success: gh release create with structured notes and CHANGELOG" {
+@test "create-release: creates release with --notes (not --generate-notes) and populates CHANGELOG.md" {
   local root; root="$(build_repo_with_tags)"
   local work="$root/work"
   run_in_repo "$work" GH_TOKEN=x TAG=v2.0.0 TAG_PREFIX=v
 
   [ "$RUN_RC" -eq 0 ]
 
-  # Check gh release create was called with --notes (not --generate-notes)
   grep -q 'release create v2.0.0' "$RUN_GHLOG"
   grep -q -- '--title v2.0.0' "$RUN_GHLOG"
-  # Should NOT use --generate-notes
   run grep -q -- '--generate-notes' "$RUN_GHLOG"
   [ "$status" -ne 0 ]
 
   grep -q 'Released: v2.0.0' <<<"$RUN_OUT"
 
-  # CHANGELOG.md should exist and contain the release
   [ -f "$work/CHANGELOG.md" ]
   grep -q '## v2.0.0' "$work/CHANGELOG.md"
   grep -q "feat:" "$work/CHANGELOG.md"
@@ -130,7 +127,7 @@ run_in_repo() {
   [ "$RUN_RC" -ne 0 ]
 }
 
-@test "create-release: CHANGELOG prepends new entry above existing" {
+@test "create-release: prepends new CHANGELOG entry above existing, preserving old entries" {
   local root; root="$(build_repo_with_tags)"
   local work="$root/work"
 
@@ -147,9 +144,7 @@ run_in_repo() {
 
   [ "$RUN_RC" -eq 0 ]
 
-  # New entry should be first
   head -1 "$work/CHANGELOG.md" | grep -q '^## v2.0.0'
-  # Old entry should still be there
   grep -q '## v1.0.0' "$work/CHANGELOG.md"
 
   rm -rf "$root"

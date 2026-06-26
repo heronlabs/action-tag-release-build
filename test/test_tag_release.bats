@@ -157,7 +157,6 @@ run_bump_then_tag() {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
   git_q "$work" commit --amend -m "feat: add a thing"
-  # No explicit BUMP — bump-version-file.sh infers from commit
   run_bump_then_tag "$work" TAG_PREFIX=v REF_NAME=main
 
   [ "$BUMP_RC" -eq 0 ]
@@ -173,7 +172,6 @@ run_bump_then_tag() {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
   git_q "$work" commit --amend -m "feat!: drop legacy api"
-  # No explicit BUMP — bump-version-file.sh infers from commit
   run_bump_then_tag "$work" TAG_PREFIX=v REF_NAME=main
 
   [ "$BUMP_RC" -eq 0 ]
@@ -275,7 +273,7 @@ run_bump_then_tag() {
   rm -rf "$root"
 }
 
-@test "tag with package.json: both files included in commit" {
+@test "tag with package.json: commits version.txt bump alongside unchanged package.json" {
   local root; root="$(build_repo_with_package_json)"
   local origin="$root/origin.git" work="$root/work"
   run_bump_then_tag "$work" BUMP=minor TAG_PREFIX=v REF_NAME=main
@@ -284,8 +282,6 @@ run_bump_then_tag() {
   [ "$TAG_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "1.1.0" ]
 
-  # npm version was NOT run (it's opt-in), so package.json stays at old version
-  # but both files should be in the commit (version.txt changed, package.json same)
   origin_has_tag "$origin" v1.1.0
 
   rm -rf "$root"
