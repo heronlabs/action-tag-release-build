@@ -97,7 +97,7 @@ Requires `actions/setup-node` before this step.
   with:
     github-token: ${{ secrets.PAT }}
     spec: minor
-    sync-claude-plugin: 'true'
+    bump-claude-plugin: 'true'
     plugin-dir: '.'
 ```
 
@@ -125,7 +125,7 @@ Creates tags like `my-package-v1.1.0`.
 | `working-directory` | Sub-directory to operate in (for monorepos). | No | `.` |
 | `version-file` | File to read and write the version number. | No | `version.txt` |
 | `update-package-json` | Also bump `package.json` using `npm version`. Set up Node with `actions/setup-node` before this step. | No | `false` |
-| `sync-claude-plugin` | Sync the version into Claude Code plugin files (`plugin.json` + `marketplace.json`). Requires `jq`. | No | `false` |
+| `bump-claude-plugin` | Sync the version into Claude Code plugin files (`plugin.json` + `marketplace.json`). Requires `jq`. | No | `false` |
 | `plugin-dir` | Directory containing the Claude plugin files. | No | `.` |
 | `create-release` | Create a GitHub release after tagging. | No | `true` |
 | `changelog` | Generate `CHANGELOG.md` and populated GitHub release notes. | No | `true` |
@@ -152,7 +152,7 @@ permissions:
 
 1. **Bump version file** — reads `version.txt`, applies the semver bump, and writes the new version back.
 2. **Sync package.json** (optional) — if `update-package-json` is `true`, runs `npm version` to keep `package.json` in sync.
-3. **Sync Claude plugin** (optional) — if `sync-claude-plugin` is `true`, uses `jq` to update version in `plugin.json` and `marketplace.json`.
+3. **Sync Claude plugin** (optional) — if `bump-claude-plugin` is `true`, uses `jq` to update version in `plugin.json` and `marketplace.json`.
 4. **Tag release** — commits all changed files as `[skip ci] bump v<version>`, rebases onto the current branch, creates the annotated `<tag-prefix><version>` tag, and pushes with `--follow-tags`.
 5. **Update major tags** — when `update-major-tag` is `true`, force-moves the floating major (`v1`) and minor (`v1.0`) tags to the new commit, so consumers pinning `@v1` always get the latest compatible release.
 6. **Create release** — when `create-release` is `true`, generates structured release notes from git log, prepends them to `CHANGELOG.md`, and creates a GitHub release with populated notes (not auto-generated).

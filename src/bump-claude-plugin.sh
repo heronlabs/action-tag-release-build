@@ -9,8 +9,8 @@
 # Optional env: PLUGIN_DIR (default: .)
 #
 # Usage:
-#   VERSION=1.2.3 bash core/sync-claude-plugin.sh
-#   VERSION=1.2.3 PLUGIN_DIR=/path/to/plugin bash core/sync-claude-plugin.sh
+#   VERSION=1.2.3 bash src/bump-claude-plugin.sh
+#   VERSION=1.2.3 PLUGIN_DIR=/path/to/plugin bash src/bump-claude-plugin.sh
 
 set -euo pipefail
 

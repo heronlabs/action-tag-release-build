@@ -9,7 +9,7 @@
 #               SPEC (alternative to BUMP)
 #
 # Usage:
-#   BUMP=patch bash core/bump-package-json.sh
+#   BUMP=patch bash src/bump-package-json.sh
 
 set -euo pipefail
 

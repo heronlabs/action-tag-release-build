@@ -1,11 +1,11 @@
 #!/usr/bin/env bats
-# bats tests for core/create-release.sh
+# bats tests for src/create-release.sh
 #
 # Builds a throwaway git repo with tags, runs create-release.sh,
 # and asserts on gh release create calls, release notes structure, and CHANGELOG.md.
 
 setup() {
-  SCRIPT="$BATS_TEST_DIRNAME/../core/create-release.sh"
+  SCRIPT="$BATS_TEST_DIRNAME/../src/create-release.sh"
   STUB_DIR="$BATS_TEST_DIRNAME"
 }
 

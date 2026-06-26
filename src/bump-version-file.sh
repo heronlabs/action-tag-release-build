@@ -9,8 +9,8 @@
 #               VERSION_FILE (default: version.txt), SPEC (alternative to BUMP)
 #
 # Usage:
-#   BUMP=patch bash core/bump-version-file.sh
-#   bash core/bump-version-file.sh   # infers from git log
+#   BUMP=patch bash src/bump-version-file.sh
+#   bash src/bump-version-file.sh   # infers from git log
 
 set -euo pipefail
 

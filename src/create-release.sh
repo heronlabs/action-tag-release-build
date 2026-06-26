@@ -6,7 +6,7 @@
 #               CHANGELOG_FILE (default: CHANGELOG.md)
 #
 # Usage:
-#   GH_TOKEN=x TAG=v1.2.3 bash core/create-release.sh
+#   GH_TOKEN=x TAG=v1.2.3 bash src/create-release.sh
 
 set -euo pipefail
 

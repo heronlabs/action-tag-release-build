@@ -1,12 +1,12 @@
 #!/usr/bin/env bats
-# bats tests for core/tag-release.sh
+# bats tests for src/tag-release.sh
 #
 # Builds throwaway git repos with a version.txt, runs bump-version-file.sh then
 # tag-release.sh, and asserts on version bumps, tags, and outputs.
 
 setup() {
-  BUMP_SCRIPT="$BATS_TEST_DIRNAME/../core/bump-version-file.sh"
-  TAG_SCRIPT="$BATS_TEST_DIRNAME/../core/tag-release.sh"
+  BUMP_SCRIPT="$BATS_TEST_DIRNAME/../src/bump-version-file.sh"
+  TAG_SCRIPT="$BATS_TEST_DIRNAME/../src/tag-release.sh"
   STUB_DIR="$BATS_TEST_DIRNAME"   # contains the `gh` stub
 }
 

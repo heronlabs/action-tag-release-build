@@ -1,11 +1,11 @@
 #!/usr/bin/env bats
-# bats tests for core/update-major-tag.sh
+# bats tests for src/update-major-tag.sh
 #
 # Builds a plain git repo, runs update-major-tag.sh, and asserts on force-pushed
 # floating major and minor tags plus GITHUB_OUTPUT.
 
 setup() {
-  SCRIPT="$BATS_TEST_DIRNAME/../core/update-major-tag.sh"
+  SCRIPT="$BATS_TEST_DIRNAME/../src/update-major-tag.sh"
   STUB_DIR="$BATS_TEST_DIRNAME"   # contains the `gh` stub
 }
 

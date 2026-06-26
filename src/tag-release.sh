@@ -30,7 +30,7 @@ fi
 TAG="${TAG_PREFIX}${VERSION}"
 
 # Collect additional files that may have been modified by opt-in scripts
-# (bump-package-json.sh, sync-claude-plugin.sh).
+# (bump-package-json.sh, bump-claude-plugin.sh).
 ADDITIONAL_FILES=()
 if [[ -f package.json ]]; then
   ADDITIONAL_FILES+=( package.json )
