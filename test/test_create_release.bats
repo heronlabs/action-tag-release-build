@@ -91,6 +91,8 @@ run_in_repo() {
   set -e
 }
 
+# ---------------------------------------------------------------- tests
+
 @test "create-release success: gh release create with structured notes and CHANGELOG" {
   local root; root="$(build_repo_with_tags)"
   local work="$root/work"
