@@ -1,10 +1,24 @@
-# Tag Release Build Action
+# 🏷️ tag-release-build — Bump, tag, release. Pure bash, no Node required.
 
 [![CI](https://github.com/heronlabs/action-tag-release-build/actions/workflows/continuous-integration.yml/badge.svg)](https://github.com/heronlabs/action-tag-release-build/actions/workflows/continuous-integration.yml)
 
-> Bump the `version.txt` file (and optionally `package.json` and Claude Code plugin files), tag the commit, move the floating major/minor tags, and optionally publish a GitHub release with a CHANGELOG.
+> Bump `version.txt`, tag the commit, move floating major/minor tags, publish a GitHub release with a CHANGELOG — and optionally sync `package.json` or Claude Code plugin files.
 
 The bump is driven by the `spec` input. When `spec` is omitted, the bump is **inferred from the merge/HEAD commit** using Conventional Commits — a breaking change (`feat!:`, `fix(api)!:`, or a `BREAKING CHANGE:` body) is `major`, a `feat:` commit is `minor`, and everything else (including unclear messages) falls back to `patch`.
+
+## Contents
+
+- [Usage](#usage)
+  - [Minimal (tag only)](#tag-only-no-github-release)
+  - [With package.json sync](#with-packagejson-sync)
+  - [With Claude Code plugin sync](#with-claude-code-plugin-sync)
+  - [Monorepo sub-package](#monorepo-sub-package)
+- [Inputs](#inputs)
+- [Outputs](#outputs)
+- [Permissions](#permissions)
+- [How it works](#how-it-works)
+- [Notes](#notes)
+- [License](#license)
 
 ## Usage
 
