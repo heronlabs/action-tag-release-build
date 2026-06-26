@@ -8,38 +8,6 @@ set -euo pipefail
 
 VERSION_FILE="${VERSION_FILE:-version.txt}"
 
-# ---------------------------------------------------------------------------
-# Inference functions — kept here for standalone/documentation use. When the
-# action.yml orchestrates the workflow, bump-version-file.sh (run as a prior
-# step) handles inference directly.
-# ---------------------------------------------------------------------------
-# classify_commit: classify a Conventional Commits message into a semver bump:
-#   major - `!` after the type/scope (feat!:, fix(api)!:) or a BREAKING CHANGE token
-#   minor - a non-breaking feat commit
-#   patch - everything else (the default when the message is unclear)
-classify_commit() {
-  local message="$1" subject
-  subject="${message%%$'\n'*}"
-
-  if [[ "$subject" =~ ^[a-zA-Z]+(\([^\)]*\))?!: ]] \
-     || grep -qE '(^|[[:space:]])BREAKING[ -]CHANGE:' <<<"$message"; then
-    echo major
-  elif [[ "$subject" =~ ^feat(\([^\)]*\))?: ]]; then
-    echo minor
-  else
-    echo patch
-  fi
-}
-
-# resolve_bump: explicit SPEC wins; omitted/empty infers from HEAD commit.
-resolve_bump() {
-  if [[ -n "${SPEC:-}" ]]; then
-    echo "${SPEC}"
-  else
-    classify_commit "$(git log -1 --pretty=%B)"
-  fi
-}
-
 # Identify the bot author for the bump commit and tag.
 git config user.name "github-actions[bot]"
 git config user.email "github-actions[bot]@users.noreply.github.com"

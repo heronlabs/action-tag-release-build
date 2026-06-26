@@ -16,32 +16,8 @@ set -euo pipefail
 
 VERSION_FILE="${VERSION_FILE:-version.txt}"
 
-# ---------------------------------------------------------------------------
-# Inference helpers (mirrored from tag-release.sh so this script is standalone)
-# ---------------------------------------------------------------------------
-classify_commit() {
-  local message="$1" subject
-  subject="${message%%$'\n'*}"
-
-  if [[ "$subject" =~ ^[a-zA-Z]+(\([^\)]*\))?!: ]] \
-     || grep -qE '(^|[[:space:]])BREAKING[ -]CHANGE:' <<<"$message"; then
-    echo major
-  elif [[ "$subject" =~ ^feat(\([^\)]*\))?: ]]; then
-    echo minor
-  else
-    echo patch
-  fi
-}
-
-resolve_bump() {
-  if [[ -n "${BUMP:-}" ]]; then
-    echo "${BUMP}"
-  elif [[ -n "${SPEC:-}" ]]; then
-    echo "${SPEC}"
-  else
-    classify_commit "$(git log -1 --pretty=%B 2>/dev/null || echo '')"
-  fi
-}
+# shellcheck disable=SC1091
+source "$(dirname "${BASH_SOURCE[0]}")/_inference.sh"
 
 BUMP="$(resolve_bump)"
 
