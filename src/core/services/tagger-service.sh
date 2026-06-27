@@ -1,18 +1,15 @@
 #!/usr/bin/env bash
-# Core domain: version resolution and semver math.
+# Tagger service — maps to mockup's Tagger interface.
 #
-# Pure functions — no side effects, no fs writes.
+# Pure functions — no side effects, no fs writes, no env reads.
 #
-#   classify_commit(message)   -> major | minor | patch
-#   resolve_bump()             -> major | minor | patch
-#   bump_version(version, type) -> new version string
-#
-# resolve_bump priority: BUMP env > SPEC env > classify_commit(HEAD commit).
+#   tagger_classify_commit(message)        -> major | minor | patch
+#   tagger_calculate(version, bump_type)   -> new version string
 
 set -euo pipefail
 
 # Classify a Conventional Commits message into a semver bump type.
-classify_commit() {
+tagger_classify_commit() {
   local message="$1" subject
   subject="${message%%$'\n'*}"
 
@@ -26,19 +23,8 @@ classify_commit() {
   fi
 }
 
-# Resolve the semver bump: explicit BUMP wins; then SPEC; else infers from HEAD.
-resolve_bump() {
-  if [[ -n "${BUMP:-}" ]]; then
-    echo "${BUMP}"
-  elif [[ -n "${SPEC:-}" ]]; then
-    echo "${SPEC}"
-  else
-    classify_commit "$(git log -1 --pretty=%B 2>/dev/null || echo '')"
-  fi
-}
-
 # Pure semver math — no node, no grep -P, no external deps.
-bump_version() {
+tagger_calculate() {
   local version="$1" bump_type="$2"
   local major minor patch
 

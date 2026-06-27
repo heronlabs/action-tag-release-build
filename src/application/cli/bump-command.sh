@@ -2,20 +2,21 @@
 # Bump command — single entry point called from action.yml.
 #
 # Orchestrates the full bump-tag-release pipeline matching BumpCommand.bumpVersion():
-#   1. Read current version                (txt-service)
-#   2. Resolve bump type from commit or input  (version-service + git-service)
-#   3. Compute next version                (version-service)
-#   4. Write new version                   (txt-service)
-#   5. Sync version to enabled providers   (node, claude)
-#   6. Git commit, tag, push               (git-service, with optional major/minor override)
-#   7. Create release + changelog notes    (github-service)
+#   1. Read current version                  (txt-service)
+#   2. Resolve bump type                     (tagger-service + git-service)
+#   3. Calculate next version                (tagger-service)
+#   4. Write new version                     (txt-service)
+#   5. Sync version to enabled bumpers       (bumper-node, bumper-claude)
+#   6. Generate release notes + changelog    (github-service, before commit)
+#   7. Git commit, tag, push                 (git-service)
+#   8. Create GitHub release                 (github-service, after tag exists)
 #
 # Outputs VERSION, TAG, MAJOR_TAG, MINOR_TAG to GITHUB_OUTPUT.
 #
 # Required env: GITHUB_OUTPUT
 # Optional env: BUMP (major|minor|patch), VERSION_FILE, TAG_PREFIX, REF_NAME,
 #               UPDATE_PACKAGE_JSON, BUMP_CLAUDE_PLUGIN, PLUGIN_DIR,
-#               UPDATE_MAJOR_TAG, GH_TOKEN, CREATE_RELEASE
+#               UPDATE_MAJOR_TAG, GH_TOKEN, CREATE_RELEASE, CHANGELOG_FILE
 
 set -euo pipefail
 
@@ -26,15 +27,15 @@ SRC_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 # shellcheck disable=SC1091
 source "$SRC_DIR/core/services/txt-service.sh"
 # shellcheck disable=SC1091
-source "$SRC_DIR/core/services/version-service.sh"
+source "$SRC_DIR/core/services/tagger-service.sh"
 # shellcheck disable=SC1091
 source "$SRC_DIR/infrastructure/git/git-ops-service.sh"
 # shellcheck disable=SC1091
 source "$SRC_DIR/infrastructure/github/github-service.sh"
 # shellcheck disable=SC1091
-source "$SRC_DIR/infrastructure/node/node-service.sh"
+source "$SRC_DIR/infrastructure/node/bumper-node-service.sh"
 # shellcheck disable=SC1091
-source "$SRC_DIR/infrastructure/claude/claude-service.sh"
+source "$SRC_DIR/infrastructure/claude/bumper-claude-service.sh"
 
 # ---- defaults -------------------------------------------------------------
 TAG_PREFIX="${TAG_PREFIX-v}"
@@ -52,39 +53,44 @@ version="$(txt_get_version)"
 semantic="${BUMP:-}"
 if [[ -z "$semantic" ]]; then
   last_commit="$(git_get_last_commit)"
-  semantic="$(classify_commit "$last_commit")"
+  semantic="$(tagger_classify_commit "$last_commit")"
 fi
 echo "ℹ️  Bump: ${semantic}"
 
 # ---- step 3: calculate next version (mockup: tagger.calculate()) ----------
-next_version="$(bump_version "$version" "$semantic")"
+next_version="$(tagger_calculate "$version" "$semantic")"
 
 # ---- step 4: set version (mockup: txt.setVersion()) -----------------------
 txt_set_version "$next_version"
 echo "✅ Version: ${version} -> ${next_version} (${semantic})"
 
-# ---- step 5: sync providers (mockup: for opt of given.opts) ---------------
+# ---- step 5: sync bumpers (mockup: for opt of given.opts) -----------------
 for name in ${BumperNames[@]+"${BumperNames[@]}"}; do
   "provider_${name}_bump_version" "$next_version"
 done
 
-# ---- step 6: git commit, tag, push (mockup: git.apply(overrideVersions)) ---
-ADDITIONAL_FILES=()
-[[ -f package.json ]] && ADDITIONAL_FILES+=(package.json)
-[[ -f package-lock.json ]] && ADDITIONAL_FILES+=(package-lock.json)
-[[ -f plugin.json ]] && ADDITIONAL_FILES+=(plugin.json)
-[[ -f marketplace.json ]] && ADDITIONAL_FILES+=(marketplace.json)
-
-REF_NAME="${REF_NAME:-main}"
-OVERRIDE_VERSIONS="${UPDATE_MAJOR_TAG:-true}"
-TAG="$(git_apply "$next_version" "$TAG_PREFIX" "$REF_NAME" "$OVERRIDE_VERSIONS" ${ADDITIONAL_FILES[@]+"${ADDITIONAL_FILES[@]}"})"
-
-# ---- step 7: release + changelog (mockup: github.createReleaseChangelogNotes())
-#             Runs after git.apply so the tag exists on the remote. ----
+# ---- step 6: release notes + changelog (before git_apply, so committed) ---
 CREATE_RELEASE="${CREATE_RELEASE:-true}"
+TAG="${TAG_PREFIX}${next_version}"
+RELEASE_NOTES=""
+
 if [[ "${CREATE_RELEASE}" == "true" ]]; then
   : "${GH_TOKEN:?GH_TOKEN is required when CREATE_RELEASE is true}"
-  github_create_release_changelog_notes "$TAG"
+
+  prev_tag="$(git describe --tags --abbrev=0 HEAD 2>/dev/null || true)"
+
+  RELEASE_NOTES="$(generate_release_notes "$prev_tag" "$TAG")"
+  update_changelog "$TAG" "$RELEASE_NOTES"
+fi
+
+# ---- step 7: git commit, tag, push (mockup: git.apply(overrideVersions)) ---
+REF_NAME="${REF_NAME:-main}"
+OVERRIDE_VERSIONS="${UPDATE_MAJOR_TAG:-true}"
+TAG="$(git_apply "$next_version" "$TAG_PREFIX" "$REF_NAME" "$OVERRIDE_VERSIONS")"
+
+# ---- step 8: create GitHub release (after tag exists on remote) -----------
+if [[ "${CREATE_RELEASE}" == "true" ]]; then
+  create_github_release "$TAG" "$RELEASE_NOTES"
 fi
 
 # ---- outputs -------------------------------------------------------------

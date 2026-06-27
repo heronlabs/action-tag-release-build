@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # GitHub operations: release notes, changelog, release creation.
+# Maps to mockup's Github interface.
 #
 #   generate_release_notes(prev_tag, current_tag) -> notes markdown
 #   update_changelog(tag, notes, changelog_file)
 #   create_github_release(tag, notes)
-#   github_create_release_changelog_notes(tag)  -> combined entry point
 
 set -euo pipefail
 
@@ -147,17 +147,3 @@ create_github_release() {
   echo "✅ Released: ${tag}"
 }
 
-# Combined entry point: generate notes, update changelog, create release.
-github_create_release_changelog_notes() {
-  local tag="$1"
-  local changelog_file="${CHANGELOG_FILE:-CHANGELOG.md}"
-
-  local prev_tag
-  prev_tag="$(git describe --tags --abbrev=0 "${tag}^" 2>/dev/null || true)"
-
-  local notes
-  notes="$(generate_release_notes "$prev_tag" "$tag")"
-
-  update_changelog "$tag" "$notes" "$changelog_file"
-  create_github_release "$tag" "$notes"
-}

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Git operations: commit, tag, push.
+# Git operations: commit, tag, push. Maps to mockup's Git interface.
 #
-#   git_get_last_commit()                                     -> last commit message
-#   git_apply(version, tag_prefix, ref_name, override_versions, additional_files...) -> tag
+#   git_get_last_commit()                                         -> last commit message
+#   git_apply(version, tag_prefix, ref_name, override_versions)   -> tag
 
 set -euo pipefail
 
@@ -12,16 +12,13 @@ git_get_last_commit() {
 
 git_apply() {
   local version="$1" tag_prefix="$2" ref_name="$3" override_versions="$4"
-  shift 4
-  local additional_files=("$@")
-  local version_file="${VERSION_FILE:-version.txt}"
 
   git config user.name "github-actions[bot]"
   git config user.email "github-actions[bot]@users.noreply.github.com"
 
   local tag="${tag_prefix}${version}"
 
-  git add "$version_file" ${additional_files[@]+"${additional_files[@]}"}
+  git add -A
   git commit -m "[skip ci] bump v${version}" >&2
   git pull --rebase origin "${ref_name}" >&2
   git tag -a "${tag}" -m "Release ${version}" >&2

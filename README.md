@@ -150,31 +150,34 @@ permissions:
 
 ## Architecture
 
+Maps to the `BumpCommand` interface — single entry point orchestrating services.
+
 ```
 src/
-  application/cli/         # Single entry point called from action.yml
-    bump-command.sh         # Full pipeline: bump → sync → tag → release → changelog
-  core/services/            # Domain rules (no side effects)
-    version-service.sh      # classify_commit, resolve_bump, bump_version
-    txt-service.sh          # Version file read/write
-  infrastructure/           # External systems
-    git/git-ops-service.sh  # Commit, tag, push (with optional major/minor tag override)
-    github/github-service.sh# Release notes, changelog, gh release create
-    node/node-service.sh    # package.json bump (provider)
-    claude/claude-service.sh# plugin.json + marketplace.json bump (provider)
+  application/cli/              # Single entry point called from action.yml
+    bump-command.sh              # Full pipeline: bump → sync → notes → commit → tag → release
+  core/services/                 # Domain rules (no side effects)
+    tagger-service.sh            # Tagger: classify_commit, calculate
+    txt-service.sh               # Txt: getVersion, setVersion
+  infrastructure/                # External systems
+    git/git-ops-service.sh       # Git: getLastCommit, apply (with optional overrideVersions)
+    github/github-service.sh     # Github: generate_release_notes, update_changelog, create_github_release
+    node/bumper-node-service.sh  # Bumper: getName, bumpVersion (package.json)
+    claude/bumper-claude-service.sh  # Bumper: getName, bumpVersion (plugin.json + marketplace.json)
 ```
 
 ## How it works
 
 **Bump-command** — the single entry point called from `action.yml`. Orchestrates the full pipeline:
 
-1. Reads the current version from `version.txt` (`txt-service`)
-2. Resolves the bump type: explicit `spec` input, or inferred from the HEAD commit via Conventional Commits (`version-service` + `git-service`)
-3. Computes the next semver (`version-service`)
-4. Writes the new version to `version.txt` (`txt-service`)
-5. Syncs the version to enabled providers — `package.json` (node) and/or Claude Code plugin files (claude)
-6. Commits, tags (`vX.Y.Z`), and pushes; when `update-major-tag` is `true`, also force-moves the floating major (`vX`) and minor (`vX.Y`) tags so consumers pinning `@vX` always get the latest compatible release (`git-service`)
-7. When `create-release` is `true`, generates structured release notes from git log, prepends them to `CHANGELOG.md`, and creates a GitHub release with populated notes (`github-service`)
+1. Reads the current version from `version.txt` (`Txt.getVersion`)
+2. Resolves the bump type: explicit `spec` input, or inferred from the HEAD commit via Conventional Commits (`Tagger.classifyCommit` + `Git.getLastCommit`)
+3. Computes the next semver (`Tagger.calculate`)
+4. Writes the new version to `version.txt` (`Txt.setVersion`)
+5. Syncs the version to enabled bumpers — `package.json` (node) and/or Claude Code plugin files (claude) (`Bumper.bumpVersion`)
+6. Generates structured release notes from git log and prepends them to `CHANGELOG.md` (`Github.generate_release_notes` + `update_changelog`) — **before the git commit**, so the changelog is committed alongside the version bump
+7. Commits all changes (`git add -A`), tags (`vX.Y.Z`), and pushes; when `update-major-tag` is `true`, also force-moves the floating major (`vX`) and minor (`vX.Y`) tags (`Git.apply`)
+8. Creates the GitHub release with populated notes after the tag exists on the remote (`Github.create_github_release`)
 
 Outputs `version`, `tag`, `major-tag`, and `minor-tag` to `GITHUB_OUTPUT`.
 
