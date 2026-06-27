@@ -148,14 +148,28 @@ permissions:
   contents: write
 ```
 
+## Architecture
+
+```
+src/
+  application/cli/         # Entry points called from action.yml
+    bump-command.sh         # Orchestrator: bump → sync providers → git tag
+    github-release-command.sh
+    update-major-tag-command.sh
+  core/services/            # Domain rules (no side effects)
+    version-service.sh      # classify_commit, resolve_bump, bump_version
+  infrastructure/           # External systems
+    git/git-ops-service.sh  # Commit, tag, push
+    github/github-service.sh# Release notes, changelog, gh release create
+    node/node-service.sh    # package.json sync (provider)
+    claude/claude-service.sh# plugin.json + marketplace.json sync (provider)
+```
+
 ## How it works
 
-1. **Bump version file** — reads `version.txt`, applies the semver bump, and writes the new version back.
-2. **Sync package.json** (optional) — if `update-package-json` is `true`, runs `npm version` to keep `package.json` in sync.
-3. **Sync Claude plugin** (optional) — if `bump-claude-plugin` is `true`, uses `jq` to update version in `plugin.json` and `marketplace.json`.
-4. **Tag release** — commits all changed files as `[skip ci] bump v<version>`, rebases onto the current branch, creates the annotated `<tag-prefix><version>` tag, and pushes with `--follow-tags`.
-5. **Update major tags** — when `update-major-tag` is `true`, force-moves the floating major (`v1`) and minor (`v1.0`) tags to the new commit, so consumers pinning `@v1` always get the latest compatible release.
-6. **Create release** — when `create-release` is `true`, generates structured release notes from git log, prepends them to `CHANGELOG.md`, and creates a GitHub release with populated notes (not auto-generated).
+1. **Bump-command** — the single entry point. Resolves bump type (explicit > inferred from HEAD commit), computes the new semver, writes `version.txt`, iterates over enabled providers (node, claude) to sync version into their files via a plugin-pattern interface, then commits, tags, and pushes. Outputs `VERSION` and `TAG`.
+2. **Update major tags** — when `update-major-tag` is `true`, force-moves the floating major (`v1`) and minor (`v1.0`) tags to the new commit, so consumers pinning `@v1` always get the latest compatible release.
+3. **Create release** — when `create-release` is `true`, generates structured release notes from git log, prepends them to `CHANGELOG.md`, and creates a GitHub release with populated notes (not auto-generated).
 
 ## Notes
 

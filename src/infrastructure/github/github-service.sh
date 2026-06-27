@@ -1,23 +1,11 @@
 #!/usr/bin/env bash
-# Create a GitHub release with structured release notes and CHANGELOG.md.
+# GitHub operations: release notes, changelog, release creation.
 #
-# Required env: GH_TOKEN, TAG
-# Optional env: TAG_PREFIX (default: v), VERSION (read from git tag),
-#               CHANGELOG_FILE (default: CHANGELOG.md)
-#
-# Usage:
-#   GH_TOKEN=x TAG=v1.2.3 bash src/create-release.sh
+#   generate_release_notes(prev_tag, current_tag) -> notes markdown
+#   update_changelog(tag, notes, changelog_file)
+#   create_github_release(tag, notes)
 
 set -euo pipefail
-
-: "${GH_TOKEN:?GH_TOKEN is required}"
-: "${TAG:?TAG is required}"
-
-TAG_PREFIX="${TAG_PREFIX:-v}"
-
-# Derive the previous tag for changelog diff.
-# We look for the most recent tag that is strictly before HEAD.
-PREV_TAG="$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || true)"
 
 generate_release_notes() {
   local prev="$1" current="$2"
@@ -42,31 +30,25 @@ generate_release_notes() {
     repo_url="https://${repo_url#git://}"
     repo_url="${repo_url%.git}"
   else
-    # Non-GitHub or local URL — skip link generation
     repo_url=""
   fi
 
   local notes=""
   local new_authors=""
 
-  # Get commits grouped by type.
-  # Use tab delimiter (\x09) since commit messages may contain pipes.
+  # Use tab delimiter since commit messages may contain pipes.
   while IFS=$'\t' read -r msg hash author; do
-    # Skip empty lines (e.g. from git log with no output)
     [[ -z "$msg" ]] && continue
 
     local sha_short="${hash:0:7}"
 
-    # Determine type from conventional commit prefix
     local type="other"
     local display_msg="$msg"
     if [[ "$msg" =~ ^(feat|fix|chore|docs|refactor|test|perf|ci|build|style|revert)(\([^\)]*\))?!?: ]]; then
       type="${BASH_REMATCH[1]}"
-      # Strip conventional commit prefix for cleaner display
       display_msg="${msg#*: }"
     fi
 
-    # Check if author has commits before this release (new contributor detection)
     local is_new_contributor=0
     if [[ -n "$prev" ]]; then
       if ! git log "$prev" --author="$author" --oneline 2>/dev/null | grep -q .; then
@@ -102,10 +84,9 @@ generate_release_notes() {
   result+=$'\n'
   result+="${notes}"
 
-  # Add New Contributors section
+  # New Contributors section
   local new_contributors_section=""
   if [[ -n "$new_authors" ]]; then
-    # Parse the |author| format
     local temp_authors="$new_authors"
     while [[ "$temp_authors" == *"|"* ]]; do
       temp_authors="${temp_authors#|}"
@@ -137,27 +118,30 @@ generate_release_notes() {
   echo "$result"
 }
 
-# Generate release notes
-NOTES="$(generate_release_notes "$PREV_TAG" "$TAG")"
+update_changelog() {
+  local tag="$1" notes="$2" changelog_file="${3:-CHANGELOG.md}"
 
-# Prepend to CHANGELOG.md (create if not exists)
-CHANGELOG_FILE="${CHANGELOG_FILE:-CHANGELOG.md}"
-CHANGELOG_ENTRY="## ${TAG} ($(date '+%Y-%m-%d'))"
-CHANGELOG_ENTRY+=$'\n\n'
-CHANGELOG_ENTRY+="${NOTES}"
-CHANGELOG_ENTRY+=$'\n\n'
+  local entry
+  entry="## ${tag} ($(date '+%Y-%m-%d'))"
+  entry+=$'\n\n'
+  entry+="${notes}"
+  entry+=$'\n\n'
 
-if [[ -f "$CHANGELOG_FILE" ]]; then
-  # Prepend to existing changelog
-  { echo -n "$CHANGELOG_ENTRY"; cat "$CHANGELOG_FILE"; } > "${CHANGELOG_FILE}.tmp" && mv "${CHANGELOG_FILE}.tmp" "$CHANGELOG_FILE"
-else
-  echo -n "$CHANGELOG_ENTRY" > "$CHANGELOG_FILE"
-fi
-echo "✅ Updated ${CHANGELOG_FILE}"
+  if [[ -f "$changelog_file" ]]; then
+    { echo -n "$entry"; cat "$changelog_file"; } > "${changelog_file}.tmp" \
+      && mv "${changelog_file}.tmp" "$changelog_file"
+  else
+    echo -n "$entry" > "$changelog_file"
+  fi
+  echo "✅ Updated ${changelog_file}"
+}
 
-# Create the GitHub release with populated notes (not auto-generated).
-gh release create "${TAG}" \
-  --title "${TAG}" \
-  --notes "${NOTES}"
+create_github_release() {
+  local tag="$1" notes="$2"
 
-echo "✅ Released: ${TAG}"
+  gh release create "${tag}" \
+    --title "${tag}" \
+    --notes "${notes}"
+
+  echo "✅ Released: ${tag}"
+}

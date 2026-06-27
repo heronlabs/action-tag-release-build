@@ -1,11 +1,11 @@
 #!/usr/bin/env bats
-# bats tests for src/update-major-tag.sh
+# bats tests for src/application/cli/update-major-tag-command.sh
 #
-# Builds a plain git repo, runs update-major-tag.sh, and asserts on force-pushed
-# floating major and minor tags plus GITHUB_OUTPUT.
+# Builds a plain git repo, runs update-major-tag-command.sh, and asserts on
+# force-pushed floating major and minor tags plus GITHUB_OUTPUT.
 
 setup() {
-  SCRIPT="$BATS_TEST_DIRNAME/../src/update-major-tag.sh"
+  SCRIPT="$BATS_TEST_DIRNAME/../src/application/cli/update-major-tag-command.sh"
   STUB_DIR="$BATS_TEST_DIRNAME"   # contains the `gh` stub
 }
 
@@ -44,7 +44,7 @@ origin_has_tag() {
   return $r
 }
 
-# Run update-major-tag.sh in the given working tree.
+# Run update-major-tag-command.sh in the given working tree.
 # Usage: run_script <cwd> [VAR=value ...]
 # Sets RUN_OUT, RUN_RC, RUN_GHLOG, RUN_GHOUT.
 # shellcheck disable=SC2034  # RUN_OUT used by callers

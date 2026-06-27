@@ -2,7 +2,7 @@
   "stack": "bash",
   "verify": {
     "install": "true",
-    "lint": "shellcheck src/*.sh src/interfaces/*.sh tests/*.bats tests/gh",
+    "lint": "shellcheck src/core/services/*.sh src/infrastructure/git/*.sh src/infrastructure/github/*.sh src/infrastructure/node/*.sh src/infrastructure/claude/*.sh src/application/cli/*.sh tests/*.bats tests/gh",
     "test": "bats tests/"
   },
   "worktree": { "dir": ".worktrees", "base": "main" },

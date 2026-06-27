@@ -1,12 +1,11 @@
 #!/usr/bin/env bats
-# bats tests for src/tag-release.sh
+# bats tests for src/application/cli/bump-command.sh
 #
-# Builds throwaway git repos with a version.txt, runs bump-version-file.sh then
-# tag-release.sh, and asserts on version bumps, tags, and outputs.
+# Builds throwaway git repos with a version.txt, runs bump-command.sh,
+# and asserts on version bumps, tags, and outputs.
 
 setup() {
-  BUMP_SCRIPT="$BATS_TEST_DIRNAME/../src/bump-version-file.sh"
-  TAG_SCRIPT="$BATS_TEST_DIRNAME/../src/tag-release.sh"
+  SCRIPT="$BATS_TEST_DIRNAME/../src/application/cli/bump-command.sh"
   STUB_DIR="$BATS_TEST_DIRNAME"   # contains the `gh` stub
 }
 
@@ -73,230 +72,172 @@ origin_has_tag() {
   return $r
 }
 
-# Run bump-version-file.sh in the given working tree.
-# Sets BUMP_OUT, BUMP_RC, BUMP_GHOUT.
-run_bump() {
+# Run bump-command.sh in the given working tree.
+# Usage: run_bump_command <cwd> [VAR=value ...]
+# Sets RUN_OUT, RUN_RC, RUN_GHOUT.
+# shellcheck disable=SC2034  # RUN_OUT used by callers
+run_bump_command() {
   local cwd="$1"; shift
-  BUMP_GHOUT="$(mktemp)"
-  BUMP_GHENV="$(mktemp)"
+  RUN_GHOUT="$(mktemp)"
+  RUN_GHENV="$(mktemp)"
   set +e
-  BUMP_OUT="$(
+  RUN_OUT="$(
     cd "$cwd" &&
-    env GITHUB_OUTPUT="$BUMP_GHOUT" \
-        GITHUB_ENV="$BUMP_GHENV" \
+    env -u BUMP -u SPEC \
+        PATH="$STUB_DIR:$PATH" \
+        GITHUB_OUTPUT="$RUN_GHOUT" \
+        GITHUB_ENV="$RUN_GHENV" \
         "$@" \
-        bash "$BUMP_SCRIPT" 2>&1
+        bash "$SCRIPT" 2>&1
   )"
-  BUMP_RC=$?
+  RUN_RC=$?
   set -e
-}
-
-# Run tag-release.sh in the given working tree.
-# Sets TAG_OUT, TAG_RC, TAG_GHLOG, TAG_GHOUT.
-run_tag() {
-  local cwd="$1"; shift
-  TAG_GHLOG="$(mktemp)"
-  TAG_GHOUT="$(mktemp)"
-  : >"$TAG_GHLOG"
-  set +e
-  TAG_OUT="$(
-    cd "$cwd" &&
-    env PATH="$STUB_DIR:$PATH" \
-        GH_LOG="$TAG_GHLOG" \
-        GITHUB_OUTPUT="$TAG_GHOUT" \
-        "$@" \
-        bash "$TAG_SCRIPT" 2>&1
-  )"
-  TAG_RC=$?
-  set -e
-}
-
-# Convenience: run bump then tag with the same shared env vars.
-# Any arguments passed are forwarded to BOTH scripts.
-# The first positional argument is the cwd, the rest are VAR=value pairs.
-run_bump_then_tag() {
-  local cwd="$1"; shift
-  run_bump "$cwd" "$@"
-  run_tag "$cwd" "$@"
 }
 
 # ---------------------------------------------------------------- tests
 
-@test "tag patch: explicit BUMP=patch bumps 1.0.0 -> 1.0.1" {
+@test "bump command patch: explicit BUMP=patch bumps 1.0.0 -> 1.0.1" {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
-  run_bump_then_tag "$work" BUMP=patch TAG_PREFIX=v REF_NAME=main
+  run_bump_command "$work" BUMP=patch TAG_PREFIX=v REF_NAME=main
 
-  [ "$BUMP_RC" -eq 0 ]
-  [ "$TAG_RC" -eq 0 ]
+  [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "1.0.1" ]
   [ "$(git -C "$work" log -1 --pretty=%s)" = "[skip ci] bump v1.0.1" ]
   origin_has_tag "$origin" v1.0.1
-  grep -q '^version=1.0.1$' "$TAG_GHOUT"
-  grep -q '^tag=v1.0.1$' "$TAG_GHOUT"
-  grep -q 'Tagged: v1.0.1' <<<"$TAG_OUT"
+  grep -q '^version=1.0.1$' "$RUN_GHOUT"
+  grep -q '^tag=v1.0.1$' "$RUN_GHOUT"
+  grep -q 'Tagged: v1.0.1' <<<"$RUN_OUT"
 
   rm -rf "$root"
 }
 
-@test "tag minor: explicit BUMP=minor bumps 1.0.0 -> 1.1.0" {
+@test "bump command minor: explicit BUMP=minor bumps 1.0.0 -> 1.1.0" {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
-  run_bump_then_tag "$work" BUMP=minor TAG_PREFIX=v REF_NAME=main
+  run_bump_command "$work" BUMP=minor TAG_PREFIX=v REF_NAME=main
 
-  [ "$BUMP_RC" -eq 0 ]
-  [ "$TAG_RC" -eq 0 ]
+  [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "1.1.0" ]
   origin_has_tag "$origin" v1.1.0
-  grep -q '^tag=v1.1.0$' "$TAG_GHOUT"
+  grep -q '^tag=v1.1.0$' "$RUN_GHOUT"
 
   rm -rf "$root"
 }
 
-@test "tag infer feat: feat commit -> minor bump" {
+@test "bump command infer feat: feat commit -> minor bump" {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
   git_q "$work" commit --amend -m "feat: add a thing"
-  run_bump_then_tag "$work" TAG_PREFIX=v REF_NAME=main
+  run_bump_command "$work" TAG_PREFIX=v REF_NAME=main
 
-  [ "$BUMP_RC" -eq 0 ]
-  [ "$TAG_RC" -eq 0 ]
+  [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "1.1.0" ]
   origin_has_tag "$origin" v1.1.0
-  grep -q 'Bump: minor' <<<"$BUMP_OUT"
+  grep -q 'Bump: minor' <<<"$RUN_OUT"
 
   rm -rf "$root"
 }
 
-@test "tag infer feat!: breaking bang -> major bump" {
+@test "bump command infer feat!: breaking bang -> major bump" {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
   git_q "$work" commit --amend -m "feat!: drop legacy api"
-  run_bump_then_tag "$work" TAG_PREFIX=v REF_NAME=main
+  run_bump_command "$work" TAG_PREFIX=v REF_NAME=main
 
-  [ "$BUMP_RC" -eq 0 ]
-  [ "$TAG_RC" -eq 0 ]
+  [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "2.0.0" ]
   origin_has_tag "$origin" v2.0.0
 
   rm -rf "$root"
 }
 
-@test "tag infer BREAKING CHANGE footer: major bump" {
+@test "bump command infer BREAKING CHANGE footer: major bump" {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
   git_q "$work" commit --amend -m "$(printf 'fix: tweak\n\nBREAKING CHANGE: drops support for X')"
-  run_bump_then_tag "$work" TAG_PREFIX=v REF_NAME=main
+  run_bump_command "$work" TAG_PREFIX=v REF_NAME=main
 
-  [ "$BUMP_RC" -eq 0 ]
-  [ "$TAG_RC" -eq 0 ]
+  [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "2.0.0" ]
   origin_has_tag "$origin" v2.0.0
 
   rm -rf "$root"
 }
 
-@test "tag infer fix: fix commit -> patch bump" {
+@test "bump command infer fix: fix commit -> patch bump" {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
   git_q "$work" commit --amend -m "fix: correct a bug"
-  run_bump_then_tag "$work" TAG_PREFIX=v REF_NAME=main
+  run_bump_command "$work" TAG_PREFIX=v REF_NAME=main
 
-  [ "$BUMP_RC" -eq 0 ]
-  [ "$TAG_RC" -eq 0 ]
+  [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "1.0.1" ]
   origin_has_tag "$origin" v1.0.1
 
   rm -rf "$root"
 }
 
-@test "tag infer unclear: non-conventional commit -> default patch" {
+@test "bump command infer unclear: non-conventional commit -> default patch" {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
   git_q "$work" commit --amend -m "Merge pull request #7 from heronlabs/topic"
-  run_bump_then_tag "$work" TAG_PREFIX=v REF_NAME=main
+  run_bump_command "$work" TAG_PREFIX=v REF_NAME=main
 
-  [ "$BUMP_RC" -eq 0 ]
-  [ "$TAG_RC" -eq 0 ]
+  [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "1.0.1" ]
   origin_has_tag "$origin" v1.0.1
 
   rm -rf "$root"
 }
 
-@test "tag explicit overrides inference: BUMP=patch wins over feat!" {
+@test "bump command explicit overrides inference: BUMP=patch wins over feat!" {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
   git_q "$work" commit --amend -m "feat!: drop legacy api"
-  run_bump_then_tag "$work" BUMP=patch TAG_PREFIX=v REF_NAME=main
+  run_bump_command "$work" BUMP=patch TAG_PREFIX=v REF_NAME=main
 
-  [ "$BUMP_RC" -eq 0 ]
-  [ "$TAG_RC" -eq 0 ]
+  [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "1.0.1" ]
   origin_has_tag "$origin" v1.0.1
 
   rm -rf "$root"
 }
 
-@test "bump-version-file major: 1.0.0 -> 2.0.0" {
+@test "bump command major: 1.0.0 -> 2.0.0" {
   local root; root="$(build_repo)"
-  local work="$root/work"
-  run_bump "$work" BUMP=major
+  local origin="$root/origin.git" work="$root/work"
+  run_bump_command "$work" BUMP=major TAG_PREFIX=v REF_NAME=main
 
-  [ "$BUMP_RC" -eq 0 ]
+  [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "2.0.0" ]
-  grep -q '^version=2.0.0$' "$BUMP_GHOUT"
+  grep -q '^version=2.0.0$' "$RUN_GHOUT"
+  origin_has_tag "$origin" v2.0.0
 
   rm -rf "$root"
 }
 
-@test "bump-version-file minor: 1.0.0 -> 1.1.0" {
-  local root; root="$(build_repo)"
-  local work="$root/work"
-  run_bump "$work" BUMP=minor
-
-  [ "$BUMP_RC" -eq 0 ]
-  [ "$(cat "$work/version.txt")" = "1.1.0" ]
-  grep -q '^version=1.1.0$' "$BUMP_GHOUT"
-
-  rm -rf "$root"
-}
-
-@test "bump-version-file patch: 1.0.0 -> 1.0.1" {
-  local root; root="$(build_repo)"
-  local work="$root/work"
-  run_bump "$work" BUMP=patch
-
-  [ "$BUMP_RC" -eq 0 ]
-  [ "$(cat "$work/version.txt")" = "1.0.1" ]
-
-  rm -rf "$root"
-}
-
-@test "tag with package.json: commits version.txt bump alongside unchanged package.json" {
+@test "bump command with package.json: commits version.txt + package.json bump" {
   local root; root="$(build_repo_with_package_json)"
   local origin="$root/origin.git" work="$root/work"
-  run_bump_then_tag "$work" BUMP=minor TAG_PREFIX=v REF_NAME=main
+  run_bump_command "$work" BUMP=minor TAG_PREFIX=v REF_NAME=main
 
-  [ "$BUMP_RC" -eq 0 ]
-  [ "$TAG_RC" -eq 0 ]
+  [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "1.1.0" ]
-
   origin_has_tag "$origin" v1.1.0
 
   rm -rf "$root"
 }
 
-@test "tag with prefix: custom TAG_PREFIX" {
+@test "bump command with prefix: custom TAG_PREFIX" {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
-  run_bump_then_tag "$work" BUMP=patch TAG_PREFIX='my-package-' REF_NAME=main
+  run_bump_command "$work" BUMP=patch TAG_PREFIX='my-package-' REF_NAME=main
 
-  [ "$BUMP_RC" -eq 0 ]
-  [ "$TAG_RC" -eq 0 ]
+  [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "1.0.1" ]
   origin_has_tag "$origin" my-package-1.0.1
-  grep -q '^tag=my-package-1.0.1$' "$TAG_GHOUT"
+  grep -q '^tag=my-package-1.0.1$' "$RUN_GHOUT"
 
   rm -rf "$root"
 }
