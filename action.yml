@@ -61,15 +61,15 @@ outputs:
     value: ${{ steps.bump.outputs.tag }}
   major-tag:
     description: The major version tag (e.g., v1)
-    value: ${{ steps.update-major.outputs.major-tag }}
+    value: ${{ steps.bump.outputs.major-tag }}
   minor-tag:
     description: The minor version tag (e.g., v1.0)
-    value: ${{ steps.update-major.outputs.minor-tag }}
+    value: ${{ steps.bump.outputs.minor-tag }}
 
 runs:
   using: composite
   steps:
-    - name: 'Bump and tag'
+    - name: 'Bump, tag, and release'
       id: bump
       shell: bash
       working-directory: ${{ inputs.working-directory }}
@@ -81,24 +81,7 @@ runs:
         UPDATE_PACKAGE_JSON: ${{ inputs.update-package-json }}
         BUMP_CLAUDE_PLUGIN: ${{ inputs.bump-claude-plugin }}
         PLUGIN_DIR: ${{ inputs.plugin-dir }}
-      run: bash ${{ github.action_path }}/src/application/cli/bump-command.sh
-
-    - name: 'Update major version tag'
-      id: update-major
-      if: inputs.update-major-tag == 'true'
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      env:
-        VERSION: ${{ steps.bump.outputs.version }}
-        TAG_PREFIX: ${{ inputs.tag-prefix }}
-      run: bash ${{ github.action_path }}/src/application/cli/update-major-tag-command.sh
-
-    - name: 'Create release'
-      if: inputs.create-release == 'true'
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      env:
+        UPDATE_MAJOR_TAG: ${{ inputs.update-major-tag }}
+        CREATE_RELEASE: ${{ inputs.create-release }}
         GH_TOKEN: ${{ inputs.github-token }}
-        TAG: ${{ steps.bump.outputs.tag }}
-        TAG_PREFIX: ${{ inputs.tag-prefix }}
-      run: bash ${{ github.action_path }}/src/application/cli/github-release-command.sh
+      run: bash ${{ github.action_path }}/src/application/cli/bump-command.sh

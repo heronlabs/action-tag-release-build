@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
-# Claude Code provider: sync version into plugin.json and marketplace.json.
+# Claude Code provider: bump version into plugin.json and marketplace.json.
 #
-# Self-registers into the PROVIDERS array when BUMP_CLAUDE_PLUGIN is true.
+#   provider_claude_get_name()  -> "claude"
+#   provider_claude_bump_version(version)
+#
 # Validates plugin.json has .name and marketplace.json has a matching entry
 # before writing. Silent no-op if both files already at version.
 
 set -euo pipefail
 
-provider_claude_enabled() {
-  [[ "${BUMP_CLAUDE_PLUGIN:-false}" == "true" ]]
+provider_claude_get_name() {
+  echo "claude"
 }
 
-provider_claude_sync() {
+provider_claude_bump_version() {
   local version="$1"
   local plugin_dir="${PLUGIN_DIR:-.}"
   local plugin_json="${plugin_dir}/plugin.json"
@@ -65,7 +67,3 @@ provider_claude_sync() {
     exit 1
   fi
 }
-
-if provider_claude_enabled; then
-  PROVIDERS+=("claude")
-fi
