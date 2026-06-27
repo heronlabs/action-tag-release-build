@@ -14,7 +14,7 @@
 # Outputs VERSION, TAG, MAJOR_TAG, MINOR_TAG to GITHUB_OUTPUT.
 #
 # Required env: GITHUB_OUTPUT
-# Optional env: BUMP (major|minor|patch), VERSION_FILE, TAG_PREFIX, REF_NAME,
+# Optional env: BUMP (major|minor|patch), VERSION_FILE, REF_NAME,
 #               UPDATE_PACKAGE_JSON, BUMP_CLAUDE_PLUGIN, PLUGIN_DIR,
 #               UPDATE_MAJOR_TAG, GH_TOKEN, CREATE_RELEASE, CHANGELOG_FILE
 
@@ -38,7 +38,7 @@ source "$SRC_DIR/infrastructure/node/bumper-node-service.sh"
 source "$SRC_DIR/infrastructure/claude/bumper-claude-service.sh"
 
 # ---- defaults -------------------------------------------------------------
-TAG_PREFIX="${TAG_PREFIX-v}"
+readonly TAG_PREFIX="v"
 export VERSION_FILE="${VERSION_FILE:-version.txt}"
 
 # ---- build bumper opts from env (mockup: given.opts = [{name}]) ------------

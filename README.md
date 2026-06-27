@@ -12,7 +12,6 @@ The bump is driven by the `spec` input. When `spec` is omitted, the bump is **in
   - [Minimal (tag only)](#tag-only-no-github-release)
   - [With package.json sync](#with-packagejson-sync)
   - [With Claude Code plugin sync](#with-claude-code-plugin-sync)
-  - [Monorepo sub-package](#monorepo-sub-package)
 - [Inputs](#inputs)
 - [Outputs](#outputs)
 - [Permissions](#permissions)
@@ -103,19 +102,6 @@ Requires `actions/setup-node` before this step.
 
 Requires `jq` on the runner (GitHub-hosted runners include it).
 
-### Monorepo sub-package
-
-```yaml
-- uses: heronlabs/action-tag-release-build@v4
-  with:
-    github-token: ${{ secrets.PAT }}
-    spec: minor
-    working-directory: packages/my-package
-    tag-prefix: 'my-package-v'
-```
-
-Creates tags like `my-package-v1.1.0`.
-
 ## Inputs
 
 | Name | Description | Required | Default |
@@ -128,8 +114,6 @@ Creates tags like `my-package-v1.1.0`.
 | `bump-claude-plugin` | Sync the version into Claude Code plugin files (`plugin.json` + `marketplace.json`). Requires `jq`. | No | `false` |
 | `plugin-dir` | Directory containing the Claude plugin files. | No | `.` |
 | `create-release` | Create a GitHub release after tagging. | No | `true` |
-| `changelog` | Generate `CHANGELOG.md` and populated GitHub release notes. | No | `true` |
-| `tag-prefix` | Tag prefix (e.g. `my-package-v`). | No | `v` |
 | `update-major-tag` | Move the floating major/minor tags to the new release. | No | `true` |
 
 ## Outputs
