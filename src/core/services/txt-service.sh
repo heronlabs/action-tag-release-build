@@ -1,16 +1,13 @@
 #!/usr/bin/env bash
-# Txt service: version file read/write.
-#
-#   txt_get_version()   -> version string
-#   txt_set_version(ver) -> writes version to file
 
 set -euo pipefail
 
+# ---- Get version.txt;
 txt_get_version() {
   local version_file="${VERSION_FILE:-version.txt}"
 
   if [[ ! -f "$version_file" ]]; then
-    echo "error: version file '${version_file}' not found" >&2
+    echo "🚫 error: version file '${version_file}' not found" >&2
     exit 1
   fi
 
@@ -19,13 +16,14 @@ txt_get_version() {
   version="$(printf '%s' "$version" | xargs)"
 
   if [[ -z "$version" ]]; then
-    echo "error: version file '${version_file}' is empty" >&2
+    echo "🚫 error: version file '${version_file}' is empty" >&2
     exit 1
   fi
 
   printf '%s' "$version"
 }
 
+# ---- Set version.txt;
 txt_set_version() {
   local version="$1"
   local version_file="${VERSION_FILE:-version.txt}"

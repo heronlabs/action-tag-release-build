@@ -9,10 +9,10 @@ branding:
   color: blue
 
 inputs:
-  github-token:
-    description: GitHub token for creating tags and releases
+  gh_token:
+    description: GitHub token for creating tags
     required: true
-  spec:
+  semantic:
     description: >-
       Semver bump type (major, minor, patch). When empty, the bump is inferred
       from the merge/HEAD commit using Conventional Commits, defaulting to patch
@@ -23,27 +23,23 @@ inputs:
     description: Working directory (for monorepo sub-directories)
     required: false
     default: '.'
-  create-release:
-    description: Create a GitHub release after tagging
+  override_tag:
+    description: Update major and minor version floating tags (e.g., v1, v1.0)
     required: false
     default: 'true'
-  update-major-tag:
-    description: Update major version tag (e.g., v1) to point to latest release
-    required: false
-    default: 'true'
-  version-file:
+  version_file:
     description: File to read/write version
     required: false
     default: 'version.txt'
-  update-package-json:
+  bump_node:
     description: Also bump package.json version via npm version
     required: false
     default: 'false'
-  bump-claude-plugin:
+  bump_claude:
     description: Sync version into Claude Code plugin files (plugin.json + marketplace.json)
     required: false
     default: 'false'
-  plugin-dir:
+  plugin_dir:
     description: Claude plugin directory
     required: false
     default: '.'
@@ -53,14 +49,14 @@ outputs:
     description: The released version
     value: ${{ steps.bump.outputs.version }}
   tag:
-    description: The created tag
+    description: The created tag (e.g., v1.2.3)
     value: ${{ steps.bump.outputs.tag }}
-  major-tag:
+  tag_major:
     description: The major version tag (e.g., v1)
-    value: ${{ steps.bump.outputs.major-tag }}
-  minor-tag:
+    value: ${{ steps.bump.outputs.tag_major }}
+  tag_minor:
     description: The minor version tag (e.g., v1.0)
-    value: ${{ steps.bump.outputs.minor-tag }}
+    value: ${{ steps.bump.outputs.tag_minor }}
 
 runs:
   using: composite
@@ -70,13 +66,12 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       env:
-        BUMP: ${{ inputs.spec }}
-        VERSION_FILE: ${{ inputs.version-file }}
+        SEMANTIC: ${{ inputs.semantic }}
+        VERSION_FILE: ${{ inputs.version_file }}
         REF_NAME: ${{ github.ref_name }}
-        UPDATE_PACKAGE_JSON: ${{ inputs.update-package-json }}
-        BUMP_CLAUDE_PLUGIN: ${{ inputs.bump-claude-plugin }}
-        PLUGIN_DIR: ${{ inputs.plugin-dir }}
-        UPDATE_MAJOR_TAG: ${{ inputs.update-major-tag }}
-        CREATE_RELEASE: ${{ inputs.create-release }}
-        GH_TOKEN: ${{ inputs.github-token }}
+        BUMP_NODE: ${{ inputs.bump_node }}
+        BUMP_CLAUDE: ${{ inputs.bump_claude }}
+        PLUGIN_DIR: ${{ inputs.plugin_dir }}
+        OVERRIDE_TAG: ${{ inputs.override_tag }}
+        GH_TOKEN: ${{ inputs.gh_token }}
       run: bash ${{ github.action_path }}/src/application/cli/bump-command.sh

@@ -1,13 +1,8 @@
 #!/usr/bin/env bash
-# GitHub operations: release notes, changelog, release creation.
-# Maps to mockup's Github interface.
-#
-#   generate_release_notes(prev_tag, current_tag) -> notes markdown
-#   update_changelog(tag, notes, changelog_file)
-#   create_github_release(tag, notes)
 
 set -euo pipefail
 
+# ---- Generate release notes, nothing else;
 generate_release_notes() {
   local prev="$1" current="$2"
 
@@ -21,7 +16,6 @@ generate_release_notes() {
 
   local repo_url
   repo_url="$(git remote get-url origin 2>/dev/null || true)"
-  # Normalize various URL formats to https://github.com/...
   if [[ "$repo_url" =~ git@github\.com: ]]; then
     repo_url="https://github.com/${repo_url#*:}"
     repo_url="${repo_url%.git}"
@@ -37,7 +31,6 @@ generate_release_notes() {
   local notes=""
   local new_authors=""
 
-  # Use tab delimiter since commit messages may contain pipes.
   while IFS=$'\t' read -r msg hash author; do
     [[ -z "$msg" ]] && continue
 
@@ -85,7 +78,6 @@ generate_release_notes() {
   result+=$'\n'
   result+="${notes}"
 
-  # New Contributors section
   local new_contributors_section=""
   if [[ -n "$new_authors" ]]; then
     local temp_authors="$new_authors"
@@ -109,7 +101,6 @@ generate_release_notes() {
     result+="${new_contributors_section}"
   fi
 
-  # Full Changelog link
   local changelog_link
   if [[ -n "$repo_url" ]]; then
     changelog_link="${repo_url}/compare/${prev}...${current}"
@@ -119,6 +110,7 @@ generate_release_notes() {
   echo "$result"
 }
 
+# ---- Update changelog file, nothing else;
 update_changelog() {
   local tag="$1" notes="$2" changelog_file="${3:-CHANGELOG.md}"
 
@@ -137,6 +129,7 @@ update_changelog() {
   echo "✅ Updated ${changelog_file}"
 }
 
+# ---- Create release command on Github(gh);
 create_github_release() {
   local tag="$1" notes="$2"
 

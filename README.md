@@ -4,12 +4,12 @@
 
 > Bump `version.txt`, tag the commit, move floating major/minor tags, publish a GitHub release with a CHANGELOG — and optionally sync `package.json` or Claude Code plugin files.
 
-The bump is driven by the `spec` input. When `spec` is omitted, the bump is **inferred from the merge/HEAD commit** using Conventional Commits — a breaking change (`feat!:`, `fix(api)!:`, or a `BREAKING CHANGE:` body) is `major`, a `feat:` commit is `minor`, and everything else (including unclear messages) falls back to `patch`.
+The bump is driven by the `semantic` input. When `semantic` is omitted, the bump is **inferred from the merge/HEAD commit** using Conventional Commits — a breaking change (`feat!:`, `fix(api)!:`, or a `BREAKING CHANGE:` body) is `major`, a `feat:` commit is `minor`, and everything else (including unclear messages) falls back to `patch`.
 
 ## Contents
 
 - [Usage](#usage)
-  - [Minimal (tag only)](#tag-only-no-github-release)
+  - [Minimal](#minimal)
   - [With package.json sync](#with-packagejson-sync)
   - [With Claude Code plugin sync](#with-claude-code-plugin-sync)
 - [Inputs](#inputs)
@@ -21,7 +21,7 @@ The bump is driven by the `spec` input. When `spec` is omitted, the bump is **in
 
 ## Usage
 
-Driven by `workflow_dispatch` with a `spec` choice — the pattern used across the heronlabs repos.
+Driven by `workflow_dispatch` with a `semantic` choice — the pattern used across the heronlabs repos.
 
 ```yaml
 name: '[ CD ] | Tags'
@@ -29,7 +29,7 @@ name: '[ CD ] | Tags'
 on:
   workflow_dispatch:
     inputs:
-      spec:
+      semantic:
         description: The SEMVER specification.
         required: true
         type: choice
@@ -56,25 +56,24 @@ jobs:
       - uses: heronlabs/action-tag-release-build@v4
         id: version
         with:
-          github-token: ${{ secrets.PAT }}
-          spec: ${{ inputs.spec }}
+          gh_token: ${{ secrets.PAT }}
+          semantic: ${{ inputs.semantic }}
 ```
 
-The `id: version` step exposes the `version`, `tag`, `major-tag`, and `minor-tag` outputs for later steps — e.g. to alias a published image with both floating tags:
+The `id: version` step exposes the `version`, `tag`, `tag_major`, and `tag_minor` outputs for later steps — e.g. to alias a published image with both floating tags:
 
 ```yaml
 - run: |
-    echo "tag-alias=${{ steps.version.outputs.major-tag }},${{ steps.version.outputs.minor-tag }}" >> "$GITHUB_OUTPUT"
+    echo "tag-alias=${{ steps.version.outputs.tag_major }},${{ steps.version.outputs.tag_minor }}" >> "$GITHUB_OUTPUT"
 ```
 
-### Tag only (no GitHub release)
+### Minimal
 
 ```yaml
 - uses: heronlabs/action-tag-release-build@v4
   with:
-    github-token: ${{ secrets.PAT }}
-    spec: patch
-    create-release: 'false'
+    gh_token: ${{ secrets.PAT }}
+    semantic: patch
 ```
 
 ### With package.json sync
@@ -82,9 +81,9 @@ The `id: version` step exposes the `version`, `tag`, `major-tag`, and `minor-tag
 ```yaml
 - uses: heronlabs/action-tag-release-build@v4
   with:
-    github-token: ${{ secrets.PAT }}
-    spec: minor
-    update-package-json: 'true'
+    gh_token: ${{ secrets.PAT }}
+    semantic: minor
+    bump_node: 'true'
 ```
 
 Requires `actions/setup-node` before this step.
@@ -94,10 +93,10 @@ Requires `actions/setup-node` before this step.
 ```yaml
 - uses: heronlabs/action-tag-release-build@v4
   with:
-    github-token: ${{ secrets.PAT }}
-    spec: minor
-    bump-claude-plugin: 'true'
-    plugin-dir: '.'
+    gh_token: ${{ secrets.PAT }}
+    semantic: minor
+    bump_claude: 'true'
+    plugin_dir: '.'
 ```
 
 Requires `jq` on the runner (GitHub-hosted runners include it).
@@ -106,15 +105,14 @@ Requires `jq` on the runner (GitHub-hosted runners include it).
 
 | Name | Description | Required | Default |
 |------|-------------|----------|---------|
-| `github-token` | Token used to push tags and create the release. Use a PAT to trigger downstream workflows. | Yes | — |
-| `spec` | Semver bump type: `major`, `minor`, or `patch`. When empty, the bump is inferred from the merge/HEAD commit (Conventional Commits), defaulting to `patch` when unclear. | No | `` (inferred) |
+| `gh_token` | Token used to push tags and create the release. Use a PAT to trigger downstream workflows. | Yes | — |
+| `semantic` | Semver bump type: `major`, `minor`, or `patch`. When empty, the bump is inferred from the merge/HEAD commit (Conventional Commits), defaulting to `patch` when unclear. | No | `` (inferred) |
 | `working-directory` | Sub-directory to operate in (for monorepos). | No | `.` |
-| `version-file` | File to read and write the version number. | No | `version.txt` |
-| `update-package-json` | Also bump `package.json` using `npm version`. Set up Node with `actions/setup-node` before this step. | No | `false` |
-| `bump-claude-plugin` | Sync the version into Claude Code plugin files (`plugin.json` + `marketplace.json`). Requires `jq`. | No | `false` |
-| `plugin-dir` | Directory containing the Claude plugin files. | No | `.` |
-| `create-release` | Create a GitHub release after tagging. | No | `true` |
-| `update-major-tag` | Move the floating major/minor tags to the new release. | No | `true` |
+| `version_file` | File to read and write the version number. | No | `version.txt` |
+| `bump_node` | Also bump `package.json` using `npm version`. Set up Node with `actions/setup-node` before this step. | No | `false` |
+| `bump_claude` | Sync the version into Claude Code plugin files (`plugin.json` + `marketplace.json`). Requires `jq`. | No | `false` |
+| `plugin_dir` | Directory containing the Claude plugin files. | No | `.` |
+| `override_tag` | Move the floating major/minor tags (`v1`, `v1.0`) to the new release. | No | `true` |
 
 ## Outputs
 
@@ -122,8 +120,8 @@ Requires `jq` on the runner (GitHub-hosted runners include it).
 |------|-------------|
 | `version` | Released version (e.g. `1.0.3`). |
 | `tag` | Created tag (e.g. `v1.0.3`). |
-| `major-tag` | Floating major tag (e.g. `v1`). |
-| `minor-tag` | Floating minor tag (e.g. `v1.0`). |
+| `tag_major` | Floating major tag (e.g. `v1`). |
+| `tag_minor` | Floating minor tag (e.g. `v1.0`). |
 
 ## Permissions
 
@@ -144,7 +142,7 @@ src/
     tagger-service.sh            # Tagger: classify_commit, calculate
     txt-service.sh               # Txt: getVersion, setVersion
   infrastructure/                # External systems
-    git/git-ops-service.sh       # Git: getLastCommit, apply (with optional overrideVersions)
+    git/git-ops-service.sh       # Git: getLastCommit, apply
     github/github-service.sh     # Github: generate_release_notes, update_changelog, create_github_release
     node/bumper-node-service.sh  # Bumper: getName, bumpVersion (package.json)
     claude/bumper-claude-service.sh  # Bumper: getName, bumpVersion (plugin.json + marketplace.json)
@@ -155,21 +153,21 @@ src/
 **Bump-command** — the single entry point called from `action.yml`. Orchestrates the full pipeline:
 
 1. Reads the current version from `version.txt` (`Txt.getVersion`)
-2. Resolves the bump type: explicit `spec` input, or inferred from the HEAD commit via Conventional Commits (`Tagger.classifyCommit` + `Git.getLastCommit`)
+2. Resolves the bump type: explicit `semantic` input, or inferred from the HEAD commit via Conventional Commits (`Tagger.classifyCommit` + `Git.getLastCommit`)
 3. Computes the next semver (`Tagger.calculate`)
 4. Writes the new version to `version.txt` (`Txt.setVersion`)
 5. Syncs the version to enabled bumpers — `package.json` (node) and/or Claude Code plugin files (claude) (`Bumper.bumpVersion`)
 6. Generates structured release notes from git log and prepends them to `CHANGELOG.md` (`Github.generate_release_notes` + `update_changelog`) — **before the git commit**, so the changelog is committed alongside the version bump
-7. Commits all changes (`git add -A`), tags (`vX.Y.Z`), and pushes; when `update-major-tag` is `true`, also force-moves the floating major (`vX`) and minor (`vX.Y`) tags (`Git.apply`)
+7. Commits all changes (`git add -A`), tags (`vX.Y.Z`), and pushes; when `override_tag` is `true`, also force-moves the floating major (`vX`) and minor (`vX.Y`) tags (`Git.apply`)
 8. Creates the GitHub release with populated notes after the tag exists on the remote (`Github.create_github_release`)
 
-Outputs `version`, `tag`, `major-tag`, and `minor-tag` to `GITHUB_OUTPUT`.
+Outputs `version`, `tag`, `tag_major`, and `tag_minor` to `GITHUB_OUTPUT`.
 
 ## Notes
 
-- **Node** — only needed when `update-package-json` is `true`. Set up the toolchain with `actions/setup-node` before this action.
+- **Node** — only needed when `bump_node` is `true`. Set up the toolchain with `actions/setup-node` before this action.
 - **`[skip ci]`** — the bump commit is prefixed `[skip ci]` so it does not re-trigger CI.
-- **Downstream triggers** — a tag pushed with the default `GITHUB_TOKEN` will **not** start other workflows. Pass a PAT as `github-token` (and to `actions/checkout`) when a downstream pipeline must react to the new tag.
+- **Downstream triggers** — a tag pushed with the default `GITHUB_TOKEN` will **not** start other workflows. Pass a PAT as `gh_token` (and to `actions/checkout`) when a downstream pipeline must react to the new tag.
 
 ## License
 

@@ -2,10 +2,10 @@
 # bats tests for src/application/cli/bump-command.sh
 #
 # Covers the full bump-tag-release pipeline in a single command:
-#   - bump + tag (explicit BUMP, inferred from commit)
+#   - bump + tag (explicit SEMANTIC, inferred from commit)
 #   - provider sync (package.json, claude plugin)
-#   - major/minor tag override (UPDATE_MAJOR_TAG)
-#   - release + changelog (CREATE_RELEASE + GH_TOKEN)
+#   - major/minor tag override (OVERRIDE_TAG)
+#   - release + changelog
 
 setup() {
   SCRIPT="$BATS_TEST_DIRNAME/../src/application/cli/bump-command.sh"
@@ -130,16 +130,15 @@ origin_has_tag() {
 run_bump_command() {
   local cwd="$1"; shift
   RUN_GHOUT="$(mktemp)"
-  RUN_GHENV="$(mktemp)"
   RUN_GHLOG="$(mktemp)"
   : >"$RUN_GHLOG"
   set +e
   RUN_OUT="$(
     cd "$cwd" &&
-    env -u BUMP \
+    env -u SEMANTIC \
+        GH_TOKEN=x \
         PATH="$STUB_DIR:$PATH" \
         GITHUB_OUTPUT="$RUN_GHOUT" \
-        GITHUB_ENV="$RUN_GHENV" \
         GH_LOG="$RUN_GHLOG" \
         "$@" \
         bash "$SCRIPT" 2>&1
@@ -150,10 +149,10 @@ run_bump_command() {
 
 # ---- bump + tag ----
 
-@test "bump: explicit BUMP=patch bumps 1.0.0 -> 1.0.1" {
+@test "bump: explicit SEMANTIC=patch bumps 1.0.0 -> 1.0.1" {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
-  run_bump_command "$work" BUMP=patch REF_NAME=main CREATE_RELEASE=false UPDATE_MAJOR_TAG=false
+  run_bump_command "$work" SEMANTIC=patch REF_NAME=main OVERRIDE_TAG=false
 
   [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "1.0.1" ]
@@ -166,10 +165,10 @@ run_bump_command() {
   rm -rf "$root"
 }
 
-@test "bump: explicit BUMP=minor bumps 1.0.0 -> 1.1.0" {
+@test "bump: explicit SEMANTIC=minor bumps 1.0.0 -> 1.1.0" {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
-  run_bump_command "$work" BUMP=minor REF_NAME=main CREATE_RELEASE=false UPDATE_MAJOR_TAG=false
+  run_bump_command "$work" SEMANTIC=minor REF_NAME=main OVERRIDE_TAG=false
 
   [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "1.1.0" ]
@@ -183,7 +182,7 @@ run_bump_command() {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
   git_q "$work" commit --amend -m "feat: add a thing"
-  run_bump_command "$work" REF_NAME=main CREATE_RELEASE=false UPDATE_MAJOR_TAG=false
+  run_bump_command "$work" REF_NAME=main OVERRIDE_TAG=false
 
   [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "1.1.0" ]
@@ -197,7 +196,7 @@ run_bump_command() {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
   git_q "$work" commit --amend -m "feat!: drop legacy api"
-  run_bump_command "$work" REF_NAME=main CREATE_RELEASE=false UPDATE_MAJOR_TAG=false
+  run_bump_command "$work" REF_NAME=main OVERRIDE_TAG=false
 
   [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "2.0.0" ]
@@ -210,7 +209,7 @@ run_bump_command() {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
   git_q "$work" commit --amend -m "$(printf 'fix: tweak\n\nBREAKING CHANGE: drops support for X')"
-  run_bump_command "$work" REF_NAME=main CREATE_RELEASE=false UPDATE_MAJOR_TAG=false
+  run_bump_command "$work" REF_NAME=main OVERRIDE_TAG=false
 
   [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "2.0.0" ]
@@ -223,7 +222,7 @@ run_bump_command() {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
   git_q "$work" commit --amend -m "fix: correct a bug"
-  run_bump_command "$work" REF_NAME=main CREATE_RELEASE=false UPDATE_MAJOR_TAG=false
+  run_bump_command "$work" REF_NAME=main OVERRIDE_TAG=false
 
   [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "1.0.1" ]
@@ -236,7 +235,7 @@ run_bump_command() {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
   git_q "$work" commit --amend -m "Merge pull request #7 from heronlabs/topic"
-  run_bump_command "$work" REF_NAME=main CREATE_RELEASE=false UPDATE_MAJOR_TAG=false
+  run_bump_command "$work" REF_NAME=main OVERRIDE_TAG=false
 
   [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "1.0.1" ]
@@ -245,11 +244,11 @@ run_bump_command() {
   rm -rf "$root"
 }
 
-@test "bump: explicit BUMP overrides inference (patch wins over feat!)" {
+@test "bump: explicit SEMANTIC overrides inference (patch wins over feat!)" {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
   git_q "$work" commit --amend -m "feat!: drop legacy api"
-  run_bump_command "$work" BUMP=patch REF_NAME=main CREATE_RELEASE=false UPDATE_MAJOR_TAG=false
+  run_bump_command "$work" SEMANTIC=patch REF_NAME=main OVERRIDE_TAG=false
 
   [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "1.0.1" ]
@@ -258,10 +257,10 @@ run_bump_command() {
   rm -rf "$root"
 }
 
-@test "bump: BUMP=major 1.0.0 -> 2.0.0" {
+@test "bump: SEMANTIC=major 1.0.0 -> 2.0.0" {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
-  run_bump_command "$work" BUMP=major REF_NAME=main CREATE_RELEASE=false UPDATE_MAJOR_TAG=false
+  run_bump_command "$work" SEMANTIC=major REF_NAME=main OVERRIDE_TAG=false
 
   [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "2.0.0" ]
@@ -276,7 +275,7 @@ run_bump_command() {
 @test "bump: with package.json sync" {
   local root; root="$(build_repo_with_package_json)"
   local origin="$root/origin.git" work="$root/work"
-  run_bump_command "$work" BUMP=minor REF_NAME=main UPDATE_PACKAGE_JSON=true CREATE_RELEASE=false UPDATE_MAJOR_TAG=false
+  run_bump_command "$work" SEMANTIC=minor REF_NAME=main BUMP_NODE=true OVERRIDE_TAG=false
 
   [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "1.1.0" ]
@@ -288,7 +287,7 @@ run_bump_command() {
 @test "bump: with claude plugin sync" {
   local root; root="$(build_repo_with_plugin)"
   local origin="$root/origin.git" work="$root/work"
-  run_bump_command "$work" BUMP=minor REF_NAME=main BUMP_CLAUDE_PLUGIN=true PLUGIN_DIR=. CREATE_RELEASE=false UPDATE_MAJOR_TAG=false
+  run_bump_command "$work" SEMANTIC=minor REF_NAME=main BUMP_CLAUDE=true PLUGIN_DIR=. OVERRIDE_TAG=false
 
   [ "$RUN_RC" -eq 0 ]
   [ "$(cat "$work/version.txt")" = "1.1.0" ]
@@ -299,25 +298,25 @@ run_bump_command() {
 
 # ---- major/minor tag override ----
 
-@test "bump: UPDATE_MAJOR_TAG=true force-pushes v1 and v1.1 floating tags" {
+@test "bump: OVERRIDE_TAG=true force-pushes v1 and v1.1 floating tags" {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
-  run_bump_command "$work" BUMP=minor REF_NAME=main UPDATE_MAJOR_TAG=true CREATE_RELEASE=false
+  run_bump_command "$work" SEMANTIC=minor REF_NAME=main OVERRIDE_TAG=true
 
   [ "$RUN_RC" -eq 0 ]
   origin_has_tag "$origin" v1
   origin_has_tag "$origin" v1.1
-  grep -q '^major-tag=v1$' "$RUN_GHOUT"
-  grep -q '^minor-tag=v1.1$' "$RUN_GHOUT"
+  grep -q '^tag_major=v1$' "$RUN_GHOUT"
+  grep -q '^tag_minor=v1.1$' "$RUN_GHOUT"
   grep -q 'Updated floating tags' <<<"$RUN_OUT"
 
   rm -rf "$root"
 }
 
-@test "bump: UPDATE_MAJOR_TAG=false does NOT push floating tags" {
+@test "bump: OVERRIDE_TAG=false does NOT push floating tags" {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
-  run_bump_command "$work" BUMP=patch REF_NAME=main UPDATE_MAJOR_TAG=false CREATE_RELEASE=false
+  run_bump_command "$work" SEMANTIC=patch REF_NAME=main OVERRIDE_TAG=false
 
   [ "$RUN_RC" -eq 0 ]
   origin_has_tag "$origin" v1.0.1
@@ -330,10 +329,10 @@ run_bump_command() {
 
 # ---- release + changelog ----
 
-@test "bump: CREATE_RELEASE=true creates release with notes and CHANGELOG.md" {
+@test "bump: creates release with notes and CHANGELOG.md" {
   local root; root="$(build_repo_with_tags)"
   local origin="$root/origin.git" work="$root/work"
-  run_bump_command "$work" BUMP=patch REF_NAME=main CREATE_RELEASE=true UPDATE_MAJOR_TAG=false GH_TOKEN=x
+  run_bump_command "$work" SEMANTIC=patch REF_NAME=main OVERRIDE_TAG=false
 
   [ "$RUN_RC" -eq 0 ]
 
@@ -353,26 +352,12 @@ run_bump_command() {
   rm -rf "$root"
 }
 
-@test "bump: CREATE_RELEASE=true GH_TOKEN missing is hard error" {
+@test "bump: GH_TOKEN missing is hard error" {
   local root; root="$(build_repo)"
   local origin="$root/origin.git" work="$root/work"
-  run_bump_command "$work" BUMP=patch REF_NAME=main CREATE_RELEASE=true UPDATE_MAJOR_TAG=false
+  run_bump_command "$work" SEMANTIC=patch REF_NAME=main OVERRIDE_TAG=false GH_TOKEN=
 
   [ "$RUN_RC" -ne 0 ]
-
-  rm -rf "$root"
-}
-
-@test "bump: CREATE_RELEASE=false skips release and changelog" {
-  local root; root="$(build_repo_with_tags)"
-  local origin="$root/origin.git" work="$root/work"
-  run_bump_command "$work" BUMP=patch REF_NAME=main CREATE_RELEASE=false UPDATE_MAJOR_TAG=false
-
-  [ "$RUN_RC" -eq 0 ]
-  [ ! -f "$work/CHANGELOG.md" ]
-  # gh should NOT have been called
-  run grep -q 'gh release create' "$RUN_GHLOG"
-  [ "$status" -ne 0 ]
 
   rm -rf "$root"
 }
@@ -387,7 +372,7 @@ run_bump_command() {
   git_q "$work" commit -m "add changelog"
   git_q "$work" push
 
-  run_bump_command "$work" BUMP=patch REF_NAME=main CREATE_RELEASE=true UPDATE_MAJOR_TAG=false GH_TOKEN=x
+  run_bump_command "$work" SEMANTIC=patch REF_NAME=main OVERRIDE_TAG=false
 
   [ "$RUN_RC" -eq 0 ]
 
@@ -402,7 +387,7 @@ run_bump_command() {
 @test "bump: full pipeline — bump, provider sync, major tags, release, changelog" {
   local root; root="$(build_repo_full)"
   local origin="$root/origin.git" work="$root/work"
-  run_bump_command "$work" BUMP=minor REF_NAME=main UPDATE_PACKAGE_JSON=true BUMP_CLAUDE_PLUGIN=true PLUGIN_DIR=. UPDATE_MAJOR_TAG=true CREATE_RELEASE=true GH_TOKEN=x
+  run_bump_command "$work" SEMANTIC=minor REF_NAME=main BUMP_NODE=true BUMP_CLAUDE=true PLUGIN_DIR=. OVERRIDE_TAG=true
 
   [ "$RUN_RC" -eq 0 ]
 
@@ -413,8 +398,8 @@ run_bump_command() {
   origin_has_tag "$origin" v2.1.0
 
   # floating tags
-  grep -q '^major-tag=v2$' "$RUN_GHOUT"
-  grep -q '^minor-tag=v2.1$' "$RUN_GHOUT"
+  grep -q '^tag_major=v2$' "$RUN_GHOUT"
+  grep -q '^tag_minor=v2.1$' "$RUN_GHOUT"
 
   # release created
   grep -q 'gh release create v2.1.0' "$RUN_GHLOG"
