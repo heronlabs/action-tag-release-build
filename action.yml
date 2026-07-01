@@ -9,10 +9,10 @@ branding:
   color: blue
 
 inputs:
-  github-token:
-    description: GitHub token for creating tags and releases
+  gh_token:
+    description: GitHub token for creating tags
     required: true
-  spec:
+  semantic:
     description: >-
       Semver bump type (major, minor, patch). When empty, the bump is inferred
       from the merge/HEAD commit using Conventional Commits, defaulting to patch
@@ -23,61 +23,55 @@ inputs:
     description: Working directory (for monorepo sub-directories)
     required: false
     default: '.'
-  create-release:
-    description: Create a GitHub release after tagging
+  override_tag:
+    description: Update major and minor version floating tags (e.g., v1, v1.0)
     required: false
     default: 'true'
-  tag-prefix:
-    description: Tag prefix for monorepo (e.g., my-package-v)
+  version_file:
+    description: File to read/write version
     required: false
-    default: 'v'
-  update-major-tag:
-    description: Update major version tag (e.g., v1) to point to latest release
+    default: 'version.txt'
+  bump_npm:
+    description: Also bump package.json version via npm version
     required: false
-    default: 'true'
+    default: 'false'
+  bump_claude:
+    description: Sync version into Claude Code plugin files (plugin.json + marketplace.json)
+    required: false
+    default: 'false'
+  plugin_dir:
+    description: Claude plugin directory
+    required: false
+    default: '.'
 
 outputs:
   version:
     description: The released version
-    value: ${{ steps.release.outputs.version }}
+    value: ${{ steps.bump.outputs.version }}
   tag:
-    description: The created tag
-    value: ${{ steps.release.outputs.tag }}
-  major-tag:
+    description: The created tag (e.g., v1.2.3)
+    value: ${{ steps.bump.outputs.tag }}
+  tag_major:
     description: The major version tag (e.g., v1)
-    value: ${{ steps.update-major.outputs.major-tag }}
-  minor-tag:
+    value: ${{ steps.bump.outputs.tag_major }}
+  tag_minor:
     description: The minor version tag (e.g., v1.0)
-    value: ${{ steps.update-major.outputs.minor-tag }}
+    value: ${{ steps.bump.outputs.tag_minor }}
 
 runs:
   using: composite
   steps:
-    - name: 'Tag release'
-      id: release
+    - name: 'Bump, tag, and release'
+      id: bump
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       env:
-        SPEC: ${{ inputs.spec }}
-        TAG_PREFIX: ${{ inputs.tag-prefix }}
+        SEMANTIC: ${{ inputs.semantic }}
+        VERSION_FILE: ${{ inputs.version_file }}
         REF_NAME: ${{ github.ref_name }}
-      run: bash ${{ github.action_path }}/core/tag-release.sh
-
-    - name: 'Update major version tag'
-      id: update-major
-      if: inputs.update-major-tag == 'true'
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      env:
-        VERSION: ${{ steps.release.outputs.version }}
-        TAG_PREFIX: ${{ inputs.tag-prefix }}
-      run: bash ${{ github.action_path }}/core/update-major-tag.sh
-
-    - name: 'Create release'
-      if: inputs.create-release == 'true'
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      env:
-        GH_TOKEN: ${{ inputs.github-token }}
-        TAG: ${{ steps.release.outputs.tag }}
-      run: bash ${{ github.action_path }}/core/create-release.sh
+        BUMP_NPM: ${{ inputs.bump_npm }}
+        BUMP_CLAUDE: ${{ inputs.bump_claude }}
+        PLUGIN_DIR: ${{ inputs.plugin_dir }}
+        OVERRIDE_TAG: ${{ inputs.override_tag }}
+        GH_TOKEN: ${{ inputs.gh_token }}
+      run: bash ${{ github.action_path }}/core/entry-point.sh

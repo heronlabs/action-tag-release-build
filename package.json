@@ -1,30 +1,70 @@
 {
-  "name": "action-tag-release-build",
-  "version": "4.0.6",
-  "description": "GitHub Action to tag and release based on commit message prefix",
-  "private": true,
+  "author": "Heron Labs",
+  "bin": {
+    "bump": "./bin/src/cli.js"
+  },
+  "bugs": {
+    "url": "https://github.com/heronlabs/action-tag-release-build/issues"
+  },
+  "dependencies": {
+    "semver": "^7.7.0"
+  },
+  "description": "Semantic version bump, tag, and GitHub release from Conventional Commits",
+  "devDependencies": {
+    "@stryker-mutator/core": "^9.6.1",
+    "@stryker-mutator/typescript-checker": "^9.6.1",
+    "@stryker-mutator/vitest-runner": "^9.6.1",
+    "@types/node": "^22.15.30",
+    "@types/semver": "^7.7.0",
+    "@vitest/coverage-v8": "^4.1.6",
+    "dependency-cruiser": "^17.4.2",
+    "eslint": "^9.39.4",
+    "eslint-plugin-jsonc": "^3.1.2",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-yml": "^3.3.2",
+    "gts": "^7.0.0",
+    "jiti": "^2.7.0",
+    "moq.ts": "^10.0.8",
+    "tsx": "^4.22.4",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.60.0",
+    "vitest": "^4.1.6"
+  },
+  "engineStrict": true,
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10.29.3"
+  },
+  "files": [
+    "bin/src"
+  ],
+  "homepage": "https://github.com/heronlabs/action-tag-release-build#readme",
+  "license": "MIT",
+  "main": "./bin/src/cli.js",
+  "name": "@heronlabs/bump",
+  "packageManager": "pnpm@10.33.2",
+  "pnpm": {
+    "overrides": {
+      "tmp@<0.2.4": ">=0.2.4"
+    }
+  },
+  "prettier": "gts/.prettierrc.json",
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/heronlabs/action-tag-release-build.git"
   },
-  "author": "Heron Labs",
-  "license": "MIT",
-  "dependencies": {
-    "gts": "^7.0.0"
+  "scripts": {
+    "build": "rm -rf bin && tsc -p tsconfig.bin.json",
+    "dep:cruise": "depcruise src --config .dependency-cruiser.json",
+    "lint:check": "gts lint && eslint \"**/*.json\" \"**/*.yml\" \"**/*.yaml\" --no-error-on-unmatched-pattern",
+    "lint:fix": "gts fix && eslint \"**/*.json\" \"**/*.yml\" \"**/*.yaml\" --fix --no-error-on-unmatched-pattern",
+    "prepublishOnly": "pnpm build",
+    "test:mutation": "stryker run stryker.conf.json",
+    "test:unit": "vitest run"
   },
-  "pnpm": {
-    "overrides": {
-      "minimatch@<3.1.4": ">=3.1.4 <4",
-      "minimatch@>=9.0.0 <9.0.7": ">=9.0.7 <10",
-      "flatted@<3.4.2": ">=3.4.2",
-      "lodash@<4.18.0": ">=4.18.0",
-      "tmp@<0.2.6": ">=0.2.6",
-      "ajv@<6.14.0": ">=6.14.0 <7",
-      "brace-expansion@<1.1.13": ">=1.1.13 <2",
-      "brace-expansion@>=2.0.0 <2.0.3": ">=2.0.3 <3",
-      "picomatch@>=4.0.0 <4.0.4": ">=4.0.4 <5",
-      "js-yaml@<4.2.0": ">=4.2.0 <5"
-    }
-  },
-  "prettier": "gts/.prettierrc.json"
+  "types": "./bin/src/application/cli/bump-command.d.ts",
+  "version": "0.1.0"
 }

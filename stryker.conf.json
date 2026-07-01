@@ -1,0 +1,39 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "checkers": [],
+  "concurrency": 2,
+  "coverageAnalysis": "perTest",
+  "dashboard": {
+    "project": "@heronlabs/bump"
+  },
+  "ignorePatterns": [
+    "bin",
+    "coverage",
+    "node_modules",
+    "reports",
+    "tests/.coverage"
+  ],
+  "incremental": true,
+  "incrementalFile": "reports/mutation/incremental.json",
+  "mutate": ["src/**/*.ts", "!src/cli.ts", "!src/**/*.d.ts"],
+  "packageManager": "pnpm",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "reporters": ["clear-text", "progress"],
+  "testRunner": "vitest",
+  "thresholds": {
+    "break": 100,
+    "high": 100,
+    "low": 100
+  },
+  "timeoutMS": 15000,
+  "vitest": {
+    "configFile": "vitest.stryker.config.ts"
+  },
+  "warnings": {
+    "preprocessorErrors": true,
+    "slow": true,
+    "slowts": true,
+    "unknownOptions": false,
+    "unserializableOptions": true
+  }
+}
