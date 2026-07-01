@@ -1,6 +1,6 @@
 import {Bumper} from '../../core/interfaces/bumper';
 import {ChangelogService} from '../../core/services/changelog-service';
-import {SemverService} from '../../core/services/server-service';
+import {SemverService} from '../../core/services/semver-service';
 import {BumpInputs} from './dtos/input-bump';
 import {BumpOutputs} from './dtos/output-bump';
 

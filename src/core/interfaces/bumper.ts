@@ -1,5 +1,7 @@
+import {Bumpers} from '../types/bumpers';
+
 export interface Bumper {
-  readonly name: string;
+  readonly name: Bumpers;
   bump(version: string):
     | {
         ok: true;

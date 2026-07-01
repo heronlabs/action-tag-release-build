@@ -13,6 +13,7 @@ export class SemverService {
         subject.includes('!:') || /\bBREAKING[ -]CHANGE\b/.test(message);
       if (breaking) data = 'major';
       else if (/^feat\b/.test(subject)) data = 'minor';
+
       return {ok: true as const, data};
     } catch (error) {
       return {ok: false as const, error};
