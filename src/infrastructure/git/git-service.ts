@@ -2,35 +2,22 @@ import {ChildProcessService} from '../terminal/child-process-service';
 
 export class GitService {
   public getLastCommit() {
-    return this.childProcessService.exec('git log -1 --pretty=%B 2>/dev/null');
+    return this.childProcessService.exec('git log -1 --pretty=%B');
   }
 
   public getCommits(tagPrefix: string) {
-    try {
-      let since = '';
-      const {ok: prevTagResultOk, data: prevTagResult} =
-        this.childProcessService.exec(
-          `git describe --tags --abbrev=0 --match "${tagPrefix}" HEAD 2>/dev/null`,
-        );
-      if (prevTagResultOk) since = prevTagResult;
-
-      const range = since ? `${since}..HEAD` : '';
-
-      const {
-        ok: commitsResultOk,
-        data: commitsResult,
-        error: commitsResultError,
-      } = this.childProcessService.exec(
-        `git log --pretty=format:"%H %s" ${range} 2>/dev/null`,
+    let since = '';
+    const {ok: prevTagResultOk, data: prevTagResult} =
+      this.childProcessService.exec(
+        `git describe --tags --abbrev=0 --match "${tagPrefix}" HEAD`,
       );
+    if (prevTagResultOk) since = prevTagResult;
 
-      if (!commitsResultOk)
-        return {ok: false as const, error: commitsResultError};
+    const range = since ? `${since}..HEAD` : '';
 
-      return {ok: true as const, data: commitsResult};
-    } catch (error) {
-      return {ok: false as const, error};
-    }
+    return this.childProcessService.exec(
+      `git log --pretty=format:"%H %s" ${range}`,
+    );
   }
 
   public apply(
@@ -41,38 +28,56 @@ export class GitService {
     refName: string,
     override: boolean,
   ) {
-    try {
-      const commitMessage = `[skip ci] bump v${version}`;
+    const commitMessage = `[skip ci] bump v${version}`;
 
-      const chain = this.childProcessService
-        .execChain('git config user.name  "github-actions[bot]"')
-        .execChain(
-          'git config user.email "github-actions[bot]@users.noreply.github.com"',
-        )
-        .execChain('git add -A')
-        .execChain(`git commit -m "${commitMessage}"`)
-        .execChain(`git pull --rebase origin "${refName}"`)
-        .execChain(`git tag -a "${tag}" -m "Release ${version}"`);
+    const chain = this.childProcessService
+      .execChain('git config user.name  "github-actions[bot]"')
+      .execChain(
+        'git config user.email "github-actions[bot]@users.noreply.github.com"',
+      )
+      .execChain('git add -A')
+      .execChain(`git commit -m "${commitMessage}"`)
+      .execChain(`git pull --rebase origin "${refName}"`)
+      .execChain(`git tag -a "${tag}" -m "Release ${version}"`);
 
-      if (!override) {
-        chain.execChain('git push --follow-tags');
-        return {ok: true as const};
-      }
+    if (!chain.ok) {
+      return {ok: false as const, error: chain.error};
+    }
 
-      chain
-        .execChain(
-          `git tag -fa "${tagMajor}" -m "Latest ${tagMajor}.x.x release"`,
-        )
-        .execChain(
-          `git tag -fa "${tagMinor}" -m "Latest ${tagMinor}.x release"`,
-        )
-        .execChain('git push --follow-tags')
-        .execChain(`git push origin "${tagMajor}" --force`)
-        .execChain(`git push origin "${tagMinor}" --force`);
+    if (!override) {
+      const push = chain.execChain('git push --follow-tags');
+      if (!push.ok) return {ok: false as const, error: push.error};
+      return {ok: true as const};
+    }
 
-      return {ok: true as const, data: chain};
-    } catch (error) {
-      return {ok: false as const, error};
+    const push = chain
+      .execChain(
+        `git tag -fa "${tagMajor}" -m "Latest ${tagMajor}.x.x release"`,
+      )
+      .execChain(`git tag -fa "${tagMinor}" -m "Latest ${tagMinor}.x release"`)
+      .execChain('git push --follow-tags');
+
+    if (!push.ok) return {ok: false as const, error: push.error};
+
+    return {ok: true as const};
+  }
+
+  public rollbackFireForget(
+    tag: string,
+    overrideTag?: {tagMajor: string; tagMinor: string},
+  ) {
+    this.childProcessService.exec(`git push origin --delete "${tag}"`);
+    this.childProcessService.exec(`git tag -d "${tag}"`);
+
+    if (overrideTag) {
+      this.childProcessService.exec(
+        `git push origin --delete "${overrideTag.tagMajor}"`,
+      );
+      this.childProcessService.exec(
+        `git push origin --delete "${overrideTag.tagMinor}"`,
+      );
+      this.childProcessService.exec(`git tag -d "${overrideTag.tagMajor}"`);
+      this.childProcessService.exec(`git tag -d "${overrideTag.tagMinor}"`);
     }
   }
 

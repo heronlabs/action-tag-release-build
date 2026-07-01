@@ -40,7 +40,6 @@
   ],
   "homepage": "https://github.com/heronlabs/action-tag-release-build#readme",
   "license": "MIT",
-  "main": "./bin/src/cli.js",
   "name": "@heronlabs/bump",
   "packageManager": "pnpm@10.33.2",
   "pnpm": {
@@ -65,6 +64,5 @@
     "test:mutation": "stryker run stryker.conf.json",
     "test:unit": "vitest run"
   },
-  "types": "./bin/src/application/cli/bump-command.d.ts",
   "version": "0.1.0"
 }

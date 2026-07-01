@@ -8,9 +8,7 @@ export class ClaudeService implements Bumper {
 
   bump(version: string) {
     try {
-      const dir = join(this.cwd, '.');
-
-      const pluginJson = join(dir, 'plugin.json');
+      const pluginJson = join(this.cwd, 'plugin.json');
       const hasPlugin = existsSync(pluginJson);
       if (!hasPlugin) {
         return {
@@ -19,7 +17,7 @@ export class ClaudeService implements Bumper {
         };
       }
 
-      const marketplaceJson = join(dir, 'marketplace.json');
+      const marketplaceJson = join(this.cwd, 'marketplace.json');
       const hasMarketplace = existsSync(marketplaceJson);
       if (!hasMarketplace) {
         return {

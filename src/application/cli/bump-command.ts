@@ -132,15 +132,16 @@ export class BumpCommand {
       refName,
       overrideTag,
     );
-    if (!gitApplyOk) {
-      // TODO: Revert if pushed anything, might need to check gitApplyError.
-      throw gitApplyError;
-    }
+    if (!gitApplyOk) throw gitApplyError;
     process.stdout.write('✅ Pushed changes\n');
 
     const {ok: githubReleaseOk, error: githubReleaseError} =
       this.githubService.createRelease(tag, releaseNotes);
-    if (!githubReleaseOk) throw githubReleaseError; // TODO: Revert pushed changes.
+    if (!githubReleaseOk) {
+      const rollbackTags = overrideTag ? {tagMajor, tagMinor} : undefined;
+      this.gitService.rollbackFireForget(tag, rollbackTags);
+      throw githubReleaseError;
+    }
     process.stdout.write('✅ Released on Github\n');
 
     if (overrideTag) {

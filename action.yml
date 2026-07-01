@@ -27,10 +27,18 @@ inputs:
     description: Update major and minor version floating tags (e.g., v1, v1.0)
     required: false
     default: 'true'
+  tag_prefix:
+    description: Tag prefix (e.g., v for v1.2.3)
+    required: false
+    default: 'v'
   version_file:
     description: File to read/write version
     required: false
     default: 'version.txt'
+  changelog_file:
+    description: Changelog file path
+    required: false
+    default: 'CHANGELOG.md'
   bump_npm:
     description: Also bump package.json version via npm version
     required: false
@@ -67,11 +75,13 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       env:
         SEMANTIC: ${{ inputs.semantic }}
+        TAG_PREFIX: ${{ inputs.tag_prefix }}
         VERSION_FILE: ${{ inputs.version_file }}
+        CHANGELOG_FILE: ${{ inputs.changelog_file }}
         REF_NAME: ${{ github.ref_name }}
         BUMP_NPM: ${{ inputs.bump_npm }}
         BUMP_CLAUDE: ${{ inputs.bump_claude }}
         PLUGIN_DIR: ${{ inputs.plugin_dir }}
         OVERRIDE_TAG: ${{ inputs.override_tag }}
         GH_TOKEN: ${{ inputs.gh_token }}
-      run: bash ${{ github.action_path }}/core/entry-point.sh
+      run: bash ${{ github.action_path }}/entry-point.sh

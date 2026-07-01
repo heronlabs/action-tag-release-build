@@ -12,7 +12,7 @@ const inputs: BumpInputs = {
   overrideTag: (process.env.OVERRIDE_TAG ?? 'true') === 'true',
   bumpNpm: (process.env.BUMP_NPM ?? 'false') === 'true',
   bumpClaude: (process.env.BUMP_CLAUDE ?? 'false') === 'true',
-  tagPrefix: 'v',
+  tagPrefix: process.env.TAG_PREFIX ?? 'v',
 };
 
 void (async () => {
@@ -20,10 +20,10 @@ void (async () => {
     const bumpCommand = BumpFactory.make();
     const {version, tag, tagMajor, tagMinor} = bumpCommand.run(inputs);
 
-    process.stdout.write(version);
-    process.stdout.write(tag);
-    process.stdout.write(tagMajor);
-    process.stdout.write(tagMinor);
+    process.stdout.write(`${version}\n`);
+    process.stdout.write(`${tag}\n`);
+    process.stdout.write(`${tagMajor}\n`);
+    process.stdout.write(`${tagMinor}\n`);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : '🚫 Unexpected error\n';
