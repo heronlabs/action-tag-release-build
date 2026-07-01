@@ -1,8 +1,16 @@
 #!/usr/bin/env node
 
-import {BumpFactory} from './application/cli/bump-factory';
+import {BumpCommand} from './application/cli/bump-command';
 import {BumpInputs} from './application/cli/dtos/input-bump';
+import {Bumper} from './core/interfaces/bumper';
+import {ClaudeService} from './core/services/bumpers/claude-bumper-service';
+import {NpmService} from './core/services/bumpers/npm-bumper-service';
+import {ChangelogService} from './core/services/changelog-service';
+import {SemverService} from './core/services/server-service';
 import {Semantic} from './core/types/semantic';
+import {GhService} from './infrastructure/gh/gh-service';
+import {GitService} from './infrastructure/git/git-service';
+import {ChildProcessService} from './infrastructure/terminal/child-process-service';
 
 const inputs: BumpInputs = {
   semantic: (process.env.SEMANTIC as Semantic) ?? '',
@@ -14,6 +22,22 @@ const inputs: BumpInputs = {
   bumpClaude: (process.env.BUMP_CLAUDE ?? 'false') === 'true',
   tagPrefix: process.env.TAG_PREFIX ?? 'v',
 };
+
+export class BumpFactory {
+  static make(): BumpCommand {
+    const cwd = process.cwd();
+    const childProcessService = new ChildProcessService(cwd);
+    const bumpers: Bumper[] = [
+      new ClaudeService(cwd),
+      new NpmService(childProcessService),
+    ];
+    const gitService = new GitService(childProcessService);
+    const semverService = new SemverService(cwd, gitService);
+    const ghService = new GhService(cwd, childProcessService);
+    const changelogService = new ChangelogService(cwd, gitService, ghService);
+    return new BumpCommand(bumpers, semverService, changelogService);
+  }
+}
 
 void (async () => {
   try {

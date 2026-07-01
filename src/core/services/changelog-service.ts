@@ -1,6 +1,7 @@
 import {existsSync, readFileSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 
+import {GhService} from '../../infrastructure/gh/gh-service';
 import {GitService} from '../../infrastructure/git/git-service';
 import {ParsedCommit} from '../types/parsed-commit';
 
@@ -19,7 +20,7 @@ export class ChangelogService {
     };
   }
 
-  public generateReleaseNotes(tagPrefix: string) {
+  private generateReleaseNotes(tagPrefix: string) {
     try {
       const {
         ok: commitsResultOk,
@@ -99,7 +100,7 @@ export class ChangelogService {
     }
   }
 
-  public updateChangelog(
+  private updateChangelog(
     tag: string,
     releaseNotes: string,
     changelogFile: string,
@@ -123,8 +124,53 @@ export class ChangelogService {
     }
   }
 
+  public applyReleaseChangelog(
+    tagPrefix: string,
+    nextVersion: string,
+    major: string,
+    minor: string,
+    changelogFile: string,
+    refName: string,
+    overrideTag: boolean,
+  ) {
+    const tag = `${tagPrefix}${nextVersion}`;
+    const tagMajor = `${tagPrefix}${major}`;
+    const tagMinor = `${tagPrefix}${major}.${minor}`;
+
+    const releaseNotes = this.generateReleaseNotes(tagPrefix);
+    if (!releaseNotes.ok)
+      return {ok: false as const, error: releaseNotes.error};
+
+    const changelog = this.updateChangelog(
+      tag,
+      releaseNotes.data,
+      changelogFile,
+    );
+    if (!changelog.ok) return {ok: false as const, error: changelog.error};
+
+    const gitApply = this.gitService.apply(
+      nextVersion,
+      tag,
+      tagMajor,
+      tagMinor,
+      refName,
+      overrideTag,
+    );
+    if (!gitApply.ok) return {ok: false as const, error: gitApply.error};
+
+    const ghRelease = this.ghService.createRelease(tag, releaseNotes.data);
+    if (!ghRelease.ok) {
+      const rollbackTags = overrideTag ? {tagMajor, tagMinor} : undefined;
+      this.gitService.rollbackFireForget(tag, rollbackTags);
+      return {ok: false as const, error: ghRelease.error};
+    }
+
+    return {ok: true as const, data: {tag, tagMajor, tagMinor}};
+  }
+
   constructor(
     private readonly cwd: string,
     private readonly gitService: GitService,
+    private readonly ghService: GhService,
   ) {}
 }

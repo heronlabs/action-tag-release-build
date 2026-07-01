@@ -1,5 +1,5 @@
-import {Bumper} from '../../core/interfaces/bumper';
-import {ChildProcessService} from '../terminal/child-process-service';
+import {ChildProcessService} from '../../../infrastructure/terminal/child-process-service';
+import {Bumper} from '../../interfaces/bumper';
 
 export class NpmService implements Bumper {
   readonly name = 'npm';

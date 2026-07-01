@@ -1,7 +1,7 @@
 import {existsSync, readFileSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 
-import {Bumper} from '../../core/interfaces/bumper';
+import {Bumper} from '../../interfaces/bumper';
 
 export class ClaudeService implements Bumper {
   readonly name = 'claude';
