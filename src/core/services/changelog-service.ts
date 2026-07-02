@@ -3,75 +3,65 @@ import {join} from 'node:path';
 
 import {GhService} from '../../infrastructure/gh/gh-service';
 import {GitService} from '../../infrastructure/git/git-service';
-import {ParsedCommit} from '../types/parsed-commit';
+import {
+  COMMIT_TYPE_LABELS,
+  CommitType,
+  ParsedCommit,
+} from '../types/parsed-commit';
 
 export class ChangelogService {
   private parseSubject(subject: string) {
     const match = subject.match(/^(\w+)(?:\(([^)]+)\))?(!)?\s*:\s*(.*)$/);
     if (!match) {
-      return {type: 'other', breaking: false, description: subject};
+      return {
+        type: 'other' as CommitType,
+        breaking: false,
+        description: subject,
+      };
     }
-    const [, type, scope, bang, description] = match;
+    const [, type = 'other', scope, bang, description] = match;
     return {
-      type: type ?? 'other',
+      type: (Object.hasOwn(COMMIT_TYPE_LABELS, type)
+        ? type
+        : 'other') as CommitType,
       scope,
       breaking: !!bang,
-      description: description ?? '',
+      description: `${description}`,
     };
   }
 
   private generateReleaseNotes(tagPrefix: string) {
     try {
-      const {
-        ok: commitsResultOk,
-        data: commitsResult,
-        error: commitsResultError,
-      } = this.gitService.getCommits(tagPrefix);
-      if (!commitsResultOk)
-        return {ok: false as const, error: commitsResultError};
+      const lastCommits = this.gitService.getCommits(tagPrefix);
+      if (!lastCommits.ok)
+        return {ok: false as const, error: lastCommits.error};
 
-      const commits: ParsedCommit[] = commitsResult
+      const commits: ParsedCommit[] = lastCommits.data
         .split('\n')
         .filter(line => line.trim().length > 0)
         .map(line => {
-          const hash = line.slice(0, 40);
           const subject = line.slice(41);
           const {type, scope, breaking, description} =
             this.parseSubject(subject);
-          return {hash, type, scope, breaking, description};
+
+          return {
+            hash: line.slice(0, 40),
+            type,
+            scope,
+            breaking,
+            description,
+          };
         });
-
-      if (commits.length === 0)
-        return {
-          ok: false as const,
-          error: new Error('No commits found since previous tag'),
-        };
-
-      const typeLabels: Array<[string, string]> = [
-        ['feat', 'Features'],
-        ['fix', 'Bug Fixes'],
-        ['perf', 'Performance Improvements'],
-        ['revert', 'Reverts'],
-        ['docs', 'Documentation'],
-        ['deps', 'Dependencies'],
-        ['other', 'Miscellaneous Chores'],
-      ];
-      const labelByType = new Map(typeLabels);
-
       const groups = new Map<string, ParsedCommit[]>();
       const breaking: ParsedCommit[] = [];
-
       for (const c of commits) {
-        const label = labelByType.get(c.type) ?? 'Miscellaneous Chores';
+        const label = COMMIT_TYPE_LABELS[c.type];
         const list = groups.get(label) ?? [];
         list.push(c);
         groups.set(label, list);
-
         if (c.breaking) breaking.push(c);
       }
-
       const sections: string[] = [];
-
       if (breaking.length > 0) {
         const lines = breaking.map(c => {
           const scope = c.scope ? `(${c.scope})` : '';
@@ -79,8 +69,7 @@ export class ChangelogService {
         });
         sections.push(`### ⚠ BREAKING CHANGES\n\n${lines.join('\n')}`);
       }
-
-      for (const [, label] of typeLabels) {
+      for (const label of Object.values(COMMIT_TYPE_LABELS)) {
         const items = groups.get(label);
         if (!items || items.length === 0) continue;
 
@@ -91,7 +80,6 @@ export class ChangelogService {
         });
         sections.push(`### ${label}\n\n${lines.join('\n')}`);
       }
-
       const releaseNotes = sections.join('\n\n');
 
       return {ok: true as const, data: releaseNotes};
@@ -124,15 +112,23 @@ export class ChangelogService {
     }
   }
 
-  public applyReleaseChangelog(
-    tagPrefix: string,
-    nextVersion: string,
-    major: string,
-    minor: string,
-    changelogFile: string,
-    refName: string,
-    overrideTag: boolean,
-  ) {
+  public applyReleaseChangelog({
+    tagPrefix,
+    nextVersion,
+    major,
+    minor,
+    changelogFile,
+    refName,
+    overrideTag,
+  }: {
+    tagPrefix: string;
+    nextVersion: string;
+    major: string;
+    minor: string;
+    changelogFile: string;
+    refName: string;
+    overrideTag: boolean;
+  }) {
     const tag = `${tagPrefix}${nextVersion}`;
     const tagMajor = `${tagPrefix}${major}`;
     const tagMinor = `${tagPrefix}${major}.${minor}`;

@@ -4,8 +4,6 @@ import {join} from 'node:path';
 import {Bumper} from '../../interfaces/bumper';
 
 export class ClaudeService implements Bumper {
-  readonly name = 'claude';
-
   bump(version: string) {
     try {
       const pluginJson = join(this.cwd, 'plugin.json');
@@ -13,7 +11,7 @@ export class ClaudeService implements Bumper {
       if (!hasPlugin) {
         return {
           ok: false as const,
-          error: new Error(`🚫 plugin.json not found at ${pluginJson}`),
+          error: new Error(`plugin.json not found at ${pluginJson}`),
         };
       }
 
@@ -22,9 +20,7 @@ export class ClaudeService implements Bumper {
       if (!hasMarketplace) {
         return {
           ok: false as const,
-          error: new Error(
-            `🚫 marketplace.json not found at ${marketplaceJson}`,
-          ),
+          error: new Error(`marketplace.json not found at ${marketplaceJson}`),
         };
       }
 
@@ -37,7 +33,7 @@ export class ClaudeService implements Bumper {
       if (!pluginName) {
         return {
           ok: false as const,
-          error: new Error('🚫 plugin.json exists but has no .name field'),
+          error: new Error('plugin.json exists but has no .name field'),
         };
       }
 
@@ -55,7 +51,7 @@ export class ClaudeService implements Bumper {
         return {
           ok: false as const,
           error: new Error(
-            `🚫 marketplace.json has no entry matching plugin name '${pluginName}'`,
+            `marketplace.json has no entry matching plugin name '${pluginName}'`,
           ),
         };
       }

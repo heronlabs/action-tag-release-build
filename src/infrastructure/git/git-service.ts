@@ -7,11 +7,10 @@ export class GitService {
 
   public getCommits(tagPrefix: string) {
     let since = '';
-    const {ok: prevTagResultOk, data: prevTagResult} =
-      this.childProcessService.exec(
-        `git describe --tags --abbrev=0 --match "${tagPrefix}" HEAD`,
-      );
-    if (prevTagResultOk) since = prevTagResult;
+    const previousTag = this.childProcessService.exec(
+      `git describe --tags --abbrev=0 --match "${tagPrefix}*" HEAD`,
+    );
+    if (previousTag.ok) since = previousTag.data;
 
     const range = since ? `${since}..HEAD` : '';
 

@@ -7,51 +7,44 @@ import {ClaudeService} from './core/services/bumpers/claude-bumper-service';
 import {NpmService} from './core/services/bumpers/npm-bumper-service';
 import {ChangelogService} from './core/services/changelog-service';
 import {SemverService} from './core/services/semver-service';
-import {Bumpers} from './core/types/bumpers';
 import {GhService} from './infrastructure/gh/gh-service';
 import {GitService} from './infrastructure/git/git-service';
 import {ChildProcessService} from './infrastructure/terminal/child-process-service';
 
-const inputs: BumpInputs = {
-  semantic: process.env.SEMANTIC ?? '',
-  versionFile: process.env.VERSION_FILE ?? 'version.txt',
-  changelogFile: process.env.CHANGELOG_FILE ?? 'CHANGELOG.md',
-  refName: process.env.REF_NAME ?? 'main',
-  overrideTag: (process.env.OVERRIDE_TAG ?? 'true') === 'true',
-  bumpNpm: (process.env.BUMP_NPM ?? 'false') === 'true',
-  bumpClaude: (process.env.BUMP_CLAUDE ?? 'false') === 'true',
-  tagPrefix: process.env.TAG_PREFIX ?? 'v',
-};
-
-export class BumpFactory {
-  static make(bumpers: Array<Bumpers>): BumpCommand {
+export class CommandsFactory {
+  static makeBump(): BumpCommand {
     const cwd = process.cwd();
     const childProcessService = new ChildProcessService(cwd);
-
-    const bumperImplementations: Bumper[] = [
-      new ClaudeService(cwd),
-      new NpmService(childProcessService),
-    ].filter(bumper => bumpers.includes(bumper.name));
 
     const gitService = new GitService(childProcessService);
     const semverService = new SemverService(cwd, gitService);
     const ghService = new GhService(cwd, childProcessService);
     const changelogService = new ChangelogService(cwd, gitService, ghService);
 
-    return new BumpCommand(
-      bumperImplementations,
-      semverService,
-      changelogService,
-    );
+    const bumpers: Bumper[] = [];
+
+    const bumpNpm = (process.env.BUMP_NPM ?? 'false') === 'false';
+    if (bumpNpm) bumpers.push(new NpmService(childProcessService));
+
+    const bumpClaude = (process.env.BUMP_CLAUDE ?? 'false') === 'false';
+    if (bumpClaude) bumpers.push(new ClaudeService(cwd));
+
+    return new BumpCommand(bumpers, semverService, changelogService);
   }
 }
 
 void (async () => {
   try {
-    const bumpers: Array<Bumpers> = [];
-    if (inputs.bumpNpm) bumpers.push('npm');
-    if (inputs.bumpClaude) bumpers.push('claude');
-    const bumpCommand = BumpFactory.make(bumpers);
+    const bumpCommand = CommandsFactory.makeBump();
+
+    const inputs: BumpInputs = {
+      semantic: process.env.SEMANTIC ?? '',
+      versionFile: process.env.VERSION_FILE ?? 'version.txt',
+      changelogFile: process.env.CHANGELOG_FILE ?? 'CHANGELOG.md',
+      refName: process.env.REF_NAME ?? 'main',
+      overrideTag: (process.env.OVERRIDE_TAG ?? 'true') === 'true',
+      tagPrefix: process.env.TAG_PREFIX ?? 'v',
+    };
 
     const {version, tag, tagMajor, tagMinor} = bumpCommand.run(inputs);
 

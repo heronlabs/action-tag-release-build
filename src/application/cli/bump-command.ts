@@ -6,41 +6,54 @@ import {BumpOutputs} from './dtos/output-bump';
 
 export class BumpCommand {
   public run(inputs: BumpInputs): BumpOutputs {
+    const {
+      versionFile,
+      semantic,
+      tagPrefix,
+      changelogFile,
+      refName,
+      overrideTag,
+    } = inputs;
+
     const semver = this.semverService.calculateNextVersion(
-      inputs.versionFile,
-      inputs.semantic,
+      versionFile,
+      semantic,
     );
     if (!semver.ok) throw semver.error;
 
+    const {nextVersion, major, minor} = semver.data;
+
     for (const bumper of this.bumpers) {
-      const bump = bumper.bump(semver.data.nextVersion);
+      const bump = bumper.bump(nextVersion);
       if (!bump.ok) throw bump.error;
       process.stdout.write(
-        `✅ Bumper ${bumper.name} -> ${semver.data.nextVersion}\n`,
+        `✅ Bumper ${bumper.constructor.name} ${nextVersion}\n`,
       );
     }
 
-    const tags = this.changelogService.applyReleaseChangelog(
-      inputs.tagPrefix,
-      semver.data.nextVersion,
-      semver.data.major,
-      semver.data.minor,
-      inputs.changelogFile,
-      inputs.refName,
-      inputs.overrideTag,
-    );
+    const tags = this.changelogService.applyReleaseChangelog({
+      tagPrefix,
+      nextVersion,
+      major,
+      minor,
+      changelogFile,
+      refName,
+      overrideTag,
+    });
     if (!tags.ok) throw tags.error;
 
-    let tagMessage = `🏷️ Tagged: ${tags.data.tag}\n`;
+    const {tag, tagMajor, tagMinor} = tags.data;
+
+    let tagMessage = `🏷️ Tagged: ${tag}`;
     if (inputs.overrideTag)
-      tagMessage = `🗂️ Tagged: ${tags.data.tag} with ${tags.data.tagMajor} ${tags.data.tagMinor}\n`;
-    process.stdout.write(tagMessage);
+      tagMessage += ` with major: ${tagMajor} and minor: ${tagMinor}`;
+    process.stdout.write(`${tagMessage}\n`);
 
     return {
-      version: semver.data.nextVersion,
-      tag: tags.data.tag,
-      tagMajor: tags.data.tagMajor,
-      tagMinor: tags.data.tagMinor,
+      version: nextVersion,
+      tag: tag,
+      tagMajor: tagMajor,
+      tagMinor: tagMinor,
     };
   }
 
