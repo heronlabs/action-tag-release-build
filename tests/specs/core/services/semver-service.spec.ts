@@ -11,7 +11,6 @@ import {
 
 vi.mock('node:fs', () => ({
   readFileSync: vi.fn(),
-  existsSync: vi.fn(),
   writeFileSync: vi.fn(),
 }));
 
@@ -125,7 +124,7 @@ describe('Given a semver service', () => {
     });
   });
 
-  it('Should throw version file not found error', () => {
+  it('Should return error version file not found error', () => {
     const error = new Error(faker.lorem.sentence());
     vi.mocked(readFileSync).mockImplementationOnce(() => {
       throw error;
@@ -140,7 +139,7 @@ describe('Given a semver service', () => {
     });
   });
 
-  it('Should throw empty version file error', () => {
+  it('Should return error empty version file error', () => {
     const versionFileContent = '';
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
 
@@ -154,7 +153,7 @@ describe('Given a semver service', () => {
     });
   });
 
-  it('Should throw error for invalid semantic', () => {
+  it('Should return error error for invalid semantic', () => {
     const versionFileContent = '1.2.3';
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
@@ -168,7 +167,7 @@ describe('Given a semver service', () => {
     });
   });
 
-  it('Should throw error for getting last commit', () => {
+  it('Should return error error for getting last commit', () => {
     const versionFileContent = '1.2.3';
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
 
@@ -186,7 +185,7 @@ describe('Given a semver service', () => {
     });
   });
 
-  it('Should throw error when calculating semantic', () => {
+  it('Should return error error when calculating semantic', () => {
     const versionFileContent = '1.2.3';
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
 
@@ -203,7 +202,7 @@ describe('Given a semver service', () => {
     });
   });
 
-  it('Should throw error when setting next version', () => {
+  it('Should return error error when setting next version', () => {
     const versionFileContent = '1.2.3';
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
 

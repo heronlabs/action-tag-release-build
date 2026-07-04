@@ -1,27 +1,130 @@
-describe('ChildProcessService', () => {
-  describe('exec()', () => {
-    it.todo('should return ok with command output when command succeeds');
-    it.todo(
-      'should return ok with trimmed output when command produces trailing whitespace',
-    );
-    it.todo(
-      'should return ok with empty string when command produces no output',
-    );
-    it.todo('should return error result when command exits with non-zero code');
-    it.todo('should pass cwd option to execSync when executing command');
-    it.todo(
-      'should return error result when execSync throws a non-Error value',
-    );
+import {execSync} from 'node:child_process';
+
+import {faker} from '@faker-js/faker';
+
+import {ChildProcessService} from '../../../../src/infrastructure/terminal/child-process-service';
+
+vi.mock('node:child_process', () => ({
+  execSync: vi.fn(),
+}));
+
+describe('Given a child process service', () => {
+  const cwd = faker.system.directoryPath();
+  let service: ChildProcessService;
+
+  beforeEach(() => {
+    service = new ChildProcessService(cwd);
   });
 
-  describe('execChain()', () => {
-    it.todo(
-      'should return ok result with chainable execChain method on success',
-    );
-    it.todo('should return failure result with noop execChain on error');
-    it.todo('should chain multiple successful commands and return last result');
-    it.todo('should stop chain at first failure and return error');
-    it.todo('should propagate failure through all subsequent execChain calls');
-    it.todo('should pass cwd option to execSync for chained commands');
+  describe('Given exec method', () => {
+    it('Should execute and parse result', () => {
+      const data = 'Everything up to date';
+      vi.mocked(execSync).mockImplementationOnce(() => data);
+
+      const output = service.exec('git status');
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data,
+      });
+    });
+
+    it('Should return error on execution', () => {
+      const error = new Error(faker.lorem.sentence());
+      vi.mocked(execSync).mockImplementationOnce(() => {
+        throw error;
+      });
+
+      const output = service.exec('git status');
+
+      expect(output).toStrictEqual({
+        ok: false,
+        error,
+      });
+    });
+  });
+
+  describe('Given exec chain method', () => {
+    it('Should exec chain with success on start', () => {
+      const data = 'Everything up to date';
+      vi.mocked(execSync)
+        .mockImplementationOnce(() => 'Added')
+        .mockImplementationOnce(() => 'Commited')
+        .mockImplementationOnce(() => data);
+
+      const output = service
+        .execChain('git add .')
+        .execChain('git commit -m "dooby"')
+        .execChain('git push');
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: 'Everything up to date',
+        execChain: expect.any(Function),
+      });
+    });
+
+    it('Should exec chain with failure on start', () => {
+      const error = new Error(faker.lorem.sentence());
+      vi.mocked(execSync)
+        .mockImplementationOnce(() => {
+          throw error;
+        })
+        .mockImplementationOnce(() => 'Commited')
+        .mockImplementationOnce(() => 'Everything up to date');
+
+      const output = service
+        .execChain('git add .')
+        .execChain('git commit -m "dooby"')
+        .execChain('git push');
+
+      expect(output).toStrictEqual({
+        ok: false,
+        error,
+        execChain: expect.any(Function),
+      });
+    });
+
+    it('Should exec chain with failure on middle', () => {
+      const error = new Error(faker.lorem.sentence());
+      vi.mocked(execSync)
+        .mockImplementationOnce(() => 'Added')
+        .mockImplementationOnce(() => {
+          throw error;
+        })
+        .mockImplementationOnce(() => 'Everything up to date');
+
+      const output = service
+        .execChain('git add .')
+        .execChain('git commit -m "dooby"')
+        .execChain('git push');
+
+      expect(output).toStrictEqual({
+        ok: false,
+        error,
+        execChain: expect.any(Function),
+      });
+    });
+
+    it('Should exec chain with failure on end', () => {
+      const error = new Error(faker.lorem.sentence());
+      vi.mocked(execSync)
+        .mockImplementationOnce(() => 'Added')
+        .mockImplementationOnce(() => 'Commited')
+        .mockImplementationOnce(() => {
+          throw error;
+        });
+
+      const output = service
+        .execChain('git add .')
+        .execChain('git commit -m "dooby"')
+        .execChain('git push');
+
+      expect(output).toStrictEqual({
+        ok: false,
+        error,
+        execChain: expect.any(Function),
+      });
+    });
   });
 });

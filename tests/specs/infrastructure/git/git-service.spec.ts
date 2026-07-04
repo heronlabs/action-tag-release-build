@@ -6,10 +6,6 @@ import {
   ChildProcessServiceMoq,
 } from '../../../__mocks__/infrastructure/child-process-service-mock';
 
-vi.mock('node:fs', () => ({
-  writeFileSync: vi.fn(),
-}));
-
 describe('Given a git service', () => {
   let service: GitService;
 
@@ -18,7 +14,7 @@ describe('Given a git service', () => {
   });
 
   describe('Given get last commit', () => {
-    it('Should return last commit', () => {
+    it('Should get last commit', () => {
       const data =
         'feat(scope)!: add some feature\nfix: add some other feature';
       ChildProcessServiceMock.exec.mockReturnValueOnce({
@@ -34,7 +30,7 @@ describe('Given a git service', () => {
       });
     });
 
-    it('Should throw error getting last commit', () => {
+    it('Should return error getting last commit', () => {
       const error = new Error(faker.lorem.sentence());
       ChildProcessServiceMock.exec.mockReturnValueOnce({
         ok: false,
@@ -51,7 +47,7 @@ describe('Given a git service', () => {
   });
 
   describe('Given get description since', () => {
-    it('Should return descriptions since last version', () => {
+    it('Should get descriptions since last version', () => {
       const data = `${faker.string.alpha(40)} feat(scope)!: add some feature\n`;
       ChildProcessServiceMock.exec
         .mockReturnValueOnce({
@@ -71,7 +67,7 @@ describe('Given a git service', () => {
       });
     });
 
-    it('Should return all descriptions', () => {
+    it('Should get all descriptions', () => {
       const data = `${faker.string.alpha(40)} feat(scope)!: add some feature\n`;
       ChildProcessServiceMock.exec
         .mockReturnValueOnce({
@@ -133,7 +129,7 @@ describe('Given a git service', () => {
       expect(execChainMock).toHaveBeenCalledTimes(9);
     });
 
-    it('Should throw error tagging', () => {
+    it('Should return error tagging', () => {
       const error = new Error(faker.lorem.sentence());
       const result = {
         ok: false as const,
@@ -159,7 +155,7 @@ describe('Given a git service', () => {
       });
     });
 
-    it('Should throw pushing new tag', () => {
+    it('Should return error for pushing new tag', () => {
       const success = {
         ok: true as const,
         data: 'OK',
@@ -198,7 +194,7 @@ describe('Given a git service', () => {
       });
     });
 
-    it('Should throw pushing new override tags', () => {
+    it('Should return error for pushing new override tags', () => {
       const success = {
         ok: true as const,
         data: 'OK',

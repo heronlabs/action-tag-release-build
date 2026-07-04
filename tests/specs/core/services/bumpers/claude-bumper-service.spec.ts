@@ -78,7 +78,7 @@ describe('Given a claude bumper service', () => {
     });
   });
 
-  it('Should throw plugin.json not found', () => {
+  it('Should return error plugin.json not found', () => {
     vi.mocked(existsSync).mockReturnValueOnce(false);
 
     const output = service.bump(faker.system.semver());
@@ -89,7 +89,7 @@ describe('Given a claude bumper service', () => {
     });
   });
 
-  it('Should throw marketplace.json not found', () => {
+  it('Should return error marketplace.json not found', () => {
     const pluginJson = {
       name: faker.lorem.word(),
       version: faker.system.semver(),
@@ -110,7 +110,7 @@ describe('Given a claude bumper service', () => {
     });
   });
 
-  it('Should throw error when plugin.json has no name field', () => {
+  it('Should return error error when plugin.json has no name field', () => {
     const pluginJson = {
       version: faker.system.semver(),
     };
@@ -127,7 +127,7 @@ describe('Given a claude bumper service', () => {
     });
   });
 
-  it('Should throw marketplace.json has no entry matching plugin name', () => {
+  it('Should return error marketplace.json has no entry matching plugin name', () => {
     const pluginJson = {
       name: faker.lorem.word(),
       version: faker.system.semver(),
@@ -158,7 +158,7 @@ describe('Given a claude bumper service', () => {
     });
   });
 
-  it('Should throw unexpected error when bumping', () => {
+  it('Should return error unexpected error when bumping', () => {
     const error = new Error(faker.lorem.sentence());
     vi.mocked(existsSync).mockImplementationOnce(() => {
       throw error;

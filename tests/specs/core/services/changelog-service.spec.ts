@@ -313,7 +313,7 @@ describe('Given a changelog service', () => {
     });
   });
 
-  it('Should throw error getting last commits', () => {
+  it('Should return error getting last commits', () => {
     const error = new Error(faker.lorem.sentence());
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: false,
@@ -337,7 +337,7 @@ describe('Given a changelog service', () => {
     });
   });
 
-  it('Should throw error getting creating release notes', () => {
+  it('Should return error getting creating release notes', () => {
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
       data: {},
@@ -360,7 +360,7 @@ describe('Given a changelog service', () => {
     });
   });
 
-  it('Should throw error writing changelog', () => {
+  it('Should return error writing changelog', () => {
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
       data: [
@@ -398,7 +398,7 @@ describe('Given a changelog service', () => {
     });
   });
 
-  it('Should throw error applying git changes', () => {
+  it('Should return error applying git changes', () => {
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
       data: [
@@ -438,7 +438,7 @@ describe('Given a changelog service', () => {
     });
   });
 
-  it('Should throw error github release and rollback with tags', () => {
+  it('Should return error github release and rollback with tags', () => {
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
       data: [
@@ -482,7 +482,7 @@ describe('Given a changelog service', () => {
     });
   });
 
-  it('Should throw error github release and rollback without tags', () => {
+  it('Should return error github release and rollback without tags', () => {
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
       data: [

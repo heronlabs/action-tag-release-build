@@ -37,7 +37,7 @@ describe('Given a gh service', () => {
     });
   });
 
-  it('Should throw error creating release notes tmp file', () => {
+  it('Should return error creating release notes tmp file', () => {
     const error = new Error(faker.lorem.sentence());
     vi.mocked(writeFileSync).mockImplementationOnce(() => {
       throw error;

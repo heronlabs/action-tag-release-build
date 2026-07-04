@@ -109,7 +109,7 @@ describe('Given a commit service', () => {
       });
     });
 
-    it('Should throw error getting description since last version', () => {
+    it('Should return error getting description since last version', () => {
       const error = new Error(faker.lorem.sentence());
       GitServiceMock.getDescriptionSince.mockReturnValueOnce({
         ok: false,
@@ -125,7 +125,7 @@ describe('Given a commit service', () => {
       });
     });
 
-    it('Should throw error parsing descriptions', () => {
+    it('Should return error parsing descriptions', () => {
       GitServiceMock.getDescriptionSince.mockReturnValueOnce({
         ok: true,
         data: {},
@@ -198,7 +198,7 @@ describe('Given a commit service', () => {
       });
     });
 
-    it('Should throw error getting last commit', () => {
+    it('Should return error getting last commit', () => {
       const error = new Error(faker.lorem.sentence());
       GitServiceMock.getLastCommit.mockReturnValueOnce({
         ok: false,
@@ -213,7 +213,7 @@ describe('Given a commit service', () => {
       });
     });
 
-    it('Should throw error parsing last commit', () => {
+    it('Should return error parsing last commit', () => {
       GitServiceMock.getLastCommit.mockReturnValueOnce({
         ok: true,
         data: {},

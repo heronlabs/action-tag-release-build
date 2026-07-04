@@ -13,7 +13,7 @@ describe('Given a npm bumper service', () => {
     service = new NpmService(ChildProcessServiceMoq);
   });
 
-  it('Should return ok with command output on success', () => {
+  it('Should update version on package.json', () => {
     const npmVersionResult = faker.lorem.sentence();
     ChildProcessServiceMock.exec.mockReturnValueOnce({
       ok: true,
