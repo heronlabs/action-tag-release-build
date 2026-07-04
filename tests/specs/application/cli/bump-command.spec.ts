@@ -1,7 +1,7 @@
 import {faker} from '@faker-js/faker';
 
 import {BumpCommand} from '../../../../src/application/cli/bump-command';
-import {BumpInputs} from '../../../../src/application/cli/dtos/input-bump';
+import {BumpInputs} from '../../../../src/application/cli/types/input-bump';
 import {
   BumperMock,
   BumperMoq,

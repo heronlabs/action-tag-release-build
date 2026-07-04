@@ -1,12 +1,55 @@
-describe('GhService', () => {
-  describe('createRelease()', () => {
-    it.todo(
-      'should write release notes to temp file and run gh release create command',
-    );
-    it.todo('should use tag as both tag and title in gh command');
-    it.todo('should write temp file to .release-notes.tmp.md in cwd');
-    it.todo('should return ok with command output on success');
-    it.todo('should return error when gh release create command fails');
-    it.todo('should return error when writing temp file fails');
+import {writeFileSync} from 'node:fs';
+
+import {faker} from '@faker-js/faker';
+
+import {GhService} from '../../../../src/infrastructure/gh/gh-service';
+import {
+  ChildProcessServiceMock,
+  ChildProcessServiceMoq,
+} from '../../../__mocks__/infrastructure/child-process-service-mock';
+
+vi.mock('node:fs', () => ({
+  writeFileSync: vi.fn(),
+}));
+
+describe('Given a gh service', () => {
+  const cwd = faker.system.directoryPath();
+  let service: GhService;
+
+  beforeEach(() => {
+    service = new GhService(cwd, ChildProcessServiceMoq);
+  });
+
+  it('Should create release notes based on tmp file', () => {
+    ChildProcessServiceMock.exec.mockReturnValueOnce({
+      ok: true,
+      data: 'OK',
+    });
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+    const tag = faker.string.alpha(2);
+    const releaseNotes = faker.lorem.paragraph();
+    const output = service.createRelease(tag, releaseNotes);
+
+    expect(output).toStrictEqual({
+      ok: true,
+      data: 'OK',
+    });
+  });
+
+  it('Should throw error creating release notes tmp file', () => {
+    const error = new Error(faker.lorem.sentence());
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {
+      throw error;
+    });
+
+    const tag = faker.string.alpha(2);
+    const releaseNotes = faker.lorem.paragraph();
+    const output = service.createRelease(tag, releaseNotes);
+
+    expect(output).toStrictEqual({
+      ok: false,
+      error,
+    });
   });
 });

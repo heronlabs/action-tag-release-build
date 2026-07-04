@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 
 import {BumpCommand} from './application/cli/bump-command';
-import {BumpInputs} from './application/cli/dtos/input-bump';
+import {BumpInputs} from './application/cli/types/input-bump';
 import {Bumper} from './core/interfaces/bumper';
 import {ClaudeService} from './core/services/bumpers/claude-bumper-service';
 import {NpmService} from './core/services/bumpers/npm-bumper-service';
 import {ChangelogService} from './core/services/changelog-service';
+import {CommitService} from './core/services/commit-service';
 import {SemverService} from './core/services/semver-service';
 import {GhService} from './infrastructure/gh/gh-service';
 import {GitService} from './infrastructure/git/git-service';
@@ -17,9 +18,15 @@ export class CommandsFactory {
     const childProcessService = new ChildProcessService(cwd);
 
     const gitService = new GitService(childProcessService);
-    const semverService = new SemverService(cwd, gitService);
+    const commitService = new CommitService(gitService);
+    const semverService = new SemverService(cwd, commitService);
     const ghService = new GhService(cwd, childProcessService);
-    const changelogService = new ChangelogService(cwd, gitService, ghService);
+    const changelogService = new ChangelogService(
+      cwd,
+      gitService,
+      ghService,
+      commitService,
+    );
 
     const bumpers: Bumper[] = [];
 
@@ -54,7 +61,7 @@ void (async () => {
     process.stdout.write(`${tagMinor}\n`);
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : '🚫 Unexpected error\n';
+      error instanceof Error ? error.message : 'Unexpected error\n';
 
     process.stderr.write(`${message}\n`);
     process.exit(1);

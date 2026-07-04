@@ -2,11 +2,14 @@ import {Mock} from 'moq.ts';
 
 import {ChildProcessService} from '../../../src/infrastructure/terminal/child-process-service';
 
-export const childProcessServiceMock = {
+export const ChildProcessServiceMock = {
   exec: vi.fn(),
+  execChain: vi.fn(),
 };
 
-export const childProcessServiceMoq = new Mock<ChildProcessService>()
+export const ChildProcessServiceMoq = new Mock<ChildProcessService>()
   .setup(x => x.exec)
-  .returns(childProcessServiceMock.exec)
+  .returns(ChildProcessServiceMock.exec)
+  .setup(x => x.execChain)
+  .returns(ChildProcessServiceMock.execChain)
   .object();

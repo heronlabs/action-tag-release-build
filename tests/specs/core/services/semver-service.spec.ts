@@ -1,76 +1,222 @@
-describe('SemverService', () => {
-  describe('classify()', () => {
-    it.todo('should classify feat commit as minor');
-    it.todo('should classify feat with scope as minor');
-    it.todo('should classify fix commit as patch');
-    it.todo('should classify chore commit as patch');
-    it.todo('should classify docs commit as patch');
-    it.todo('should classify unknown type prefix as patch');
+import {readFileSync, writeFileSync} from 'node:fs';
+import {join} from 'node:path';
 
-    it.todo('should detect breaking change from !: in subject line');
-    it.todo('should detect breaking change from feat!: in subject line');
-    it.todo('should detect breaking change from fix(scope)!: in subject line');
-    it.todo(
-      'should detect breaking change from BREAKING CHANGE in commit body',
-    );
-    it.todo(
-      'should detect breaking change from BREAKING-CHANGE in commit body',
-    );
-    it.todo('should classify breaking feat as major (not minor)');
+import {faker} from '@faker-js/faker';
 
-    it.todo('should return error when classify throws unexpectedly');
+import {SemverService} from '../../../../src/core/services/semver-service';
+import {
+  CommitServiceMock,
+  CommitServiceMoq,
+} from '../../../__mocks__/core/commit-service-mock';
+
+vi.mock('node:fs', () => ({
+  readFileSync: vi.fn(),
+  existsSync: vi.fn(),
+  writeFileSync: vi.fn(),
+}));
+
+describe('Given a semver service', () => {
+  const cwd = faker.system.directoryPath();
+  let service: SemverService;
+
+  beforeEach(() => {
+    service = new SemverService(cwd, CommitServiceMoq);
   });
 
-  describe('calculate()', () => {
-    it.todo('should bump major version and reset minor and patch to 0');
-    it.todo('should bump minor version and reset patch to 0');
-    it.todo('should bump patch version');
-    it.todo('should strip leading non-digit prefix from version');
-    it.todo('should default missing minor segment to 0');
-    it.todo('should default missing patch segment to 0');
-    it.todo('should handle version 0.0.0 bumping to 0.1.0 for minor');
-    it.todo('should handle version 0.0.0 bumping to 0.0.1 for patch');
-    it.todo('should handle version 1.0.0 bumping to 2.0.0 for major');
-    it.todo('should handle large version numbers without overflow issues');
-    it.todo('should return error when version is unparseable');
+  it('Should calculate next version using explicit major semantic input', () => {
+    const versionFileContent = '1.2.3';
+    vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+    const output = service.calculateNextVersion('version.txt', 'major');
+
+    expect(output).toStrictEqual({
+      ok: true,
+      data: {
+        nextVersion: '2.0.0',
+        major: '2',
+        minor: '0',
+        patch: '0',
+      },
+    });
   });
 
-  describe('get()', () => {
-    it.todo('should read and trim version from version file');
-    it.todo('should return error when version file does not exist');
-    it.todo('should return error when version file is empty');
-    it.todo('should return error when readFileSync throws unexpected error');
-    it.todo(
-      'should strip leading and trailing whitespace from version content',
-    );
+  it('Should calculate next version using explicit minor semantic input', () => {
+    const versionFileContent = '1.2.3';
+    vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+    const output = service.calculateNextVersion('version.txt', 'minor');
+
+    expect(output).toStrictEqual({
+      ok: true,
+      data: {
+        nextVersion: '1.3.0',
+        major: '1',
+        minor: '3',
+        patch: '0',
+      },
+    });
   });
 
-  describe('set()', () => {
-    it.todo('should write version to version file with trailing newline');
-    it.todo('should return error when writeFileSync fails');
+  it('Should calculate next version using explicit patch semantic input', () => {
+    const versionFileContent = '1.2.3';
+    vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+    const output = service.calculateNextVersion('version.txt', 'patch');
+
+    expect(output).toStrictEqual({
+      ok: true,
+      data: {
+        nextVersion: '1.2.4',
+        major: '1',
+        minor: '2',
+        patch: '4',
+      },
+    });
   });
 
-  describe('calculateNextVersion()', () => {
-    it.todo('should calculate next version using explicit semantic input');
-    it.todo(
-      'should calculate next version from git last commit when no semantic provided',
-    );
-    it.todo(
-      'should not call git last commit when explicit semantic is provided',
-    );
+  it('Should calculate next version based on last commmit for major', () => {
+    const versionFileContent = '1.2.3';
+    vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
 
-    it.todo('should return error when version file is not found');
-    it.todo('should return error when version file is empty');
-    it.todo('should return error when explicit semantic string is invalid');
-    it.todo(
-      'should return error when semantic is empty and git last commit fails',
-    );
-    it.todo('should return error when commit classification fails');
-    it.todo('should return error when version calculation fails');
-    it.todo('should return error when writing updated version file fails');
+    CommitServiceMock.classifyLastCommit.mockReturnValueOnce({
+      ok: true,
+      data: 'major',
+    });
 
-    it.todo('should write updated version to version file on success');
-    it.todo('should return nextVersion, major, minor, and patch on success');
-    it.todo('should pass correct version and semantic to internal calculate');
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+    const output = service.calculateNextVersion('version.txt');
+
+    expect(output).toStrictEqual({
+      ok: true,
+      data: {
+        nextVersion: '2.0.0',
+        major: '2',
+        minor: '0',
+        patch: '0',
+      },
+    });
+  });
+
+  it('Should calculate next version based on last commmit for minor', () => {
+    const versionFileContent = '1.2.3';
+    vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
+
+    CommitServiceMock.classifyLastCommit.mockReturnValueOnce({
+      ok: true,
+      data: 'minor',
+    });
+
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+    const output = service.calculateNextVersion('version.txt');
+
+    expect(output).toStrictEqual({
+      ok: true,
+      data: {
+        nextVersion: '1.3.0',
+        major: '1',
+        minor: '3',
+        patch: '0',
+      },
+    });
+  });
+
+  it('Should throw version file not found error', () => {
+    const error = new Error(faker.lorem.sentence());
+    vi.mocked(readFileSync).mockImplementationOnce(() => {
+      throw error;
+    });
+
+    const versionFile = faker.string.alpha();
+    const output = service.calculateNextVersion(versionFile, 'major');
+
+    expect(output).toStrictEqual({
+      ok: false,
+      error,
+    });
+  });
+
+  it('Should throw empty version file error', () => {
+    const versionFileContent = '';
+    vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
+
+    const versionFile = faker.string.alpha();
+    const output = service.calculateNextVersion(versionFile, 'major');
+
+    const path = join(cwd, versionFile);
+    expect(output).toStrictEqual({
+      ok: false,
+      error: new Error(`version file '${path}' is empty`),
+    });
+  });
+
+  it('Should throw error for invalid semantic', () => {
+    const versionFileContent = '1.2.3';
+    vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+    const semantic = faker.string.alpha();
+    const output = service.calculateNextVersion('version.txt', semantic);
+
+    expect(output).toStrictEqual({
+      ok: false,
+      error: new Error(`invalid semantic: '${semantic}'`),
+    });
+  });
+
+  it('Should throw error for getting last commit', () => {
+    const versionFileContent = '1.2.3';
+    vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
+
+    const error = new Error(faker.lorem.sentence());
+    CommitServiceMock.classifyLastCommit.mockReturnValueOnce({
+      ok: false,
+      error,
+    });
+
+    const output = service.calculateNextVersion('version.txt');
+
+    expect(output).toStrictEqual({
+      ok: false,
+      error,
+    });
+  });
+
+  it('Should throw error when calculating semantic', () => {
+    const versionFileContent = '1.2.3';
+    vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
+
+    const error = new Error(faker.lorem.sentence());
+    vi.spyOn(globalThis, 'parseInt').mockImplementationOnce(() => {
+      throw error;
+    });
+
+    const output = service.calculateNextVersion('version.txt', 'major');
+
+    expect(output).toStrictEqual({
+      ok: false,
+      error,
+    });
+  });
+
+  it('Should throw error when setting next version', () => {
+    const versionFileContent = '1.2.3';
+    vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
+
+    const error = new Error(faker.lorem.sentence());
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {
+      throw error;
+    });
+
+    const output = service.calculateNextVersion('version.txt', 'major');
+
+    expect(output).toStrictEqual({
+      ok: false,
+      error,
+    });
   });
 });

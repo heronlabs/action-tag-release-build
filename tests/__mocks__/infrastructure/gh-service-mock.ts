@@ -2,11 +2,11 @@ import {Mock} from 'moq.ts';
 
 import {GhService} from '../../../src/infrastructure/gh/gh-service';
 
-export const ghServiceMock = {
+export const GhServiceMock = {
   createRelease: vi.fn(),
 };
 
-export const ghServiceMoq = new Mock<GhService>()
+export const GhServiceMoq = new Mock<GhService>()
   .setup(x => x.createRelease)
-  .returns(ghServiceMock.createRelease)
+  .returns(GhServiceMock.createRelease)
   .object();

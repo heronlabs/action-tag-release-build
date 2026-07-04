@@ -1,26 +1,10 @@
 import {readFileSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 
-import {GitService} from '../../infrastructure/git/git-service';
-import {Semantic} from '../types/semantic';
+import {CommitService} from './commit-service';
 
 export class SemverService {
-  private classify(message: string) {
-    try {
-      const subject = message.split('\n')[0]!;
-      let data: Semantic = 'patch';
-      const breaking =
-        subject.includes('!:') || /\bBREAKING[ -]CHANGE\b/.test(message);
-      if (breaking) data = 'major';
-      else if (/^feat\b/.test(subject)) data = 'minor';
-
-      return {ok: true as const, data};
-    } catch (error) {
-      return {ok: false as const, error};
-    }
-  }
-
-  private calculate(version: string, semantic: Semantic) {
+  private calculate(version: string, semantic: string) {
     try {
       const numeric = version.replace(/^\D+/, '');
       const [major = '0', minor = '0', patch = '0'] = numeric.split('.');
@@ -40,7 +24,7 @@ export class SemverService {
       } else if (semantic === 'minor') {
         nextMinor = n + 1;
         nextPatch = 0;
-      } else if (semantic === 'patch') {
+      } else {
         nextPatch = p + 1;
       }
 
@@ -64,21 +48,13 @@ export class SemverService {
     try {
       const path = join(this.cwd, versionFile);
 
-      let content: string;
-      try {
-        content = readFileSync(path, 'utf8');
-      } catch {
-        return {
-          ok: false as const,
-          error: new Error(`🚫 Version file '${path}' not found`),
-        };
-      }
+      const content = readFileSync(path, 'utf8');
 
       const version = content.trim();
       if (!version) {
         return {
           ok: false as const,
-          error: new Error(`🚫 Version file '${path}' is empty`),
+          error: new Error(`version file '${path}' is empty`),
         };
       }
 
@@ -108,19 +84,16 @@ export class SemverService {
       if (!semanticCheck)
         return {
           ok: false as const,
-          error: new Error(`🚫 Invalid semantic: '${semantic}'`),
+          error: new Error(`invalid semantic: '${semantic}'`),
         };
     } else {
-      const lastCommit = this.gitService.getLastCommit();
-      if (!lastCommit.ok) return {ok: false as const, error: lastCommit.error};
-
-      const lastCommitType = this.classify(lastCommit.data);
+      const lastCommitType = this.commitService.classifyLastCommit();
       if (!lastCommitType.ok)
         return {ok: false as const, error: lastCommitType.error};
       semantic = lastCommitType.data;
     }
 
-    const semver = this.calculate(version.data, semantic as Semantic);
+    const semver = this.calculate(version.data, semantic);
     if (!semver.ok) return {ok: false as const, error: semver.error};
 
     const setVersion = this.set(semver.data.nextVersion, versionFile);
@@ -139,6 +112,6 @@ export class SemverService {
 
   constructor(
     private readonly cwd: string,
-    private readonly gitService: GitService,
+    private readonly commitService: CommitService,
   ) {}
 }

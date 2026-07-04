@@ -5,13 +5,17 @@ import {ChildProcessService} from '../terminal/child-process-service';
 
 export class GhService {
   public createRelease(tag: string, releaseNotes: string) {
-    const releaseNotesFile = join(this.cwd, '.release-notes.tmp.md');
+    try {
+      const releaseNotesFile = join(this.cwd, '.release-notes.tmp.md');
 
-    writeFileSync(releaseNotesFile, releaseNotes, 'utf8');
+      writeFileSync(releaseNotesFile, releaseNotes, 'utf8');
 
-    return this.childProcessService.exec(
-      `gh release create "${tag}" --title "${tag}" --notes-file "${releaseNotesFile}"`,
-    );
+      return this.childProcessService.exec(
+        `gh release create "${tag}" --title "${tag}" --notes-file "${releaseNotesFile}"`,
+      );
+    } catch (error) {
+      return {ok: false as const, error};
+    }
   }
 
   constructor(

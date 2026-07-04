@@ -4,12 +4,16 @@ import {faker} from '@faker-js/faker';
 
 import {ChangelogService} from '../../../../src/core/services/changelog-service';
 import {
-  ghServiceMock,
-  ghServiceMoq,
+  CommitServiceMock,
+  CommitServiceMoq,
+} from '../../../__mocks__/core/commit-service-mock';
+import {
+  GhServiceMock,
+  GhServiceMoq,
 } from '../../../__mocks__/infrastructure/gh-service-mock';
 import {
-  gitServiceMock,
-  gitServiceMoq,
+  GitServiceMock,
+  GitServiceMoq,
 } from '../../../__mocks__/infrastructure/git-service-mock';
 
 vi.mock('node:fs', () => ({
@@ -23,23 +27,36 @@ describe('Given a changelog service', () => {
   let service: ChangelogService;
 
   beforeEach(() => {
-    service = new ChangelogService(cwd, gitServiceMoq, ghServiceMoq);
+    service = new ChangelogService(
+      cwd,
+      GitServiceMoq,
+      GhServiceMoq,
+      CommitServiceMoq,
+    );
   });
 
   it('Should generate release notes on empty changelog and github with conventional commits', () => {
-    gitServiceMock.getCommits.mockReturnValueOnce({
-      ok: true,
-      data: `${faker.string.alpha(40)} feat(scope)!: add some feature`,
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
+      ok: true as const,
+      data: [
+        {
+          hash: faker.string.alpha(40),
+          type: 'feat',
+          scope: 'scope',
+          breaking: true,
+          description: 'add some feature',
+        },
+      ],
     });
 
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    gitServiceMock.apply.mockReturnValueOnce({
+    GitServiceMock.apply.mockReturnValueOnce({
       ok: true,
     });
 
-    ghServiceMock.createRelease.mockReturnValueOnce({
+    GhServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
     });
@@ -66,19 +83,26 @@ describe('Given a changelog service', () => {
   });
 
   it('Should generate release notes on empty changelog and github with conventional commits without scope', () => {
-    gitServiceMock.getCommits.mockReturnValueOnce({
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
-      data: `${faker.string.alpha(40)} feat!: add some feature`,
+      data: [
+        {
+          hash: faker.string.alpha(40),
+          type: 'feat',
+          breaking: true,
+          description: 'add some feature',
+        },
+      ],
     });
 
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    gitServiceMock.apply.mockReturnValueOnce({
+    GitServiceMock.apply.mockReturnValueOnce({
       ok: true,
     });
 
-    ghServiceMock.createRelease.mockReturnValueOnce({
+    GhServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
     });
@@ -105,19 +129,26 @@ describe('Given a changelog service', () => {
   });
 
   it('Should generate release notes on empty changelog and github with different conventional commits', () => {
-    gitServiceMock.getCommits.mockReturnValueOnce({
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
-      data: `${faker.string.alpha(40)} ci: add some feature`,
+      data: [
+        {
+          hash: faker.string.alpha(40),
+          type: 'other',
+          breaking: false,
+          description: 'add some feature',
+        },
+      ],
     });
 
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    gitServiceMock.apply.mockReturnValueOnce({
+    GitServiceMock.apply.mockReturnValueOnce({
       ok: true,
     });
 
-    ghServiceMock.createRelease.mockReturnValueOnce({
+    GhServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
     });
@@ -144,19 +175,26 @@ describe('Given a changelog service', () => {
   });
 
   it('Should generate release notes on empty changelog and github without conventional commits', () => {
-    gitServiceMock.getCommits.mockReturnValueOnce({
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
-      data: `${faker.string.alpha(40)} add some feature`,
+      data: [
+        {
+          hash: faker.string.alpha(40),
+          type: 'other',
+          breaking: false,
+          description: 'add some feature',
+        },
+      ],
     });
 
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    gitServiceMock.apply.mockReturnValueOnce({
+    GitServiceMock.apply.mockReturnValueOnce({
       ok: true,
     });
 
-    ghServiceMock.createRelease.mockReturnValueOnce({
+    GhServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
     });
@@ -183,19 +221,26 @@ describe('Given a changelog service', () => {
   });
 
   it('Should generate release notes on empty changelog and github with edge case commit', () => {
-    gitServiceMock.getCommits.mockReturnValueOnce({
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
-      data: `${faker.string.alpha(40)} __foo__`,
+      data: [
+        {
+          hash: faker.string.alpha(40),
+          type: 'other',
+          breaking: false,
+          description: '__foo__',
+        },
+      ],
     });
 
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    gitServiceMock.apply.mockReturnValueOnce({
+    GitServiceMock.apply.mockReturnValueOnce({
       ok: true,
     });
 
-    ghServiceMock.createRelease.mockReturnValueOnce({
+    GhServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
     });
@@ -222,20 +267,27 @@ describe('Given a changelog service', () => {
   });
 
   it('Should generate release notes on existing changelog and github without conventional commits', () => {
-    gitServiceMock.getCommits.mockReturnValueOnce({
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
-      data: `${faker.string.alpha(40)} add some feature`,
+      data: [
+        {
+          hash: faker.string.alpha(40),
+          type: 'other',
+          breaking: false,
+          description: 'add some feature',
+        },
+      ],
     });
 
     vi.mocked(existsSync).mockReturnValueOnce(true);
     vi.mocked(readFileSync).mockReturnValueOnce('# Changelog');
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    gitServiceMock.apply.mockReturnValueOnce({
+    GitServiceMock.apply.mockReturnValueOnce({
       ok: true,
     });
 
-    ghServiceMock.createRelease.mockReturnValueOnce({
+    GhServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
     });
@@ -263,7 +315,7 @@ describe('Given a changelog service', () => {
 
   it('Should throw error getting last commits', () => {
     const error = new Error(faker.lorem.sentence());
-    gitServiceMock.getCommits.mockReturnValueOnce({
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: false,
       error,
     });
@@ -286,9 +338,9 @@ describe('Given a changelog service', () => {
   });
 
   it('Should throw error getting creating release notes', () => {
-    gitServiceMock.getCommits.mockReturnValueOnce({
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
-      data: [],
+      data: {},
     });
 
     const inputs = {
@@ -309,9 +361,17 @@ describe('Given a changelog service', () => {
   });
 
   it('Should throw error writing changelog', () => {
-    gitServiceMock.getCommits.mockReturnValueOnce({
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
-      data: `${faker.string.alpha(40)} feat(scope)!: add some feature`,
+      data: [
+        {
+          hash: faker.string.alpha(40),
+          type: 'feat',
+          scope: 'scope',
+          breaking: true,
+          description: 'add some feature',
+        },
+      ],
     });
 
     vi.mocked(existsSync).mockReturnValueOnce(false);
@@ -339,16 +399,24 @@ describe('Given a changelog service', () => {
   });
 
   it('Should throw error applying git changes', () => {
-    gitServiceMock.getCommits.mockReturnValueOnce({
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
-      data: `${faker.string.alpha(40)} feat(scope)!: add some feature`,
+      data: [
+        {
+          hash: faker.string.alpha(40),
+          type: 'feat',
+          scope: 'scope',
+          breaking: true,
+          description: 'add some feature',
+        },
+      ],
     });
 
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
     const error = new Error(faker.lorem.sentence());
-    gitServiceMock.apply.mockReturnValueOnce({
+    GitServiceMock.apply.mockReturnValueOnce({
       ok: false,
       error,
     });
@@ -371,26 +439,30 @@ describe('Given a changelog service', () => {
   });
 
   it('Should throw error github release and rollback with tags', () => {
-    gitServiceMock.getCommits.mockReturnValueOnce({
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
-      data: `${faker.string.alpha(40)} feat(scope)!: add some feature`,
+      data: [
+        {
+          hash: faker.string.alpha(40),
+          type: 'feat',
+          scope: 'scope',
+          breaking: true,
+          description: 'add some feature',
+        },
+      ],
     });
 
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    gitServiceMock.apply.mockReturnValueOnce({
+    GitServiceMock.apply.mockReturnValueOnce({
       ok: true,
     });
 
     const error = new Error(faker.lorem.sentence());
-    ghServiceMock.createRelease.mockReturnValueOnce({
+    GhServiceMock.createRelease.mockReturnValueOnce({
       ok: false,
       error,
-    });
-
-    gitServiceMock.rollbackFireForget.mockReturnValueOnce({
-      ok: true,
     });
 
     const inputs = {
@@ -411,26 +483,30 @@ describe('Given a changelog service', () => {
   });
 
   it('Should throw error github release and rollback without tags', () => {
-    gitServiceMock.getCommits.mockReturnValueOnce({
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
-      data: `${faker.string.alpha(40)} feat(scope)!: add some feature`,
+      data: [
+        {
+          hash: faker.string.alpha(40),
+          type: 'feat',
+          scope: 'scope',
+          breaking: true,
+          description: 'add some feature',
+        },
+      ],
     });
 
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    gitServiceMock.apply.mockReturnValueOnce({
+    GitServiceMock.apply.mockReturnValueOnce({
       ok: true,
     });
 
     const error = new Error(faker.lorem.sentence());
-    ghServiceMock.createRelease.mockReturnValueOnce({
+    GhServiceMock.createRelease.mockReturnValueOnce({
       ok: false,
       error,
-    });
-
-    gitServiceMock.rollbackFireForget.mockReturnValueOnce({
-      ok: true,
     });
 
     const inputs = {

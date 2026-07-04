@@ -3,64 +3,27 @@ import {join} from 'node:path';
 
 import {GhService} from '../../infrastructure/gh/gh-service';
 import {GitService} from '../../infrastructure/git/git-service';
-import {
-  COMMIT_TYPE_LABELS,
-  CommitType,
-  ParsedCommit,
-} from '../types/parsed-commit';
+import {CommitTypeLabels} from '../types/commit-types';
+import {ParsedDescription} from '../types/parsed-commit';
+import {CommitService} from './commit-service';
 
 export class ChangelogService {
-  private parseSubject(subject: string) {
-    const match = subject.match(/^(\w+)(?:\(([^)]+)\))?(!)?\s*:\s*(.*)$/);
-    if (!match) {
-      return {
-        type: 'other' as CommitType,
-        breaking: false,
-        description: subject,
-      };
-    }
-    const [, type = 'other', scope, bang, description] = match;
-    return {
-      type: (Object.hasOwn(COMMIT_TYPE_LABELS, type)
-        ? type
-        : 'other') as CommitType,
-      scope,
-      breaking: !!bang,
-      description: `${description}`,
-    };
-  }
-
   private generateReleaseNotes(tagPrefix: string) {
     try {
-      const lastCommits = this.gitService.getCommits(tagPrefix);
-      if (!lastCommits.ok)
-        return {ok: false as const, error: lastCommits.error};
+      const commits = this.commitService.parseDescriptionSince(tagPrefix);
+      if (!commits.ok) return {ok: false as const, error: commits.error};
 
-      const commits: ParsedCommit[] = lastCommits.data
-        .split('\n')
-        .filter(line => line.trim().length > 0)
-        .map(line => {
-          const subject = line.slice(41);
-          const {type, scope, breaking, description} =
-            this.parseSubject(subject);
+      const groups = new Map<string, ParsedDescription[]>();
+      const breaking: ParsedDescription[] = [];
 
-          return {
-            hash: line.slice(0, 40),
-            type,
-            scope,
-            breaking,
-            description,
-          };
-        });
-      const groups = new Map<string, ParsedCommit[]>();
-      const breaking: ParsedCommit[] = [];
-      for (const c of commits) {
-        const label = COMMIT_TYPE_LABELS[c.type];
+      for (const c of commits.data) {
+        const label = CommitTypeLabels[c.type];
         const list = groups.get(label) ?? [];
         list.push(c);
         groups.set(label, list);
         if (c.breaking) breaking.push(c);
       }
+
       const sections: string[] = [];
       if (breaking.length > 0) {
         const lines = breaking.map(c => {
@@ -69,7 +32,8 @@ export class ChangelogService {
         });
         sections.push(`### ⚠ BREAKING CHANGES\n\n${lines.join('\n')}`);
       }
-      for (const label of Object.values(COMMIT_TYPE_LABELS)) {
+
+      for (const label of Object.values(CommitTypeLabels)) {
         const items = groups.get(label);
         if (!items || items.length === 0) continue;
 
@@ -80,6 +44,7 @@ export class ChangelogService {
         });
         sections.push(`### ${label}\n\n${lines.join('\n')}`);
       }
+
       const releaseNotes = sections.join('\n\n');
 
       return {ok: true as const, data: releaseNotes};
@@ -144,20 +109,16 @@ export class ChangelogService {
     );
     if (!changelog.ok) return {ok: false as const, error: changelog.error};
 
-    const gitApply = this.gitService.apply(
-      nextVersion,
+    const gitApply = this.gitService.apply({
+      version: nextVersion,
       tag,
-      tagMajor,
-      tagMinor,
       refName,
-      overrideTag,
-    );
+      tags: overrideTag ? {major, minor} : undefined,
+    });
     if (!gitApply.ok) return {ok: false as const, error: gitApply.error};
 
     const ghRelease = this.ghService.createRelease(tag, releaseNotes.data);
     if (!ghRelease.ok) {
-      const rollbackTags = overrideTag ? {tagMajor, tagMinor} : undefined;
-      this.gitService.rollbackFireForget(tag, rollbackTags);
       return {ok: false as const, error: ghRelease.error};
     }
 
@@ -168,5 +129,6 @@ export class ChangelogService {
     private readonly cwd: string,
     private readonly gitService: GitService,
     private readonly ghService: GhService,
+    private readonly commitService: CommitService,
   ) {}
 }
