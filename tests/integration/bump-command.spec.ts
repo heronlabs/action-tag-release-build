@@ -69,7 +69,7 @@ describe('Full tag-release-build pipeline', () => {
       expect(tags).toContain('v1.3.0');
     });
 
-    it('Should write CHANGELOG.md with feat in Features section', () => {
+    it('Should write CHANGELOG.md with ## v1.3.0 heading', () => {
       const inputs: BumpInputs = {
         semantic: '',
         versionFile: 'version.txt',
@@ -83,7 +83,37 @@ describe('Full tag-release-build pipeline', () => {
       const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
 
       expect(changelog).toContain('## v1.3.0');
+    });
+
+    it('Should write CHANGELOG.md with ### Features section', () => {
+      const inputs: BumpInputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      };
+      bumpCommand.run(inputs);
+
+      const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
+
       expect(changelog).toContain('### Features');
+    });
+
+    it('Should write CHANGELOG.md with feat: add thing content', () => {
+      const inputs: BumpInputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      };
+      bumpCommand.run(inputs);
+
+      const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
+
       expect(changelog).toContain('feat: add thing');
     });
   });
@@ -139,7 +169,7 @@ describe('Full tag-release-build pipeline', () => {
       expect(tags).toContain('v1.2.4');
     });
 
-    it('Should write CHANGELOG.md with fix in Bug Fixes section', () => {
+    it('Should write CHANGELOG.md with ## v1.2.4 heading', () => {
       const inputs: BumpInputs = {
         semantic: '',
         versionFile: 'version.txt',
@@ -152,7 +182,35 @@ describe('Full tag-release-build pipeline', () => {
 
       const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
       expect(changelog).toContain('## v1.2.4');
+    });
+
+    it('Should write CHANGELOG.md with ### Bug Fixes section', () => {
+      const inputs: BumpInputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      };
+      bumpCommand.run(inputs);
+
+      const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
       expect(changelog).toContain('### Bug Fixes');
+    });
+
+    it('Should write CHANGELOG.md with fix: typo content', () => {
+      const inputs: BumpInputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      };
+      bumpCommand.run(inputs);
+
+      const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
       expect(changelog).toContain('fix: typo');
     });
   });
@@ -250,7 +308,7 @@ describe('Full tag-release-build pipeline', () => {
       bumpCommand = testingCliFactory(workDir);
     });
 
-    it('Should create additional floating tags when overrideTag is true', () => {
+    it('Should create floating tag 1 when overrideTag is true', () => {
       const inputs: BumpInputs = {
         semantic: '',
         versionFile: 'version.txt',
@@ -270,6 +328,27 @@ describe('Full tag-release-build pipeline', () => {
         .split('\n');
 
       expect(tags).toContain('1');
+    });
+
+    it('Should create floating tag 3 when overrideTag is true', () => {
+      const inputs: BumpInputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: true,
+      };
+      bumpCommand.run(inputs);
+
+      const tags = execSync('git tag -l', {
+        cwd: workDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      })
+        .trim()
+        .split('\n');
+
       expect(tags).toContain('3');
     });
   });
