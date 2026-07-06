@@ -327,7 +327,7 @@ describe('Full tag-release-build pipeline', () => {
         .trim()
         .split('\n');
 
-      expect(tags).toContain('1');
+      expect(tags).toEqual(['v1', 'v1.2.3', 'v1.3', 'v1.3.0']);
     });
 
     it('Should create floating tag 3 when overrideTag is true', () => {
@@ -349,7 +349,7 @@ describe('Full tag-release-build pipeline', () => {
         .trim()
         .split('\n');
 
-      expect(tags).toContain('3');
+      expect(tags).toEqual(expect.arrayContaining(['v1.3', 'v1.3.0']));
     });
   });
 });

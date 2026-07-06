@@ -160,7 +160,7 @@ jobs:
       - run: pnpm test:integration
 
   mutation:
-    needs: unit
+    needs: [unit, integration]
     name: 'Mutation Tests'
     runs-on: ubuntu-24.04
     steps:
