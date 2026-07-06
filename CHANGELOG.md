@@ -1,3 +1,9 @@
+## v5.0.2 (2026-07-06)
+
+### Bug Fixes
+
+* fix: update tag handling in changelog service to use specific major and minor tags (747bbd6af39680797611f8a3237a2f73f919539c)
+
 ## v5.0.1 (2026-07-06)
 
 ### Bug Fixes
