@@ -1,0 +1,1 @@
+{"version":3,"file":"bumper.d.ts","sourceRoot":"","sources":["../../../../src/core/interfaces/bumper.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,MAAM;IACrB,IAAI,CAAC,OAAO,EAAE,MAAM,GAChB;QACE,EAAE,EAAE,IAAI,CAAC;QACT,IAAI,EAAE,MAAM,CAAC;QACb,KAAK,CAAC,EAAE,SAAS,CAAC;KACnB,GACD;QACE,EAAE,EAAE,KAAK,CAAC;QACV,KAAK,EAAE,OAAO,CAAC;QACf,IAAI,CAAC,EAAE,SAAS,CAAC;KAClB,CAAC;CACP"}

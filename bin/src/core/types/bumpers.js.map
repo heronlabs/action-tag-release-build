@@ -1,0 +1,1 @@
+{"version":3,"file":"bumpers.js","sourceRoot":"","sources":["../../../../src/core/types/bumpers.ts"],"names":[],"mappings":"","sourcesContent":["export type Bumpers = 'claude' | 'npm';\n"]}
