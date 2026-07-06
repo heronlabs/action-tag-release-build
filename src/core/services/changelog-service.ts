@@ -113,7 +113,7 @@ export class ChangelogService {
       version: nextVersion,
       tag,
       refName,
-      tags: overrideTag ? {major, minor} : undefined,
+      tags: overrideTag ? {major: tagMajor, minor: tagMinor} : undefined,
     });
     if (!gitApply.ok) return {ok: false as const, error: gitApply.error};
 

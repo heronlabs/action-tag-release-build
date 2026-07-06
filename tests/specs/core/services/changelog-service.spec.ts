@@ -36,6 +36,54 @@ describe('Given a changelog service', () => {
     );
   });
 
+  it('Should apply git changes with tags', () => {
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
+      ok: true as const,
+      data: [
+        {
+          hash: faker.string.alpha(40),
+          type: 'feat',
+          scope: 'scope',
+          breaking: true,
+          description: 'add some feature',
+        },
+      ],
+    });
+
+    vi.mocked(existsSync).mockReturnValueOnce(false);
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+    GitServiceMock.apply.mockReturnValueOnce({
+      ok: true,
+    });
+
+    GhServiceMock.createRelease.mockReturnValueOnce({
+      ok: true,
+      data: '',
+    });
+
+    const inputs = {
+      tagPrefix: faker.string.alpha(),
+      nextVersion: faker.system.semver(),
+      major: faker.string.alpha(),
+      minor: faker.string.alpha(),
+      changelogFile: `${faker.string.alpha()}.md`,
+      refName: faker.string.alpha(),
+      overrideTag: true,
+    };
+    service.applyReleaseChangelog(inputs);
+
+    expect(GitServiceMock.apply).toHaveBeenNthCalledWith(1, {
+      version: inputs.nextVersion,
+      tag: `${inputs.tagPrefix}${inputs.nextVersion}`,
+      refName: inputs.refName,
+      tags: {
+        major: `${inputs.tagPrefix}${inputs.major}`,
+        minor: `${inputs.tagPrefix}${inputs.major}.${inputs.minor}`,
+      },
+    });
+  });
+
   it('Should generate release notes on empty changelog and github with conventional commits', () => {
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true as const,

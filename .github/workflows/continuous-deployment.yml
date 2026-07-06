@@ -41,5 +41,4 @@ jobs:
         with:
           gh_token: ${{ github.token }}
           semantic: ${{ inputs.spec }}
-          override_tag: true
           bump_npm: true
