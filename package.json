@@ -61,7 +61,7 @@
     "test:integration": "vitest run tests/integration/ --coverage.enabled=false",
     "test:mutation": "stryker run stryker.conf.json",
     "test:ui": "vitest --ui",
-    "test:unit": "vitest run tests/specs/"
+    "test:unit": "vitest run tests/unit/"
   },
   "version": "5.0.2"
 }
