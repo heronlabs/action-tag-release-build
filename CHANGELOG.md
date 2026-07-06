@@ -1,3 +1,10 @@
+## v5.0.1 (2026-07-06)
+
+### Bug Fixes
+
+* fix: ship built CLI with action, replace npx with direct node call (f5c1d8ae53a0347bf78d8de94b8bd1f452c3f571)
+* fix: use npx instead of pnpm install + build in entry-point.sh (#16) (86d2f02f56a183b48ded0c67674718b3f18f34ac)
+
 ## v5.0.0 (2026-07-06)
 
 
