@@ -20,7 +20,11 @@ export class ChildProcessService {
 
   execChain(command: string) {
     try {
-      const data = execSync(command, {cwd: this.cwd, encoding: 'utf8'})
+      const data = execSync(command, {
+        cwd: this.cwd,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      })
         .toString()
         .trim();
       return this.success(data);
@@ -31,7 +35,11 @@ export class ChildProcessService {
 
   exec(command: string) {
     try {
-      const data = execSync(command, {cwd: this.cwd, encoding: 'utf8'})
+      const data = execSync(command, {
+        cwd: this.cwd,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      })
         .toString()
         .trim();
       return {ok: true as const, data};

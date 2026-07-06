@@ -49,6 +49,7 @@ describe('Given a child process service', () => {
       expect(execSync).toHaveBeenCalledWith('git status', {
         cwd,
         encoding: 'utf8',
+        stdio: 'pipe',
       });
     });
 
@@ -108,6 +109,7 @@ describe('Given a child process service', () => {
       expect(execSync).toHaveBeenCalledWith('git add -A', {
         cwd,
         encoding: 'utf8',
+        stdio: 'pipe',
       });
     });
 

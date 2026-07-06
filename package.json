@@ -58,9 +58,10 @@
     "lint:check": "gts lint && eslint \"**/*.json\" \"**/*.yml\" \"**/*.yaml\" --no-error-on-unmatched-pattern",
     "lint:fix": "gts fix && eslint \"**/*.json\" \"**/*.yml\" \"**/*.yaml\" --fix --no-error-on-unmatched-pattern",
     "prepublishOnly": "pnpm build",
+    "test:integration": "vitest run tests/integration/",
     "test:mutation": "stryker run stryker.conf.json",
     "test:ui": "vitest --ui",
-    "test:unit": "vitest run"
+    "test:unit": "vitest run tests/unit/"
   },
   "version": "5.0.2"
 }
