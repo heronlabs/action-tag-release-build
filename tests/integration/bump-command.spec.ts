@@ -1032,4 +1032,70 @@ describe('Full tag-release-build pipeline', () => {
       expect(() => bumpCommand.run(inputs)).toThrow();
     });
   });
+
+  describe('Scenario Y: Pre-receive hook rejecting push without floating tags', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      workDir = testRepo.workDir;
+      const hookPath = join(testRepo.bareDir, 'hooks', 'pre-receive');
+      writeFileSync(
+        hookPath,
+        '#!/bin/sh\necho rejected by test hook\nexit 1\n',
+      );
+      chmodSync(hookPath, 0o755);
+      bumpCommand = testingCliFactory(workDir);
+    });
+
+    it('Should throw error when push is rejected by pre-receive hook', () => {
+      const inputs: BumpInputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      };
+
+      expect(() => bumpCommand.run(inputs)).toThrow();
+    });
+  });
+
+  describe('Scenario Z: Pre-receive hook rejecting push with floating tags', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      workDir = testRepo.workDir;
+      const hookPath = join(testRepo.bareDir, 'hooks', 'pre-receive');
+      writeFileSync(
+        hookPath,
+        '#!/bin/sh\necho rejected by test hook\nexit 1\n',
+      );
+      chmodSync(hookPath, 0o755);
+      bumpCommand = testingCliFactory(workDir);
+    });
+
+    it('Should throw error when force-tag push is rejected by pre-receive hook', () => {
+      const inputs: BumpInputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: true,
+      };
+
+      expect(() => bumpCommand.run(inputs)).toThrow();
+    });
+  });
 });
