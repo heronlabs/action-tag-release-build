@@ -443,6 +443,34 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
+  describe('Scenario G2: Breaking change with scope renders scope in entry', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat(api)!: break API'],
+      });
+      workDir = testRepo.workDir;
+      bumpCommand = testingCliFactory(workDir);
+    });
+
+    it('Should include scope in breaking change CHANGELOG entry', () => {
+      bumpCommand.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      });
+
+      const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
+      expect(changelog).toContain('feat(api)!');
+    });
+  });
+
   describe('Scenario H: Existing CHANGELOG.md prepends new entry', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
