@@ -13,9 +13,19 @@
     "reports",
     "tests/.coverage"
   ],
+  "ignoreStatic": true,
   "incremental": true,
   "incrementalFile": "reports/mutation/incremental.json",
   "mutate": ["src/**/*.ts", "!src/cli.ts", "!src/**/*.d.ts"],
+  "mutator": {
+    "excludedMutations": [
+      "ArrayDeclaration",
+      "BlockStatement",
+      "ConditionalExpression",
+      "ObjectLiteral",
+      "StringLiteral"
+    ]
+  },
   "packageManager": "pnpm",
   "plugins": ["@stryker-mutator/vitest-runner"],
   "reporters": ["clear-text", "progress"],

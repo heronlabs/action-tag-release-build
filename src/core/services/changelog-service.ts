@@ -35,7 +35,7 @@ export class ChangelogService {
 
       for (const label of Object.values(CommitTypeLabels)) {
         const items = groups.get(label);
-        if (!items || items.length === 0) continue;
+        if (!items) continue;
 
         const lines = items.map(c => {
           const scope = c.scope ? `(${c.scope})` : '';
@@ -65,7 +65,7 @@ export class ChangelogService {
       const entry = `## ${tag} (${date})\n\n${releaseNotes}\n\n`;
 
       if (existsSync(path)) {
-        const existing = readFileSync(path, 'utf8');
+        const existing = readFileSync(path).toString();
         writeFileSync(path, entry + existing);
       } else {
         writeFileSync(path, entry);
