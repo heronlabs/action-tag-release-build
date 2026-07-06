@@ -1,4 +1,5 @@
 import {existsSync, readFileSync, writeFileSync} from 'node:fs';
+import {join} from 'node:path';
 
 import {faker} from '@faker-js/faker';
 
@@ -524,5 +525,320 @@ describe('Given a changelog service', () => {
       ok: false,
       error,
     });
+  });
+
+  it('Should write breaking entry with scope in parentheses', () => {
+    const commitHash = faker.string.alpha(40);
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
+      ok: true as const,
+      data: [
+        {
+          hash: commitHash,
+          type: 'fix',
+          scope: 'my-scope',
+          breaking: true,
+          description: 'critical fix',
+        },
+      ],
+    });
+    vi.mocked(existsSync).mockReturnValueOnce(false);
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+    GitServiceMock.apply.mockReturnValueOnce({ok: true});
+    GhServiceMock.createRelease.mockReturnValueOnce({ok: true, data: ''});
+
+    service.applyReleaseChangelog({
+      tagPrefix: 'v',
+      nextVersion: '1.0.0',
+      major: '1',
+      minor: '0',
+      changelogFile: 'CHANGELOG.md',
+      refName: 'main',
+      overrideTag: false,
+    });
+
+    expect(writeFileSync).toHaveBeenCalledWith(
+      join(cwd, 'CHANGELOG.md'),
+      expect.stringContaining(`* fix(my-scope)!: critical fix (${commitHash})`),
+    );
+  });
+
+  it('Should write breaking entry without scope and no parentheses', () => {
+    const commitHash = faker.string.alpha(40);
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
+      ok: true as const,
+      data: [
+        {
+          hash: commitHash,
+          type: 'fix',
+          scope: undefined,
+          breaking: true,
+          description: 'critical fix',
+        },
+      ],
+    });
+    vi.mocked(existsSync).mockReturnValueOnce(false);
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+    GitServiceMock.apply.mockReturnValueOnce({ok: true});
+    GhServiceMock.createRelease.mockReturnValueOnce({ok: true, data: ''});
+
+    service.applyReleaseChangelog({
+      tagPrefix: 'v',
+      nextVersion: '1.0.0',
+      major: '1',
+      minor: '0',
+      changelogFile: 'CHANGELOG.md',
+      refName: 'main',
+      overrideTag: false,
+    });
+
+    expect(writeFileSync).toHaveBeenCalledWith(
+      join(cwd, 'CHANGELOG.md'),
+      expect.stringContaining(`* fix!: critical fix (${commitHash})`),
+    );
+  });
+
+  it('Should not contain Stryker artifacts in release notes', () => {
+    const commitHash = faker.string.alpha(40);
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
+      ok: true as const,
+      data: [
+        {
+          hash: commitHash,
+          type: 'fix',
+          scope: undefined,
+          breaking: true,
+          description: 'critical fix',
+        },
+      ],
+    });
+    vi.mocked(existsSync).mockReturnValueOnce(false);
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+    GitServiceMock.apply.mockReturnValueOnce({ok: true});
+    GhServiceMock.createRelease.mockReturnValueOnce({ok: true, data: ''});
+
+    service.applyReleaseChangelog({
+      tagPrefix: 'v',
+      nextVersion: '1.0.0',
+      major: '1',
+      minor: '0',
+      changelogFile: 'CHANGELOG.md',
+      refName: 'main',
+      overrideTag: false,
+    });
+
+    expect(writeFileSync).toHaveBeenCalledWith(
+      join(cwd, 'CHANGELOG.md'),
+      expect.not.stringContaining('Stryker was here'),
+    );
+  });
+
+  it('Should write empty release notes when no commits exist', () => {
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
+      ok: true as const,
+      data: [],
+    });
+    vi.mocked(existsSync).mockReturnValueOnce(false);
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+    GitServiceMock.apply.mockReturnValueOnce({ok: true});
+    GhServiceMock.createRelease.mockReturnValueOnce({ok: true, data: ''});
+
+    service.applyReleaseChangelog({
+      tagPrefix: 'v',
+      nextVersion: '1.0.0',
+      major: '1',
+      minor: '0',
+      changelogFile: 'CHANGELOG.md',
+      refName: 'main',
+      overrideTag: false,
+    });
+
+    expect(writeFileSync).toHaveBeenCalledWith(
+      join(cwd, 'CHANGELOG.md'),
+      expect.not.stringContaining('### '),
+    );
+  });
+
+  it('Should separate multiple entries in same section with newline', () => {
+    const firstHash = faker.string.alpha(40);
+    const secondHash = faker.string.alpha(40);
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
+      ok: true as const,
+      data: [
+        {
+          hash: firstHash,
+          type: 'feat',
+          scope: undefined,
+          breaking: false,
+          description: 'first feature',
+        },
+        {
+          hash: secondHash,
+          type: 'feat',
+          scope: undefined,
+          breaking: false,
+          description: 'second feature',
+        },
+      ],
+    });
+    vi.mocked(existsSync).mockReturnValueOnce(false);
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+    GitServiceMock.apply.mockReturnValueOnce({ok: true});
+    GhServiceMock.createRelease.mockReturnValueOnce({ok: true, data: ''});
+
+    service.applyReleaseChangelog({
+      tagPrefix: 'v',
+      nextVersion: '1.0.0',
+      major: '1',
+      minor: '0',
+      changelogFile: 'CHANGELOG.md',
+      refName: 'main',
+      overrideTag: false,
+    });
+
+    expect(writeFileSync).toHaveBeenCalledWith(
+      join(cwd, 'CHANGELOG.md'),
+      expect.stringContaining(
+        `* feat: first feature (${firstHash})\n* feat: second feature (${secondHash})`,
+      ),
+    );
+  });
+
+  it('Should include breaking change marker in features section', () => {
+    const commitHash = faker.string.alpha(40);
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
+      ok: true as const,
+      data: [
+        {
+          hash: commitHash,
+          type: 'feat',
+          scope: 'api',
+          breaking: true,
+          description: 'breaking feature',
+        },
+      ],
+    });
+    vi.mocked(existsSync).mockReturnValueOnce(false);
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+    GitServiceMock.apply.mockReturnValueOnce({ok: true});
+    GhServiceMock.createRelease.mockReturnValueOnce({ok: true, data: ''});
+
+    service.applyReleaseChangelog({
+      tagPrefix: 'v',
+      nextVersion: '1.0.0',
+      major: '1',
+      minor: '0',
+      changelogFile: 'CHANGELOG.md',
+      refName: 'main',
+      overrideTag: false,
+    });
+
+    expect(writeFileSync).toHaveBeenCalledWith(
+      join(cwd, 'CHANGELOG.md'),
+      expect.stringContaining(`* feat(api)!: breaking feature (${commitHash})`),
+    );
+  });
+
+  it('Should include changelog header with date in written content', () => {
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
+      ok: true as const,
+      data: [
+        {
+          hash: faker.string.alpha(40),
+          type: 'fix',
+          scope: undefined,
+          breaking: false,
+          description: 'bug fix',
+        },
+      ],
+    });
+    vi.mocked(existsSync).mockReturnValueOnce(false);
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+    GitServiceMock.apply.mockReturnValueOnce({ok: true});
+    GhServiceMock.createRelease.mockReturnValueOnce({ok: true, data: ''});
+
+    service.applyReleaseChangelog({
+      tagPrefix: 'v',
+      nextVersion: '1.0.0',
+      major: '1',
+      minor: '0',
+      changelogFile: 'CHANGELOG.md',
+      refName: 'main',
+      overrideTag: false,
+    });
+
+    expect(writeFileSync).toHaveBeenCalledWith(
+      join(cwd, 'CHANGELOG.md'),
+      expect.stringMatching(/^## v1\.0\.0 \(\d{4}-\d{2}-\d{2}\)\n\n/),
+    );
+  });
+
+  it('Should not include breaking changes section for non-breaking commits', () => {
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
+      ok: true as const,
+      data: [
+        {
+          hash: faker.string.alpha(40),
+          type: 'feat',
+          scope: undefined,
+          breaking: false,
+          description: 'simple feature',
+        },
+      ],
+    });
+    vi.mocked(existsSync).mockReturnValueOnce(false);
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+    GitServiceMock.apply.mockReturnValueOnce({ok: true});
+    GhServiceMock.createRelease.mockReturnValueOnce({ok: true, data: ''});
+
+    service.applyReleaseChangelog({
+      tagPrefix: 'v',
+      nextVersion: '1.0.0',
+      major: '1',
+      minor: '0',
+      changelogFile: 'CHANGELOG.md',
+      refName: 'main',
+      overrideTag: false,
+    });
+
+    expect(writeFileSync).toHaveBeenCalledWith(
+      join(cwd, 'CHANGELOG.md'),
+      expect.not.stringContaining('### ⚠ BREAKING CHANGES'),
+    );
+  });
+
+  it('Should prepend new entry before existing changelog content', () => {
+    const existingContent = '# Old Changelog';
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
+      ok: true as const,
+      data: [
+        {
+          hash: faker.string.alpha(40),
+          type: 'fix',
+          scope: undefined,
+          breaking: false,
+          description: 'bug fix',
+        },
+      ],
+    });
+    vi.mocked(existsSync).mockReturnValueOnce(true);
+    vi.mocked(readFileSync).mockReturnValueOnce(existingContent);
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+    GitServiceMock.apply.mockReturnValueOnce({ok: true});
+    GhServiceMock.createRelease.mockReturnValueOnce({ok: true, data: ''});
+
+    service.applyReleaseChangelog({
+      tagPrefix: 'v',
+      nextVersion: '1.0.0',
+      major: '1',
+      minor: '0',
+      changelogFile: 'CHANGELOG.md',
+      refName: 'main',
+      overrideTag: false,
+    });
+
+    expect(writeFileSync).toHaveBeenCalledWith(
+      join(cwd, 'CHANGELOG.md'),
+      expect.stringContaining(existingContent),
+    );
   });
 });

@@ -72,3 +72,6 @@ lib-cov
 
 # Release notes tmp file
 .release-notes.tmp.md
+
+# LLM
+.serena

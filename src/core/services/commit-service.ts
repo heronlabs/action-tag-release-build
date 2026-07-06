@@ -5,7 +5,7 @@ import {Semantic} from '../types/semantic';
 
 export class CommitService {
   private parseCommit(subject: string) {
-    const match = subject.match(/^(\w+)(?:\(([^)]+)\))?(!)?\s*:\s*(.*)$/);
+    const match = subject.match(/^(\w+)(?:\(([^)]+)\))?(!)?\s*:\s*(.*)/);
     if (!match) {
       return {
         type: 'other' as CommitType,
@@ -13,7 +13,7 @@ export class CommitService {
         description: subject,
       };
     }
-    const [, type = 'other', scope, bang, description] = match;
+    const [, type, scope, bang, description] = match;
     return {
       type: type as CommitType,
       scope,

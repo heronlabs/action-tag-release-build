@@ -24,7 +24,7 @@ The bump is driven by the `semantic` input. When `semantic` is omitted, the bump
 Driven by `workflow_dispatch` with a `semantic` choice — the pattern used across the heronlabs repos.
 
 ```yaml
-name: '[ CD ] | Tags'
+name: 'Continuous Deployment'
 
 on:
   workflow_dispatch:
@@ -46,7 +46,7 @@ jobs:
   release:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           token: ${{ secrets.PAT }}
@@ -69,11 +69,12 @@ The `id: version` step exposes the `version`, `tag`, `tag_major`, and `tag_minor
 
 ### Minimal
 
+When `semantic` is omitted the bump is inferred from the HEAD commit.
+
 ```yaml
 - uses: heronlabs/action-tag-release-build@v4
   with:
     gh_token: ${{ secrets.PAT }}
-    semantic: patch
 ```
 
 ### With package.json sync
@@ -109,6 +110,8 @@ Requires `jq` on the runner (GitHub-hosted runners include it).
 | `semantic` | Semver bump type: `major`, `minor`, or `patch`. When empty, the bump is inferred from the merge/HEAD commit (Conventional Commits), defaulting to `patch` when unclear. | No | `` (inferred) |
 | `working-directory` | Sub-directory to operate in (for monorepos). | No | `.` |
 | `version_file` | File to read and write the version number. | No | `version.txt` |
+| `changelog_file` | Changelog file to prepend release notes into. | No | `CHANGELOG.md` |
+| `tag_prefix` | Prefix for created tags (e.g. `v` produces `v1.2.3`). | No | `v` |
 | `bump_npm` | Also bump `package.json` using `npm version`. Set up Node with `actions/setup-node` before this step. | No | `false` |
 | `bump_claude` | Sync the version into Claude Code plugin files (`plugin.json` + `marketplace.json`). Requires `jq`. | No | `false` |
 | `plugin_dir` | Directory containing the Claude plugin files. | No | `.` |
@@ -132,36 +135,57 @@ permissions:
 
 ## Architecture
 
-Maps to the `BumpCommand` interface — single entry point orchestrating services.
+TypeScript CLI published as `@heronlabs/bump`, wrapped by `entry-point.sh` for the composite action.
 
 ```
 src/
-  application/cli/              # Single entry point called from action.yml
-    bump-command.sh              # Full pipeline: bump → sync → notes → commit → tag → release
-  core/services/                 # Domain rules (no side effects)
-    tagger-service.sh            # Tagger: classify_commit, calculate
-    txt-service.sh               # Txt: getVersion, setVersion
-  infrastructure/                # External systems
-    git/git-ops-service.sh       # Git: getLastCommit, apply
-    github/github-service.sh     # Github: generate_release_notes, update_changelog, create_github_release
-    node/bumper-node-service.sh  # Bumper: getName, bumpVersion (package.json)
-    claude/bumper-claude-service.sh  # Bumper: getName, bumpVersion (plugin.json + marketplace.json)
+  cli.ts                              # CLI entry point + CommandsFactory (wires all services)
+  application/cli/
+    bump-command.ts                   # BumpCommand — orchestrates the full pipeline
+    types/
+      input-bump.ts                   # BumpInputs type
+      output-bump.ts                  # BumpOutputs type
+  core/
+    interfaces/
+      bumper.ts                       # Bumper interface
+    services/
+      semver-service.ts               # Read version file, calculate next semver, write version file
+      commit-service.ts               # Parse Conventional Commits, classify last commit type
+      changelog-service.ts            # Generate release notes, update changelog, tag + push + release
+      bumpers/
+        npm-bumper-service.ts         # Sync version into package.json
+        claude-bumper-service.ts      # Sync version into Claude Code plugin files
+    types/
+      commit-types.ts                 # CommitTypeLabels mapping
+      parsed-commit.ts                # ParsedDescription type
+      semantic.ts                     # Semantic enum
+      bumpers.ts                      # Bumper name type
+  infrastructure/
+    git/
+      git-service.ts                  # Git commands: log, describe, tag, push
+    gh/
+      gh-service.ts                   # GitHub CLI: release create
+    terminal/
+      child-process-service.ts        # Shell command execution (exec + execChain)
 ```
 
 ## How it works
 
-**Bump-command** — the single entry point called from `action.yml`. Orchestrates the full pipeline:
+**`entry-point.sh`** — thin shell wrapper called by `action.yml`. Runs `npx @heronlabs/bump` and maps stdout lines to `GITHUB_OUTPUT`.
 
-1. Reads the current version from `version.txt` (`Txt.getVersion`)
-2. Resolves the bump type: explicit `semantic` input, or inferred from the HEAD commit via Conventional Commits (`Tagger.classifyCommit` + `Git.getLastCommit`)
-3. Computes the next semver (`Tagger.calculate`)
-4. Writes the new version to `version.txt` (`Txt.setVersion`)
-5. Syncs the version to enabled bumpers — `package.json` (node) and/or Claude Code plugin files (claude) (`Bumper.bumpVersion`)
-6. Generates structured release notes from git log and prepends them to `CHANGELOG.md` (`Github.generate_release_notes` + `update_changelog`) — **before the git commit**, so the changelog is committed alongside the version bump
-7. Commits all changes (`git add -A`), tags (`vX.Y.Z`), and pushes; when `override_tag` is `true`, also force-moves the floating major (`vX`) and minor (`vX.Y`) tags (`Git.apply`)
-8. Creates the GitHub release with populated notes after the tag exists on the remote (`Github.create_github_release`)
+**`CommandsFactory`** (`src/cli.ts`) — wires all services with their dependencies, reads env vars (`BUMP_NPM`, `BUMP_CLAUDE`, `SEMANTIC`, etc.), and maps them to a `BumpInputs` object.
 
-Outputs `version`, `tag`, `tag_major`, and `tag_minor` to `GITHUB_OUTPUT`.
+**`BumpCommand.run()`** — the orchestrator:
+
+1. **Calculate next version** — `SemverService.calculateNextVersion()` reads `version.txt`, resolves the bump type (explicit `semantic` input or inferred from the HEAD commit via `CommitService.classifyLastCommit()`), computes the next semver, and writes it back to `version.txt`.
+2. **Sync bumpers** — each enabled `Bumper` (npm, claude) syncs the new version into its target file (`package.json`, `plugin.json` + `marketplace.json`).
+3. **Release** — `ChangelogService.applyReleaseChangelog()` runs three steps:
+   - **Generate release notes** — parses commits since the last tag via `CommitService.parseDescriptionSince()`, groups by Conventional Commit type, and formats entries with breaking change markers.
+   - **Update changelog** — prepends the new entry (with date header) to `CHANGELOG.md`.
+   - **Tag and push** — `GitService.apply()` commits all changes (`[skip ci]`), creates the annotated tag (`vX.Y.Z`), optionally force-moves floating major/minor tags, and pushes with `--follow-tags`.
+   - **Create GitHub release** — `GhService.createRelease()` publishes the release with the generated notes.
+
+Outputs `version`, `tag`, `tag_major`, and `tag_minor` to stdout — one per line — which `entry-point.sh` redirects to `GITHUB_OUTPUT`.
 
 ## Notes
 

@@ -18,6 +18,11 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+
 jobs:
   release:
     runs-on: ubuntu-24.04
@@ -26,7 +31,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.node-version'
+          cache: 'pnpm'
+
       - uses: ./
         with:
-          github-token: ${{ github.token }}
-          spec: ${{ inputs.spec }}
+          gh_token: ${{ github.token }}
+          semantic: ${{ inputs.spec }}
+          override_tag: true
+          bump_npm: true

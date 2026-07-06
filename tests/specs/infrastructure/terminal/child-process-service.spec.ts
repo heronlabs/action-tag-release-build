@@ -29,6 +29,29 @@ describe('Given a child process service', () => {
       });
     });
 
+    it('Should trim whitespace from exec output', () => {
+      const rawData = '  \nEverything up to date\n  ';
+      vi.mocked(execSync).mockImplementationOnce(() => rawData);
+
+      const output = service.exec('git status');
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: 'Everything up to date',
+      });
+    });
+
+    it('Should pass correct options to execSync in exec', () => {
+      vi.mocked(execSync).mockImplementationOnce(() => 'OK');
+
+      service.exec('git status');
+
+      expect(execSync).toHaveBeenCalledWith('git status', {
+        cwd,
+        encoding: 'utf8',
+      });
+    });
+
     it('Should return error on execution', () => {
       const error = new Error(faker.lorem.sentence());
       vi.mocked(execSync).mockImplementationOnce(() => {
@@ -61,6 +84,30 @@ describe('Given a child process service', () => {
         ok: true,
         data: 'Everything up to date',
         execChain: expect.any(Function),
+      });
+    });
+
+    it('Should trim whitespace from execChain output', () => {
+      const rawData = '  \nPushed\n  ';
+      vi.mocked(execSync).mockImplementationOnce(() => rawData);
+
+      const output = service.execChain('git push');
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: 'Pushed',
+        execChain: expect.any(Function),
+      });
+    });
+
+    it('Should pass correct options to execSync in execChain', () => {
+      vi.mocked(execSync).mockImplementationOnce(() => 'Added');
+
+      service.execChain('git add -A');
+
+      expect(execSync).toHaveBeenCalledWith('git add -A', {
+        cwd,
+        encoding: 'utf8',
       });
     });
 

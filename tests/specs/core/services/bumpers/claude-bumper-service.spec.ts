@@ -39,7 +39,8 @@ describe('Given a claude bumper service', () => {
     );
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    const output = service.bump(faker.system.semver());
+    const newVersion = faker.system.semver();
+    const output = service.bump(newVersion);
 
     expect(output).toStrictEqual({
       ok: true,
@@ -47,12 +48,10 @@ describe('Given a claude bumper service', () => {
     });
   });
 
-  it('Should skip version in both plugin.json and marketplace.json', () => {
-    const version = faker.system.semver();
-
+  it('Should write new version in both plugin.json', () => {
     const pluginJson = {
       name: faker.lorem.word(),
-      version,
+      version: faker.system.semver(),
     };
     vi.mocked(existsSync).mockReturnValueOnce(true);
     vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(pluginJson));
@@ -70,12 +69,130 @@ describe('Given a claude bumper service', () => {
     );
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    const output = service.bump(version);
+    const newVersion = faker.system.semver();
+    service.bump(newVersion);
+
+    expect(writeFileSync).toHaveBeenNthCalledWith(
+      1,
+      join(cwd, 'plugin.json'),
+      JSON.stringify({...pluginJson, version: newVersion}, null, 2) + '\n',
+    );
+  });
+
+  it('Should write new version in marketplace.json', () => {
+    const pluginJson = {
+      name: faker.lorem.word(),
+      version: faker.system.semver(),
+    };
+    vi.mocked(existsSync).mockReturnValueOnce(true);
+    vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(pluginJson));
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+    const marketplaceJson = [
+      {
+        name: pluginJson.name,
+        version: pluginJson.version,
+      },
+    ];
+    vi.mocked(existsSync).mockReturnValueOnce(true);
+    vi.mocked(readFileSync).mockReturnValueOnce(
+      JSON.stringify(marketplaceJson),
+    );
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+    const newVersion = faker.system.semver();
+    service.bump(newVersion);
+
+    expect(writeFileSync).toHaveBeenNthCalledWith(
+      2,
+      join(cwd, 'marketplace.json'),
+      JSON.stringify([{name: pluginJson.name, version: newVersion}], null, 2) +
+        '\n',
+    );
+  });
+
+  it('Should skip version when already matching in plugin and marketplace', () => {
+    const version = faker.system.semver();
+
+    const pluginJson = {
+      name: faker.lorem.word(),
+      version,
+    };
+    vi.mocked(existsSync).mockReturnValueOnce(true);
+    vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(pluginJson));
+
+    const marketplaceJson = [
+      {
+        name: pluginJson.name,
+        version: pluginJson.version,
+      },
+    ];
+    vi.mocked(existsSync).mockReturnValueOnce(true);
+    vi.mocked(readFileSync).mockReturnValueOnce(
+      JSON.stringify(marketplaceJson),
+    );
+
+    service.bump(version);
+
+    expect(writeFileSync).not.toHaveBeenCalled();
+  });
+
+  it('Should update only plugin.json when marketplace entry version already matches', () => {
+    const pluginJson = {
+      name: faker.lorem.word(),
+      version: faker.system.semver(),
+    };
+    vi.mocked(existsSync).mockReturnValueOnce(true);
+    vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(pluginJson));
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+    const newVersion = faker.system.semver();
+    const marketplaceJson = [
+      {
+        name: pluginJson.name,
+        version: newVersion,
+      },
+    ];
+    vi.mocked(existsSync).mockReturnValueOnce(true);
+    vi.mocked(readFileSync).mockReturnValueOnce(
+      JSON.stringify(marketplaceJson),
+    );
+
+    const output = service.bump(newVersion);
 
     expect(output).toStrictEqual({
       ok: true,
       data: 'OK',
     });
+  });
+
+  it('Should write new version only on plugin.json when marketplace entry version already matches', () => {
+    const pluginJson = {
+      name: faker.lorem.word(),
+      version: faker.system.semver(),
+    };
+    vi.mocked(existsSync).mockReturnValueOnce(true);
+    vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(pluginJson));
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+    const newVersion = faker.system.semver();
+    const marketplaceJson = [
+      {
+        name: pluginJson.name,
+        version: newVersion,
+      },
+    ];
+    vi.mocked(existsSync).mockReturnValueOnce(true);
+    vi.mocked(readFileSync).mockReturnValueOnce(
+      JSON.stringify(marketplaceJson),
+    );
+
+    service.bump(newVersion);
+
+    expect(writeFileSync).toHaveBeenCalledWith(
+      join(cwd, 'plugin.json'),
+      JSON.stringify({...pluginJson, version: newVersion}, null, 2) + '\n',
+    );
   });
 
   it('Should return error plugin.json not found', () => {
