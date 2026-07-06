@@ -2,7 +2,17 @@
 
 set -euo pipefail
 
-output=$(npx --yes "@heronlabs/bump")
+ORIGINAL_DIR="$PWD"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Install dependencies and build the CLI locally instead of fetching from npm
+cd "$SCRIPT_DIR"
+pnpm install --frozen-lockfile
+pnpm build
+
+# Run from the consumer's working directory so process.cwd() resolves correctly
+cd "$ORIGINAL_DIR"
+output=$(node "$SCRIPT_DIR/bin/src/cli.js")
 
 mapfile -t lines <<< "$output"
 

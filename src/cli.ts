@@ -30,10 +30,10 @@ export class CommandsFactory {
 
     const bumpers: Bumper[] = [];
 
-    const bumpNpm = (process.env.BUMP_NPM ?? 'false') === 'false';
+    const bumpNpm = (process.env.BUMP_NPM ?? 'false') === 'true';
     if (bumpNpm) bumpers.push(new NpmService(childProcessService));
 
-    const bumpClaude = (process.env.BUMP_CLAUDE ?? 'false') === 'false';
+    const bumpClaude = (process.env.BUMP_CLAUDE ?? 'false') === 'true';
     if (bumpClaude) bumpers.push(new ClaudeService(cwd));
 
     return new BumpCommand(bumpers, semverService, changelogService);
