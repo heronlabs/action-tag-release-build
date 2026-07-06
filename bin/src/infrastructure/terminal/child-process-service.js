@@ -21,7 +21,11 @@ class ChildProcessService {
     }
     execChain(command) {
         try {
-            const data = (0, node_child_process_1.execSync)(command, { cwd: this.cwd, encoding: 'utf8' })
+            const data = (0, node_child_process_1.execSync)(command, {
+                cwd: this.cwd,
+                encoding: 'utf8',
+                stdio: 'pipe',
+            })
                 .toString()
                 .trim();
             return this.success(data);
@@ -32,7 +36,11 @@ class ChildProcessService {
     }
     exec(command) {
         try {
-            const data = (0, node_child_process_1.execSync)(command, { cwd: this.cwd, encoding: 'utf8' })
+            const data = (0, node_child_process_1.execSync)(command, {
+                cwd: this.cwd,
+                encoding: 'utf8',
+                stdio: 'pipe',
+            })
                 .toString()
                 .trim();
             return { ok: true, data };
