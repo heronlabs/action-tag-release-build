@@ -725,4 +725,105 @@ describe('Full tag-release-build pipeline', () => {
       expect(() => bumpCommand.run(inputs)).toThrow('gh release failed');
     });
   });
+
+  describe('Scenario P: Git apply failure propagates error', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      workDir = testRepo.workDir;
+      bumpCommand = testingCliFactory(workDir);
+    });
+
+    it('Should throw error when git pull fails with non-existent branch', () => {
+      const inputs: BumpInputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'nonexistent-branch',
+        tagPrefix: 'v',
+        overrideTag: false,
+      };
+
+      expect(() => bumpCommand.run(inputs)).toThrow();
+    });
+  });
+
+  describe('Scenario Q: Non-numeric version file throws error', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      workDir = testRepo.workDir;
+      writeFileSync(join(workDir, 'version.txt'), 'abc');
+      bumpCommand = testingCliFactory(workDir);
+    });
+
+    it('Should throw error when version file has no numeric part', () => {
+      const inputs: BumpInputs = {
+        semantic: 'major',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      };
+
+      expect(() => bumpCommand.run(inputs)).toThrow();
+    });
+  });
+
+  describe('Scenario R: Non-matching tag prefix falls back to full log', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      workDir = testRepo.workDir;
+      bumpCommand = testingCliFactory(workDir);
+    });
+
+    it('Should bump when no tags match the prefix', () => {
+      const inputs: BumpInputs = {
+        semantic: 'major',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'z',
+        overrideTag: false,
+      };
+
+      bumpCommand.run(inputs);
+
+      const version = readFileSync(join(workDir, 'version.txt'), 'utf8').trim();
+      expect(version).toBe('2.0.0');
+    });
+
+    it('Should include feat commit in CHANGELOG even with non-matching tag prefix', () => {
+      const inputs: BumpInputs = {
+        semantic: 'major',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'z',
+        overrideTag: false,
+      };
+
+      bumpCommand.run(inputs);
+
+      const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
+      expect(changelog).toContain('feat: add thing');
+    });
+  });
 });
