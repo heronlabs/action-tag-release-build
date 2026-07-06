@@ -2,17 +2,13 @@
 
 set -euo pipefail
 
-ORIGINAL_DIR="$PWD"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Install dependencies and build the CLI locally instead of fetching from npm
-cd "$SCRIPT_DIR"
-pnpm install --frozen-lockfile
-pnpm build
+# Read the version from package.json so the CLI version matches the action version
+VERSION="$(node -p "require('$SCRIPT_DIR/package.json').version")"
 
-# Run from the consumer's working directory so process.cwd() resolves correctly
-cd "$ORIGINAL_DIR"
-output=$(node "$SCRIPT_DIR/bin/src/cli.js")
+# Run the published CLI directly via npx — no local install or build needed.
+output=$(npx --yes "@heronlabs/bump@$VERSION")
 
 mapfile -t lines <<< "$output"
 
