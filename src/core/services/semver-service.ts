@@ -7,6 +7,12 @@ export class SemverService {
   private calculate(version: string, semantic: string) {
     try {
       const numeric = version.replace(/^\D+/, '');
+      if (!numeric) {
+        return {
+          ok: false as const,
+          error: new Error(`version '${version}' has no numeric part`),
+        };
+      }
       const [major = '0', minor = '0', patch = '0'] = numeric.split('.');
 
       const m = parseInt(major, 10);

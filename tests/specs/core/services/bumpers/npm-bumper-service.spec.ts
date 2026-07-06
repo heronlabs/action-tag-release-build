@@ -27,6 +27,21 @@ describe('Given a npm bumper service', () => {
       data: npmVersionResult,
     });
   });
+
+  it('Should call npm version command with correct arguments', () => {
+    const version = faker.system.semver();
+    ChildProcessServiceMock.exec.mockReturnValueOnce({
+      ok: true,
+      data: 'OK',
+    });
+
+    service.bump(version);
+
+    expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith(
+      `npm version "${version}" --no-git-tag-version`,
+    );
+  });
+
   it('Should return error when npm version command fails', () => {
     const error = new Error(faker.lorem.sentence());
     ChildProcessServiceMock.exec.mockReturnValueOnce({

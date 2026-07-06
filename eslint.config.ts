@@ -54,6 +54,7 @@ export default defineConfig([
       'reports/',
       'pnpm-lock.yaml',
       '.serena/',
+      '.stryker-tmp/',
     ],
   },
 ]);

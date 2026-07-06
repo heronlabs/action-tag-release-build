@@ -6,13 +6,10 @@ export class GitService {
   }
 
   public getDescriptionSince(tagPrefix: string) {
-    let since = '';
     const previousTag = this.childProcessService.exec(
       `git describe --tags --abbrev=0 --match "${tagPrefix}*" HEAD`,
     );
-    if (previousTag.ok) since = previousTag.data;
-
-    const range = since ? `${since}..HEAD` : '';
+    const range = previousTag.ok ? `${previousTag.data}..HEAD` : '';
 
     return this.childProcessService.exec(
       `git log --pretty=format:"%H %s" ${range}`,
@@ -57,7 +54,7 @@ export class GitService {
 
     const push = chain
       .execChain(
-        `git tag -fa "${!tags.major}" -m "Latest ${!tags.major}.x.x release"`,
+        `git tag -fa "${tags.major}" -m "Latest ${tags.major}.x.x release"`,
       )
       .execChain(
         `git tag -fa "${tags.minor}" -m "Latest ${tags.minor}.x release"`,

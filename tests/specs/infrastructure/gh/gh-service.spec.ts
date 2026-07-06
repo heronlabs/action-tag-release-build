@@ -1,4 +1,5 @@
 import {writeFileSync} from 'node:fs';
+import {join} from 'node:path';
 
 import {faker} from '@faker-js/faker';
 
@@ -35,6 +36,42 @@ describe('Given a gh service', () => {
       ok: true,
       data: 'OK',
     });
+  });
+
+  it('Should write release notes to correct temp file path with encoding', () => {
+    ChildProcessServiceMock.exec.mockReturnValueOnce({
+      ok: true,
+      data: 'OK',
+    });
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+    const tag = faker.string.alpha(2);
+    const releaseNotes = faker.lorem.paragraph();
+    service.createRelease(tag, releaseNotes);
+
+    const expectedPath = join(cwd, '.release-notes.tmp.md');
+    expect(writeFileSync).toHaveBeenCalledWith(
+      expectedPath,
+      releaseNotes,
+      'utf8',
+    );
+  });
+
+  it('Should call gh release create with correct command', () => {
+    ChildProcessServiceMock.exec.mockReturnValueOnce({
+      ok: true,
+      data: 'OK',
+    });
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+    const tag = faker.string.alpha(2);
+    const releaseNotes = faker.lorem.paragraph();
+    service.createRelease(tag, releaseNotes);
+
+    const expectedPath = join(cwd, '.release-notes.tmp.md');
+    expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith(
+      `gh release create "${tag}" --title "${tag}" --notes-file "${expectedPath}"`,
+    );
   });
 
   it('Should return error creating release notes tmp file', () => {

@@ -125,6 +125,133 @@ describe('Given a commit service', () => {
       });
     });
 
+    it('Should filter empty and whitespace-only lines from commit data', () => {
+      const hash = faker.string.alpha(40);
+      const hash2 = faker.string.alpha(40);
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: `${hash} feat: add feature\n\n  \n${hash2} fix: fix bug`,
+      });
+
+      const tagPrefix = faker.string.alpha();
+      const output = service.parseDescriptionSince(tagPrefix);
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: [
+          {
+            hash,
+            type: 'feat',
+            scope: undefined,
+            breaking: false,
+            description: 'add feature',
+          },
+          {
+            hash: hash2,
+            type: 'fix',
+            scope: undefined,
+            breaking: false,
+            description: 'fix bug',
+          },
+        ],
+      });
+    });
+
+    it('Should not match conventional commit pattern when not at start of subject', () => {
+      const hash = faker.string.alpha(40);
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: `${hash} prefix text feat: add feature`,
+      });
+
+      const tagPrefix = faker.string.alpha();
+      const output = service.parseDescriptionSince(tagPrefix);
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: [
+          {
+            hash,
+            type: 'other',
+            breaking: false,
+            description: 'prefix text feat: add feature',
+          },
+        ],
+      });
+    });
+
+    it('Should match conventional commit without space after colon', () => {
+      const hash = faker.string.alpha(40);
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: `${hash} feat:message`,
+      });
+
+      const tagPrefix = faker.string.alpha();
+      const output = service.parseDescriptionSince(tagPrefix);
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: [
+          {
+            hash,
+            type: 'feat',
+            scope: undefined,
+            breaking: false,
+            description: 'message',
+          },
+        ],
+      });
+    });
+
+    it('Should match conventional commit with space before colon', () => {
+      const hash = faker.string.alpha(40);
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: `${hash} feat : message`,
+      });
+
+      const tagPrefix = faker.string.alpha();
+      const output = service.parseDescriptionSince(tagPrefix);
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: [
+          {
+            hash,
+            type: 'feat',
+            scope: undefined,
+            breaking: false,
+            description: 'message',
+          },
+        ],
+      });
+    });
+
+    it('Should match conventional commit with trailing text after message', () => {
+      const hash = faker.string.alpha(40);
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: `${hash} feat: add feature more text here`,
+      });
+
+      const tagPrefix = faker.string.alpha();
+      const output = service.parseDescriptionSince(tagPrefix);
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: [
+          {
+            hash,
+            type: 'feat',
+            scope: undefined,
+            breaking: false,
+            description: 'add feature more text here',
+          },
+        ],
+      });
+    });
+
     it('Should return error parsing descriptions', () => {
       GitServiceMock.getDescriptionSince.mockReturnValueOnce({
         ok: true,
@@ -210,6 +337,34 @@ describe('Given a commit service', () => {
       expect(output).toStrictEqual({
         ok: false,
         error,
+      });
+    });
+
+    it('Should filter whitespace-only lines in last commit', () => {
+      GitServiceMock.getLastCommit.mockReturnValueOnce({
+        ok: true,
+        data: '   \nfeat: add feature',
+      });
+
+      const output = service.classifyLastCommit();
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: 'minor',
+      });
+    });
+
+    it('Should return patch when all lines are whitespace only', () => {
+      GitServiceMock.getLastCommit.mockReturnValueOnce({
+        ok: true,
+        data: '   \n\t\n',
+      });
+
+      const output = service.classifyLastCommit();
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: 'patch',
       });
     });
 
