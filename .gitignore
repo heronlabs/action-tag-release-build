@@ -34,7 +34,6 @@ Thumbs.db
 *.tgz
 
 # TypeScript / build info
-bin/
 *.tsbuildinfo
 
 # IDE / Editor

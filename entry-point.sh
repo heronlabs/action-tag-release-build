@@ -4,11 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Read the version from package.json so the CLI version matches the action version
-VERSION="$(node -p "require('$SCRIPT_DIR/package.json').version")"
-
-# Run the published CLI directly via npx — no local install or build needed.
-output=$(npx --yes "@heronlabs/bump@$VERSION")
+output=$(node "$SCRIPT_DIR/bin/src/cli.js")
 
 mapfile -t lines <<< "$output"
 
