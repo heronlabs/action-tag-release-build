@@ -1,5 +1,11 @@
 import {execSync} from 'node:child_process';
-import {readFileSync, writeFileSync} from 'node:fs';
+import {
+  chmodSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import {join} from 'node:path';
 
 import {BumpCommand} from '../../src/application/cli/bump-command';
@@ -824,6 +830,206 @@ describe('Full tag-release-build pipeline', () => {
 
       const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
       expect(changelog).toContain('feat: add thing');
+    });
+  });
+
+  describe('Scenario S: Real GhService fails in test repo without GitHub remote', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      workDir = testRepo.workDir;
+      bumpCommand = testingCliFactory(workDir, {useRealGhService: true});
+    });
+
+    it('Should throw error when real gh CLI cannot resolve repository', () => {
+      const inputs: BumpInputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      };
+
+      expect(() => bumpCommand.run(inputs)).toThrow();
+    });
+  });
+
+  describe('Scenario S2: Real GhService fails when release notes path is a directory', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      workDir = testRepo.workDir;
+      mkdirSync(join(workDir, '.release-notes.tmp.md'));
+      bumpCommand = testingCliFactory(workDir, {useRealGhService: true});
+    });
+
+    it('Should throw error when release notes temp file is a directory', () => {
+      const inputs: BumpInputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      };
+
+      expect(() => bumpCommand.run(inputs)).toThrow();
+    });
+  });
+
+  describe('Scenario T: CHANGELOG.md is a directory throws update error', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      workDir = testRepo.workDir;
+      mkdirSync(join(workDir, 'CHANGELOG.md'));
+      bumpCommand = testingCliFactory(workDir);
+    });
+
+    it('Should throw error when CHANGELOG.md is a directory', () => {
+      const inputs: BumpInputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      };
+
+      expect(() => bumpCommand.run(inputs)).toThrow();
+    });
+  });
+
+  describe('Scenario U: version.txt is a directory throws read error', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      workDir = testRepo.workDir;
+      // Remove the file and create a directory with the same name
+      const versionPath = join(workDir, 'version.txt');
+      rmSync(versionPath);
+      mkdirSync(versionPath);
+      bumpCommand = testingCliFactory(workDir);
+    });
+
+    it('Should throw error when version file is a directory', () => {
+      const inputs: BumpInputs = {
+        semantic: 'major',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      };
+
+      expect(() => bumpCommand.run(inputs)).toThrow();
+    });
+  });
+
+  describe('Scenario V: Read-only version file throws write error', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      workDir = testRepo.workDir;
+      const versionPath = join(workDir, 'version.txt');
+      writeFileSync(versionPath, '1.2.3');
+      chmodSync(versionPath, 0o444);
+      bumpCommand = testingCliFactory(workDir);
+    });
+
+    it('Should throw error when version file is read-only', () => {
+      const inputs: BumpInputs = {
+        semantic: 'major',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      };
+
+      expect(() => bumpCommand.run(inputs)).toThrow();
+    });
+  });
+
+  describe('Scenario W: Corrupt git HEAD fails classifyLastCommit with empty semantic', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      workDir = testRepo.workDir;
+      rmSync(join(workDir, '.git', 'HEAD'));
+      bumpCommand = testingCliFactory(workDir);
+    });
+
+    it('Should throw error when git HEAD is missing and semantic is empty', () => {
+      const inputs: BumpInputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      };
+
+      expect(() => bumpCommand.run(inputs)).toThrow();
+    });
+  });
+
+  describe('Scenario X: Corrupt git HEAD fails changelog generation with explicit semantic', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      workDir = testRepo.workDir;
+      rmSync(join(workDir, '.git', 'HEAD'));
+      bumpCommand = testingCliFactory(workDir);
+    });
+
+    it('Should throw error when git HEAD is missing and semantic is explicit', () => {
+      const inputs: BumpInputs = {
+        semantic: 'major',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      };
+
+      expect(() => bumpCommand.run(inputs)).toThrow();
     });
   });
 });

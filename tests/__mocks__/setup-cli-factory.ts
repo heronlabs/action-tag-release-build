@@ -6,6 +6,7 @@ import {ChangelogService} from '../../src/core/services/changelog-service';
 import {CommitService} from '../../src/core/services/commit-service';
 import {SemverService} from '../../src/core/services/semver-service';
 import {Bumpers} from '../../src/core/types/bumpers';
+import {GhService} from '../../src/infrastructure/gh/gh-service';
 import {GitService} from '../../src/infrastructure/git/git-service';
 import {ChildProcessService} from '../../src/infrastructure/terminal/child-process-service';
 import {GhServiceMock, GhServiceMoq} from './infrastructure/gh-service-mock';
@@ -13,24 +14,31 @@ import {GhServiceMock, GhServiceMoq} from './infrastructure/gh-service-mock';
 export interface TestingCliOptions {
   bumpers?: Bumpers[];
   ghCreateReleaseReturn?: {ok: true} | {ok: false; error: Error};
+  useRealGhService?: boolean;
 }
 
 export const testingCliFactory = (
   workDir: string,
   opts: TestingCliOptions = {},
 ): BumpCommand => {
-  GhServiceMock.createRelease.mockReturnValue(
-    opts.ghCreateReleaseReturn ?? {ok: true},
-  );
-
   const childProcessService = new ChildProcessService(workDir);
   const gitService = new GitService(childProcessService);
+
+  const ghService = opts.useRealGhService
+    ? new GhService(workDir, childProcessService)
+    : (() => {
+        GhServiceMock.createRelease.mockReturnValue(
+          opts.ghCreateReleaseReturn ?? {ok: true},
+        );
+        return GhServiceMoq;
+      })();
+
   const commitService = new CommitService(gitService);
   const semverService = new SemverService(workDir, commitService);
   const changelogService = new ChangelogService(
     workDir,
     gitService,
-    GhServiceMoq,
+    ghService,
     commitService,
   );
 

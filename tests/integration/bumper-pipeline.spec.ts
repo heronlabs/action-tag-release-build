@@ -213,4 +213,29 @@ describe('Bumper integration tests', () => {
       expect(() => bumpCommand.run(baseInputs)).toThrow();
     });
   });
+
+  describe('Scenario U: ClaudeService bumper fails with invalid plugin.json content', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      workDir = testRepo.workDir;
+
+      writeFileSync(join(workDir, 'plugin.json'), 'not valid json');
+      const marketplace = [{name: 'x', version: '1.2.3'}];
+      writeFileSync(
+        join(workDir, 'marketplace.json'),
+        JSON.stringify(marketplace, null, 2) + '\n',
+      );
+      bumpCommand = testingCliFactory(workDir, {bumpers: ['claude']});
+    });
+
+    it('Should throw error when plugin.json contains invalid JSON', () => {
+      expect(() => bumpCommand.run(baseInputs)).toThrow();
+    });
+  });
 });
