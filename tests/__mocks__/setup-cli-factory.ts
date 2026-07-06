@@ -15,6 +15,10 @@ export interface TestingCliOptions {
   bumpers?: Bumpers[];
   ghCreateReleaseReturn?: {ok: true} | {ok: false; error: Error};
   useRealGhService?: boolean;
+  patchServices?: (services: {
+    gitService: GitService;
+    commitService: CommitService;
+  }) => void;
 }
 
 export const testingCliFactory = (
@@ -41,6 +45,10 @@ export const testingCliFactory = (
     ghService,
     commitService,
   );
+
+  if (opts.patchServices) {
+    opts.patchServices({gitService, commitService});
+  }
 
   const bumpers: Bumper[] = (opts.bumpers ?? []).map(name => {
     if (name === 'npm') return new NpmService(childProcessService);

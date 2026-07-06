@@ -24,7 +24,7 @@ describe('Full tag-release-build pipeline', () => {
     testRepo?.cleanup();
   });
 
-  describe('Scenario A: Minor bump from feat commit', () => {
+  describe('Minor bump from feat commit', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -124,7 +124,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario B: Patch bump from fix commit', () => {
+  describe('Patch bump from fix commit', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -221,7 +221,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario C: Major bump from breaking change', () => {
+  describe('Major bump from breaking change', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -271,7 +271,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario D: Explicit semantic overrides inference', () => {
+  describe('Explicit semantic overrides inference', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -301,7 +301,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario E: Floating tag override', () => {
+  describe('Floating tag override', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -359,7 +359,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario F: Multiple commit types rendered in CHANGELOG', () => {
+  describe('Multiple commit types rendered in CHANGELOG', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -401,7 +401,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario G: Breaking changes section in CHANGELOG', () => {
+  describe('Breaking changes section in CHANGELOG', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -443,7 +443,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario G2: Breaking change with scope renders scope in entry', () => {
+  describe('Breaking change with scope renders scope in entry', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -471,7 +471,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario H: Existing CHANGELOG.md prepends new entry', () => {
+  describe('Existing CHANGELOG.md prepends new entry', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -533,7 +533,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario I: Non-conventional commit produces patch bump', () => {
+  describe('Non-conventional commit produces patch bump', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -589,7 +589,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario J: Commit with scope rendered in CHANGELOG', () => {
+  describe('Commit with scope rendered in CHANGELOG', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -617,7 +617,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario K: Explicit semantic minor overrides inference', () => {
+  describe('Explicit semantic minor overrides inference', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -645,7 +645,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario L: Explicit semantic patch overrides inference', () => {
+  describe('Explicit semantic patch overrides inference', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -673,7 +673,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario M: Empty version file throws error', () => {
+  describe('Empty version file throws error', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -701,7 +701,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario N: Invalid semantic throws error', () => {
+  describe('Invalid semantic throws error', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -728,7 +728,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario O: GitHub release failure throws error', () => {
+  describe('GitHub release failure throws error', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -760,7 +760,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario P: Git apply failure propagates error', () => {
+  describe('Git apply failure propagates error', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -787,7 +787,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario Q: Non-numeric version file throws error', () => {
+  describe('Non-numeric version file throws error', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -815,7 +815,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario R: Non-matching tag prefix falls back to full log', () => {
+  describe('Non-matching tag prefix falls back to full log', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -861,7 +861,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario S: Real GhService fails in test repo without GitHub remote', () => {
+  describe('Real GhService fails in test repo without GitHub remote', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -888,7 +888,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario S2: Real GhService fails when release notes path is a directory', () => {
+  describe('Real GhService fails when release notes path is a directory', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -916,7 +916,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario T: CHANGELOG.md is a directory throws update error', () => {
+  describe('CHANGELOG.md is a directory throws update error', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -944,7 +944,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario U: version.txt is a directory throws read error', () => {
+  describe('version.txt is a directory throws read error', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -975,7 +975,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario V: Read-only version file throws write error', () => {
+  describe('Read-only version file throws write error', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -1005,7 +1005,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario W: Corrupt git HEAD fails classifyLastCommit with empty semantic', () => {
+  describe('Corrupt git HEAD fails classifyLastCommit with empty semantic', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -1033,7 +1033,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario X: Corrupt git HEAD fails changelog generation with explicit semantic', () => {
+  describe('Corrupt git HEAD fails changelog generation with explicit semantic', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -1061,7 +1061,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario Y: Pre-receive hook rejecting push without floating tags', () => {
+  describe('Pre-receive hook rejecting push without floating tags', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -1094,7 +1094,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Scenario Z: Pre-receive hook rejecting push with floating tags', () => {
+  describe('Pre-receive hook rejecting push with floating tags', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
 
@@ -1124,6 +1124,487 @@ describe('Full tag-release-build pipeline', () => {
       };
 
       expect(() => bumpCommand.run(inputs)).toThrow();
+    });
+  });
+
+  describe('Bumper: NpmService updates package.json', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      workDir = testRepo.workDir;
+
+      writeFileSync(
+        join(workDir, 'package.json'),
+        JSON.stringify({name: 'test-pkg', version: '1.2.3'}, null, 2) + '\n',
+      );
+      bumpCommand = testingCliFactory(workDir, {bumpers: ['npm']});
+    });
+
+    it('Should update package.json version from 1.2.3 to 1.3.0', () => {
+      bumpCommand.run({
+        semantic: 'minor',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      });
+
+      const pkg = JSON.parse(
+        readFileSync(join(workDir, 'package.json'), 'utf8'),
+      ) as {version: string};
+      expect(pkg.version).toBe('1.3.0');
+    });
+  });
+
+  describe('Bumper: ClaudeService updates plugin files', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      workDir = testRepo.workDir;
+
+      const plugin = {name: 'my-plugin', version: '1.2.3'};
+      writeFileSync(
+        join(workDir, 'plugin.json'),
+        JSON.stringify(plugin, null, 2) + '\n',
+      );
+      const marketplace = [{name: 'my-plugin', version: '1.2.3'}];
+      writeFileSync(
+        join(workDir, 'marketplace.json'),
+        JSON.stringify(marketplace, null, 2) + '\n',
+      );
+      bumpCommand = testingCliFactory(workDir, {bumpers: ['claude']});
+    });
+
+    it('Should update plugin.json version from 1.2.3 to 1.3.0', () => {
+      bumpCommand.run({
+        semantic: 'minor',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      });
+
+      const plugin = JSON.parse(
+        readFileSync(join(workDir, 'plugin.json'), 'utf8'),
+      ) as {version: string};
+      expect(plugin.version).toBe('1.3.0');
+    });
+
+    it('Should update marketplace.json version from 1.2.3 to 1.3.0', () => {
+      bumpCommand.run({
+        semantic: 'minor',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      });
+
+      const marketplace = JSON.parse(
+        readFileSync(join(workDir, 'marketplace.json'), 'utf8'),
+      ) as Array<{version: string}>;
+      expect(marketplace[0]?.version).toBe('1.3.0');
+    });
+  });
+
+  describe('Bumper: ClaudeService fails without plugin.json', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      workDir = testRepo.workDir;
+      bumpCommand = testingCliFactory(workDir, {bumpers: ['claude']});
+    });
+
+    it('Should throw error when plugin.json is missing', () => {
+      expect(() =>
+        bumpCommand.run({
+          semantic: 'minor',
+          versionFile: 'version.txt',
+          changelogFile: 'CHANGELOG.md',
+          refName: 'main',
+          tagPrefix: 'v',
+          overrideTag: false,
+        }),
+      ).toThrow();
+    });
+  });
+
+  describe('Bumper: ClaudeService fails without marketplace.json', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      workDir = testRepo.workDir;
+
+      const plugin = {name: 'my-plugin', version: '1.2.3'};
+      writeFileSync(
+        join(workDir, 'plugin.json'),
+        JSON.stringify(plugin, null, 2) + '\n',
+      );
+      bumpCommand = testingCliFactory(workDir, {bumpers: ['claude']});
+    });
+
+    it('Should throw error when marketplace.json is missing', () => {
+      expect(() =>
+        bumpCommand.run({
+          semantic: 'minor',
+          versionFile: 'version.txt',
+          changelogFile: 'CHANGELOG.md',
+          refName: 'main',
+          tagPrefix: 'v',
+          overrideTag: false,
+        }),
+      ).toThrow();
+    });
+  });
+
+  describe('Bumper: ClaudeService fails without plugin name', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      workDir = testRepo.workDir;
+
+      const plugin = {version: '1.2.3'};
+      writeFileSync(
+        join(workDir, 'plugin.json'),
+        JSON.stringify(plugin, null, 2) + '\n',
+      );
+      const marketplace = [{name: 'other', version: '1.2.3'}];
+      writeFileSync(
+        join(workDir, 'marketplace.json'),
+        JSON.stringify(marketplace, null, 2) + '\n',
+      );
+      bumpCommand = testingCliFactory(workDir, {bumpers: ['claude']});
+    });
+
+    it('Should throw error when plugin.json has no name field', () => {
+      expect(() =>
+        bumpCommand.run({
+          semantic: 'minor',
+          versionFile: 'version.txt',
+          changelogFile: 'CHANGELOG.md',
+          refName: 'main',
+          tagPrefix: 'v',
+          overrideTag: false,
+        }),
+      ).toThrow();
+    });
+  });
+
+  describe('Bumper: ClaudeService fails without matching marketplace entry', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      workDir = testRepo.workDir;
+
+      const plugin = {name: 'my-plugin', version: '1.2.3'};
+      writeFileSync(
+        join(workDir, 'plugin.json'),
+        JSON.stringify(plugin, null, 2) + '\n',
+      );
+      const marketplace = [{name: 'other-plugin', version: '1.2.3'}];
+      writeFileSync(
+        join(workDir, 'marketplace.json'),
+        JSON.stringify(marketplace, null, 2) + '\n',
+      );
+      bumpCommand = testingCliFactory(workDir, {bumpers: ['claude']});
+    });
+
+    it('Should throw error when marketplace has no matching entry', () => {
+      expect(() =>
+        bumpCommand.run({
+          semantic: 'minor',
+          versionFile: 'version.txt',
+          changelogFile: 'CHANGELOG.md',
+          refName: 'main',
+          tagPrefix: 'v',
+          overrideTag: false,
+        }),
+      ).toThrow();
+    });
+  });
+
+  describe('Bumper: ClaudeService fails with invalid plugin.json', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      workDir = testRepo.workDir;
+
+      writeFileSync(join(workDir, 'plugin.json'), 'not valid json');
+      const marketplace = [{name: 'x', version: '1.2.3'}];
+      writeFileSync(
+        join(workDir, 'marketplace.json'),
+        JSON.stringify(marketplace, null, 2) + '\n',
+      );
+      bumpCommand = testingCliFactory(workDir, {bumpers: ['claude']});
+    });
+
+    it('Should throw error when plugin.json contains invalid JSON', () => {
+      expect(() =>
+        bumpCommand.run({
+          semantic: 'minor',
+          versionFile: 'version.txt',
+          changelogFile: 'CHANGELOG.md',
+          refName: 'main',
+          tagPrefix: 'v',
+          overrideTag: false,
+        }),
+      ).toThrow();
+    });
+  });
+
+  describe('Defensive catch: parseDescriptionSince unexpected exception', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      workDir = testRepo.workDir;
+      bumpCommand = testingCliFactory(workDir, {
+        patchServices: ({gitService}) => {
+          gitService.getDescriptionSince = () => {
+            throw new Error('simulated internal exception');
+          };
+        },
+      });
+    });
+
+    it('Should throw error when getDescriptionSince throws unexpectedly', () => {
+      expect(() =>
+        bumpCommand.run({
+          semantic: 'minor',
+          versionFile: 'version.txt',
+          changelogFile: 'CHANGELOG.md',
+          refName: 'main',
+          tagPrefix: 'v',
+          overrideTag: false,
+        }),
+      ).toThrow();
+    });
+  });
+
+  describe('Defensive catch: classifyLastCommit unexpected exception', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      workDir = testRepo.workDir;
+      bumpCommand = testingCliFactory(workDir, {
+        patchServices: ({gitService}) => {
+          gitService.getLastCommit = () => {
+            throw new Error('simulated internal exception');
+          };
+        },
+      });
+    });
+
+    it('Should throw error when getLastCommit throws unexpectedly', () => {
+      expect(() =>
+        bumpCommand.run({
+          semantic: '',
+          versionFile: 'version.txt',
+          changelogFile: 'CHANGELOG.md',
+          refName: 'main',
+          tagPrefix: 'v',
+          overrideTag: false,
+        }),
+      ).toThrow();
+    });
+  });
+
+  describe('Defensive catch: generateReleaseNotes unexpected exception', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      workDir = testRepo.workDir;
+      bumpCommand = testingCliFactory(workDir, {
+        patchServices: ({commitService}) => {
+          commitService.parseDescriptionSince = () => {
+            throw new Error('simulated internal exception');
+          };
+        },
+      });
+    });
+
+    it('Should throw error when release notes generation throws unexpectedly', () => {
+      expect(() =>
+        bumpCommand.run({
+          semantic: 'minor',
+          versionFile: 'version.txt',
+          changelogFile: 'CHANGELOG.md',
+          refName: 'main',
+          tagPrefix: 'v',
+          overrideTag: false,
+        }),
+      ).toThrow();
+    });
+  });
+
+  describe('Defensive catch: semver calculate unexpected exception', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      workDir = testRepo.workDir;
+      bumpCommand = testingCliFactory(workDir);
+    });
+
+    it('Should throw error when semver calculation throws unexpectedly', () => {
+      vi.spyOn(globalThis, 'parseInt').mockImplementation(() => {
+        throw new Error('simulated parseInt failure');
+      });
+
+      expect(() =>
+        bumpCommand.run({
+          semantic: 'major',
+          versionFile: 'version.txt',
+          changelogFile: 'CHANGELOG.md',
+          refName: 'main',
+          tagPrefix: 'v',
+          overrideTag: false,
+        }),
+      ).toThrow();
+    });
+  });
+
+  describe('Empty commit log produces patch bump', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      workDir = testRepo.workDir;
+      execSync('git commit --allow-empty --allow-empty-message -m ""', {
+        cwd: workDir,
+        stdio: 'pipe',
+      });
+      bumpCommand = testingCliFactory(workDir);
+    });
+
+    it('Should bump to 1.2.4 when commit log is empty', () => {
+      bumpCommand.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      });
+
+      const version = readFileSync(join(workDir, 'version.txt'), 'utf8').trim();
+      expect(version).toBe('1.2.4');
+    });
+  });
+
+  describe('Claude bumper skips update when version already matches', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      workDir = testRepo.workDir;
+
+      const plugin = {name: 'my-plugin', version: '1.3.0'};
+      writeFileSync(
+        join(workDir, 'plugin.json'),
+        JSON.stringify(plugin, null, 2) + '\n',
+      );
+      const marketplace = [{name: 'my-plugin', version: '1.3.0'}];
+      writeFileSync(
+        join(workDir, 'marketplace.json'),
+        JSON.stringify(marketplace, null, 2) + '\n',
+      );
+      bumpCommand = testingCliFactory(workDir, {bumpers: ['claude']});
+    });
+
+    it('Should skip plugin update when version already matches', () => {
+      bumpCommand.run({
+        semantic: 'minor',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      });
+
+      const plugin = JSON.parse(
+        readFileSync(join(workDir, 'plugin.json'), 'utf8'),
+      ) as {version: string};
+      expect(plugin.version).toBe('1.3.0');
+    });
+
+    it('Should skip marketplace update when version already matches', () => {
+      bumpCommand.run({
+        semantic: 'minor',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        refName: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      });
+
+      const marketplace = JSON.parse(
+        readFileSync(join(workDir, 'marketplace.json'), 'utf8'),
+      ) as Array<{version: string}>;
+      expect(marketplace[0]?.version).toBe('1.3.0');
     });
   });
 });
