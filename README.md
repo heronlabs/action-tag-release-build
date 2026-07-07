@@ -53,7 +53,7 @@ jobs:
 
       - run: git pull --rebase origin main
 
-      - uses: heronlabs/action-tag-release-build@v4
+      - uses: heronlabs/action-tag-release-build@v5
         id: version
         with:
           gh_token: ${{ secrets.PAT }}
@@ -72,7 +72,7 @@ The `id: version` step exposes the `version`, `tag`, `tag_major`, and `tag_minor
 When `semantic` is omitted the bump is inferred from the HEAD commit.
 
 ```yaml
-- uses: heronlabs/action-tag-release-build@v4
+- uses: heronlabs/action-tag-release-build@v5
   with:
     gh_token: ${{ secrets.PAT }}
 ```
@@ -80,7 +80,7 @@ When `semantic` is omitted the bump is inferred from the HEAD commit.
 ### With package.json sync
 
 ```yaml
-- uses: heronlabs/action-tag-release-build@v4
+- uses: heronlabs/action-tag-release-build@v5
   with:
     gh_token: ${{ secrets.PAT }}
     semantic: minor
@@ -92,7 +92,7 @@ Requires `actions/setup-node` before this step.
 ### With Claude Code plugin sync
 
 ```yaml
-- uses: heronlabs/action-tag-release-build@v4
+- uses: heronlabs/action-tag-release-build@v5
   with:
     gh_token: ${{ secrets.PAT }}
     semantic: minor

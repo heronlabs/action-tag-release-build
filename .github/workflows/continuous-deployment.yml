@@ -5,7 +5,7 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
-      spec:
+      semantic:
         description: The SEMVER specification.
         required: true
         type: choice
@@ -40,5 +40,5 @@ jobs:
       - uses: ./
         with:
           gh_token: ${{ github.token }}
-          semantic: ${{ inputs.spec }}
+          semantic: ${{ inputs.semantic }}
           bump_npm: true
