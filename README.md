@@ -1,8 +1,10 @@
-# 🏷️ tag-release-build — Bump, tag, release.
+# 🏷️ tag-release-build — Bump, tag, release
 
-[![CI](https://github.com/heronlabs/action-tag-release-build/actions/workflows/continuous-integration.yml/badge.svg)](https://github.com/heronlabs/action-tag-release-build/actions/workflows/continuous-integration.yml)
+[![CI][ci-badge]][ci-url]
+[![License: MIT][license-badge]][license-url]
+[![GitHub Marketplace][marketplace-badge]][marketplace-url]
 
-> Bump `version.txt`, tag the commit, move floating major/minor tags, publish a GitHub release with a CHANGELOG — and optionally sync `package.json` or Claude Code plugin files.
+> **GitHub Action** to bump `version.txt`, tag the commit, move floating major/minor tags, publish a GitHub release with a CHANGELOG — and optionally sync `package.json` or Claude Code plugin files.
 
 The bump is driven by the `semantic` input. When `semantic` is omitted, the bump is **inferred from the merge/HEAD commit** using Conventional Commits — a breaking change (`feat!:`, `fix(api)!:`, or a `BREAKING CHANGE:` body) is `major`, a `feat:` commit is `minor`, and everything else (including unclear messages) falls back to `patch`.
 
@@ -196,3 +198,10 @@ Outputs `version`, `tag`, `tag_major`, and `tag_minor` to stdout — one per lin
 ## License
 
 MIT
+
+[ci-badge]: https://github.com/heronlabs/action-tag-release-build/actions/workflows/continuous-integration.yml/badge.svg
+[ci-url]: https://github.com/heronlabs/action-tag-release-build/actions/workflows/continuous-integration.yml
+[license-badge]: https://img.shields.io/badge/License-MIT-blue.svg
+[license-url]: ./LICENSE
+[marketplace-badge]: https://img.shields.io/badge/GitHub-Marketplace-green.svg
+[marketplace-url]: https://github.com/marketplace/actions/action-tag-release-build
