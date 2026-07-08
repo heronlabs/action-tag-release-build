@@ -1,3 +1,9 @@
+## v5.0.10 (2026-07-08)
+
+### Bug Fixes
+
+* fix: parse marketplace.json as {plugins: [...]} object, not top-level array (#24) (b0b3dc12a2dcb80b9783ffb1c72d4c7112806492)
+
 ## v5.0.9 (2026-07-08)
 
 ### Bug Fixes
