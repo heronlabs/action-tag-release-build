@@ -46,9 +46,8 @@ export class ClaudeService implements Bumper {
         writeFileSync(pluginJson, JSON.stringify(plugin, null, 2) + '\n');
       }
 
-      const marketplace = JSON.parse(readFileSync(marketplaceJson, 'utf8')) as {
-        plugins?: Array<Record<string, unknown>>;
-      };
+      const marketplace: {plugins?: Array<Record<string, unknown>>} =
+        JSON.parse(readFileSync(marketplaceJson, 'utf8'));
 
       if (!marketplace.plugins) {
         return {
