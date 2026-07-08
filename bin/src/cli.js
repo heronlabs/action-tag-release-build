@@ -21,12 +21,12 @@ class CommandsFactory {
         const ghService = new gh_service_1.GhService(cwd, childProcessService);
         const changelogService = new changelog_service_1.ChangelogService(cwd, gitService, ghService, commitService);
         const bumpers = [];
-        const bumpNpm = (process.env.BUMP_NPM ?? 'false') === 'true';
+        const bumpNpm = (process.env.BUMP_NPM || 'false') === 'true';
         if (bumpNpm)
             bumpers.push(new npm_bumper_service_1.NpmService(childProcessService));
-        const bumpClaude = (process.env.BUMP_CLAUDE ?? 'false') === 'true';
+        const bumpClaude = (process.env.BUMP_CLAUDE || 'false') === 'true';
         if (bumpClaude) {
-            const pluginDir = process.env.PLUGIN_DIR ?? '.claude-plugin';
+            const pluginDir = process.env.PLUGIN_DIR || '.claude-plugin';
             bumpers.push(new claude_bumper_service_1.ClaudeService(cwd, pluginDir));
         }
         return new bump_command_1.BumpCommand(bumpers, semverService, changelogService);
@@ -38,11 +38,11 @@ void (async () => {
         const bumpCommand = CommandsFactory.makeBump();
         const inputs = {
             semantic: process.env.SEMANTIC ?? '',
-            versionFile: process.env.VERSION_FILE ?? 'version.txt',
-            changelogFile: process.env.CHANGELOG_FILE ?? 'CHANGELOG.md',
-            refName: process.env.REF_NAME ?? 'main',
-            overrideTag: (process.env.OVERRIDE_TAG ?? 'true') === 'true',
-            tagPrefix: process.env.TAG_PREFIX ?? 'v',
+            versionFile: process.env.VERSION_FILE || 'version.txt',
+            changelogFile: process.env.CHANGELOG_FILE || 'CHANGELOG.md',
+            refName: process.env.REF_NAME || 'main',
+            overrideTag: (process.env.OVERRIDE_TAG || 'true') === 'true',
+            tagPrefix: process.env.TAG_PREFIX || 'v',
         };
         const { version, tag, tagMajor, tagMinor } = bumpCommand.run(inputs);
         process.stdout.write(`${version}\n`);
