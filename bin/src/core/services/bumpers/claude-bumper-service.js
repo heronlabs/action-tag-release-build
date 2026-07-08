@@ -54,7 +54,7 @@ class ClaudeService {
             return { ok: false, error };
         }
     }
-    constructor(cwd, pluginDir = '.claude-plugin') {
+    constructor(cwd, pluginDir) {
         this.cwd = cwd;
         this.pluginDir = pluginDir;
     }

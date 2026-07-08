@@ -11,6 +11,6 @@ export declare class ClaudeService implements Bumper {
         error: unknown;
         data?: undefined;
     };
-    constructor(cwd: string, pluginDir?: string);
+    constructor(cwd: string, pluginDir: string);
 }
 //# sourceMappingURL=claude-bumper-service.d.ts.map
