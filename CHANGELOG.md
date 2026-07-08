@@ -1,3 +1,9 @@
+## v5.0.6 (2026-07-08)
+
+### Bug Fixes
+
+* fix(claude-bumper): accept plugin dir via PLUGIN_DIR env, default .claude-plugin (b127381d14b91a47dfe076e965af612b63759931)
+
 ## v5.0.5 (2026-07-07)
 
 ### Documentation
