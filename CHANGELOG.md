@@ -1,3 +1,9 @@
+## v5.0.7 (2026-07-08)
+
+### Bug Fixes
+
+* fix: remove deprecated shamefully-hoist, tighten dependabot window (#22) (74ee2857ef588d5b7d46d41a400bde6120135e4f)
+
 ## v5.0.6 (2026-07-08)
 
 ### Bug Fixes
