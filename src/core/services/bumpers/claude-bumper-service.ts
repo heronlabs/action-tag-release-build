@@ -75,6 +75,6 @@ export class ClaudeService implements Bumper {
 
   constructor(
     private readonly cwd: string,
-    private readonly pluginDir: string = '.claude-plugin',
+    private readonly pluginDir: string,
   ) {}
 }

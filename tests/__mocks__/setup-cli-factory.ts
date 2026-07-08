@@ -52,7 +52,7 @@ export const testingCliFactory = (
 
   const bumpers: Bumper[] = (opts.bumpers ?? []).map(name => {
     if (name === 'npm') return new NpmService(childProcessService);
-    if (name === 'claude') return new ClaudeService(workDir);
+    if (name === 'claude') return new ClaudeService(workDir, '.claude-plugin');
     throw new Error(`Unknown bumper: ${name}`);
   });
 
