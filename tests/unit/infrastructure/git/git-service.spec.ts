@@ -181,7 +181,7 @@ describe('Given a git service', () => {
       };
       service.apply(input);
 
-      expect(execChainMock).toHaveBeenCalledTimes(9);
+      expect(execChainMock).toHaveBeenCalledTimes(11);
     });
 
     it('Should return error tagging', () => {
@@ -443,6 +443,48 @@ describe('Given a git service', () => {
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         9,
         'git push --follow-tags',
+      );
+    });
+
+    it('Should call git push force for major override tag on tenth step', () => {
+      ChildProcessServiceMock.execChain.mockReturnValue({
+        ok: true as const,
+        data: 'OK',
+        execChain: (nextCommand: string) =>
+          ChildProcessServiceMock.execChain(nextCommand),
+      });
+
+      service.apply({
+        version: '1.2.3',
+        tag: 'v1.2.3',
+        refName: 'main',
+        tags: {major: 'v1', minor: 'v2'},
+      });
+
+      expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
+        10,
+        'git push origin "v1" --force',
+      );
+    });
+
+    it('Should call git push force for minor override tag on eleventh step', () => {
+      ChildProcessServiceMock.execChain.mockReturnValue({
+        ok: true as const,
+        data: 'OK',
+        execChain: (nextCommand: string) =>
+          ChildProcessServiceMock.execChain(nextCommand),
+      });
+
+      service.apply({
+        version: '1.2.3',
+        tag: 'v1.2.3',
+        refName: 'main',
+        tags: {major: 'v1', minor: 'v2'},
+      });
+
+      expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
+        11,
+        'git push origin "v2" --force',
       );
     });
 

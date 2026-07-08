@@ -32,7 +32,9 @@ class GitService {
         const push = chain
             .execChain(`git tag -fa "${tags.major}" -m "Latest ${tags.major}.x.x release"`)
             .execChain(`git tag -fa "${tags.minor}" -m "Latest ${tags.minor}.x release"`)
-            .execChain('git push --follow-tags');
+            .execChain('git push --follow-tags')
+            .execChain(`git push origin "${tags.major}" --force`)
+            .execChain(`git push origin "${tags.minor}" --force`);
         if (!push.ok)
             return { ok: false, error: push.error };
         return { ok: true };
