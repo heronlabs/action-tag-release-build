@@ -1,6 +1,7 @@
 import { Bumper } from '../../interfaces/bumper';
 export declare class ClaudeService implements Bumper {
     private readonly cwd;
+    private readonly pluginDir;
     bump(version: string): {
         ok: true;
         data: string;
@@ -10,6 +11,6 @@ export declare class ClaudeService implements Bumper {
         error: unknown;
         data?: undefined;
     };
-    constructor(cwd: string);
+    constructor(cwd: string, pluginDir?: string);
 }
 //# sourceMappingURL=claude-bumper-service.d.ts.map

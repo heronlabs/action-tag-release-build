@@ -25,8 +25,10 @@ class CommandsFactory {
         if (bumpNpm)
             bumpers.push(new npm_bumper_service_1.NpmService(childProcessService));
         const bumpClaude = (process.env.BUMP_CLAUDE ?? 'false') === 'true';
-        if (bumpClaude)
-            bumpers.push(new claude_bumper_service_1.ClaudeService(cwd));
+        if (bumpClaude) {
+            const pluginDir = process.env.PLUGIN_DIR ?? '.claude-plugin';
+            bumpers.push(new claude_bumper_service_1.ClaudeService(cwd, pluginDir));
+        }
         return new bump_command_1.BumpCommand(bumpers, semverService, changelogService);
     }
 }

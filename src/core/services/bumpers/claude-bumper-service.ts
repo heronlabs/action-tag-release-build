@@ -6,7 +6,7 @@ import {Bumper} from '../../interfaces/bumper';
 export class ClaudeService implements Bumper {
   bump(version: string) {
     try {
-      const pluginJson = join(this.cwd, 'plugin.json');
+      const pluginJson = join(this.cwd, this.pluginDir, 'plugin.json');
       const hasPlugin = existsSync(pluginJson);
       if (!hasPlugin) {
         return {
@@ -15,7 +15,11 @@ export class ClaudeService implements Bumper {
         };
       }
 
-      const marketplaceJson = join(this.cwd, 'marketplace.json');
+      const marketplaceJson = join(
+        this.cwd,
+        this.pluginDir,
+        'marketplace.json',
+      );
       const hasMarketplace = existsSync(marketplaceJson);
       if (!hasMarketplace) {
         return {
@@ -69,5 +73,8 @@ export class ClaudeService implements Bumper {
     }
   }
 
-  constructor(private readonly cwd: string) {}
+  constructor(
+    private readonly cwd: string,
+    private readonly pluginDir: string = '.claude-plugin',
+  ) {}
 }

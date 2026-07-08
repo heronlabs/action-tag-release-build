@@ -16,7 +16,7 @@ describe('Given a claude bumper service', () => {
   let service: ClaudeService;
 
   beforeEach(() => {
-    service = new ClaudeService(cwd);
+    service = new ClaudeService(cwd, '.claude-plugin');
   });
   it('Should update version in both plugin.json and marketplace.json', () => {
     const pluginJson = {
@@ -74,7 +74,7 @@ describe('Given a claude bumper service', () => {
 
     expect(writeFileSync).toHaveBeenNthCalledWith(
       1,
-      join(cwd, 'plugin.json'),
+      join(cwd, '.claude-plugin', 'plugin.json'),
       JSON.stringify({...pluginJson, version: newVersion}, null, 2) + '\n',
     );
   });
@@ -105,7 +105,7 @@ describe('Given a claude bumper service', () => {
 
     expect(writeFileSync).toHaveBeenNthCalledWith(
       2,
-      join(cwd, 'marketplace.json'),
+      join(cwd, '.claude-plugin', 'marketplace.json'),
       JSON.stringify([{name: pluginJson.name, version: newVersion}], null, 2) +
         '\n',
     );
@@ -190,7 +190,7 @@ describe('Given a claude bumper service', () => {
     service.bump(newVersion);
 
     expect(writeFileSync).toHaveBeenCalledWith(
-      join(cwd, 'plugin.json'),
+      join(cwd, '.claude-plugin', 'plugin.json'),
       JSON.stringify({...pluginJson, version: newVersion}, null, 2) + '\n',
     );
   });
@@ -202,7 +202,9 @@ describe('Given a claude bumper service', () => {
 
     expect(output).toStrictEqual({
       ok: false,
-      error: new Error(`plugin.json not found at ${join(cwd, 'plugin.json')}`),
+      error: new Error(
+        `plugin.json not found at ${join(cwd, '.claude-plugin', 'plugin.json')}`,
+      ),
     });
   });
 
@@ -222,7 +224,7 @@ describe('Given a claude bumper service', () => {
     expect(output).toStrictEqual({
       ok: false,
       error: new Error(
-        `marketplace.json not found at ${join(cwd, 'marketplace.json')}`,
+        `marketplace.json not found at ${join(cwd, '.claude-plugin', 'marketplace.json')}`,
       ),
     });
   });
@@ -286,6 +288,80 @@ describe('Given a claude bumper service', () => {
     expect(output).toStrictEqual({
       ok: false,
       error,
+    });
+  });
+
+  describe('Given a custom plugin dir', () => {
+    const customPluginDir = faker.system.directoryPath();
+    let service: ClaudeService;
+
+    beforeEach(() => {
+      service = new ClaudeService(cwd, customPluginDir);
+    });
+
+    it('Should resolve plugin files inside the custom plugin dir', () => {
+      const pluginJson = {
+        name: faker.lorem.word(),
+        version: faker.system.semver(),
+      };
+      vi.mocked(existsSync).mockReturnValueOnce(true);
+      vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(pluginJson));
+      vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+      const marketplaceJson = [
+        {
+          name: pluginJson.name,
+          version: pluginJson.version,
+        },
+      ];
+      vi.mocked(existsSync).mockReturnValueOnce(true);
+      vi.mocked(readFileSync).mockReturnValueOnce(
+        JSON.stringify(marketplaceJson),
+      );
+      vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+      const newVersion = faker.system.semver();
+      service.bump(newVersion);
+
+      expect(writeFileSync).toHaveBeenNthCalledWith(
+        1,
+        join(cwd, customPluginDir, 'plugin.json'),
+        JSON.stringify({...pluginJson, version: newVersion}, null, 2) + '\n',
+      );
+    });
+
+    it('Should return error plugin.json not found in custom plugin dir', () => {
+      vi.mocked(existsSync).mockReturnValueOnce(false);
+
+      const output = service.bump(faker.system.semver());
+
+      expect(output).toStrictEqual({
+        ok: false,
+        error: new Error(
+          `plugin.json not found at ${join(cwd, customPluginDir, 'plugin.json')}`,
+        ),
+      });
+    });
+
+    it('Should return error marketplace.json not found in custom plugin dir', () => {
+      const pluginJson = {
+        name: faker.lorem.word(),
+        version: faker.system.semver(),
+      };
+      vi.mocked(existsSync).mockReturnValueOnce(true);
+      vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(pluginJson));
+      vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+      vi.mocked(existsSync).mockReturnValueOnce(false);
+
+      const output = service.bump(faker.system.semver());
+
+      expect(output).toStrictEqual({
+        ok: false,
+        error: new Error(
+          `marketplace.json not found at ${join(cwd, customPluginDir, 'marketplace.json')}`,
+        ),
+      });
     });
   });
 });

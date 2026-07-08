@@ -5,9 +5,10 @@ const node_fs_1 = require("node:fs");
 const node_path_1 = require("node:path");
 class ClaudeService {
     cwd;
+    pluginDir;
     bump(version) {
         try {
-            const pluginJson = (0, node_path_1.join)(this.cwd, 'plugin.json');
+            const pluginJson = (0, node_path_1.join)(this.cwd, this.pluginDir, 'plugin.json');
             const hasPlugin = (0, node_fs_1.existsSync)(pluginJson);
             if (!hasPlugin) {
                 return {
@@ -15,7 +16,7 @@ class ClaudeService {
                     error: new Error(`plugin.json not found at ${pluginJson}`),
                 };
             }
-            const marketplaceJson = (0, node_path_1.join)(this.cwd, 'marketplace.json');
+            const marketplaceJson = (0, node_path_1.join)(this.cwd, this.pluginDir, 'marketplace.json');
             const hasMarketplace = (0, node_fs_1.existsSync)(marketplaceJson);
             if (!hasMarketplace) {
                 return {
@@ -53,8 +54,9 @@ class ClaudeService {
             return { ok: false, error };
         }
     }
-    constructor(cwd) {
+    constructor(cwd, pluginDir = '.claude-plugin') {
         this.cwd = cwd;
+        this.pluginDir = pluginDir;
     }
 }
 exports.ClaudeService = ClaudeService;

@@ -50,7 +50,7 @@ inputs:
   plugin_dir:
     description: Claude plugin directory
     required: false
-    default: '.'
+    default: '.claude-plugin'
 
 outputs:
   version:
