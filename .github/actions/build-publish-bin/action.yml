@@ -1,0 +1,29 @@
+name: 'Build and publish bin folder'
+description: 'Builds TypeScript and commits the resulting bin/ folder to keep it in sync with source'
+
+inputs:
+  github_token:
+    description: 'GitHub token for pushing the bin/ artifact commit'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - run: pnpm install --frozen-lockfile
+      shell: bash
+
+    - run: pnpm build
+      shell: bash
+
+    - name: Commit bin/ changes
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add --force bin/
+        git diff --staged --quiet || {
+          git commit -m "[skip ci] chore: update bin/ build artifact"
+          git push
+        }
