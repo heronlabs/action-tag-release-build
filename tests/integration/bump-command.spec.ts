@@ -1284,6 +1284,45 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
+  describe('Bumper: ClaudeService fails when marketplace.json has no plugins key', () => {
+    let workDir: string;
+    let bumpCommand: BumpCommand;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      workDir = testRepo.workDir;
+
+      mkdirSync(join(workDir, '.claude-plugin'), {recursive: true});
+      const plugin = {name: 'my-plugin', version: '1.2.3'};
+      writeFileSync(
+        join(workDir, '.claude-plugin', 'plugin.json'),
+        JSON.stringify(plugin, null, 2) + '\n',
+      );
+      const marketplace = {};
+      writeFileSync(
+        join(workDir, '.claude-plugin', 'marketplace.json'),
+        JSON.stringify(marketplace, null, 2) + '\n',
+      );
+      bumpCommand = testingCliFactory(workDir, {bumpers: ['claude']});
+    });
+
+    it('Should throw error when marketplace.json has no plugins array', () => {
+      expect(() =>
+        bumpCommand.run({
+          semantic: 'minor',
+          versionFile: 'version.txt',
+          changelogFile: 'CHANGELOG.md',
+          refName: 'main',
+          tagPrefix: 'v',
+          overrideTag: false,
+        }),
+      ).toThrow();
+    });
+  });
+
   describe('Bumper: ClaudeService fails without plugin name', () => {
     let workDir: string;
     let bumpCommand: BumpCommand;
