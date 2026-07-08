@@ -1214,7 +1214,10 @@ describe('Full tag-release-build pipeline', () => {
       });
 
       const marketplace = JSON.parse(
-        readFileSync(join(workDir, '.claude-plugin', 'marketplace.json'), 'utf8'),
+        readFileSync(
+          join(workDir, '.claude-plugin', 'marketplace.json'),
+          'utf8',
+        ),
       ) as Array<{version: string}>;
       expect(marketplace[0]?.version).toBe('1.3.0');
     });
@@ -1371,7 +1374,10 @@ describe('Full tag-release-build pipeline', () => {
       workDir = testRepo.workDir;
 
       mkdirSync(join(workDir, '.claude-plugin'), {recursive: true});
-      writeFileSync(join(workDir, '.claude-plugin', 'plugin.json'), 'not valid json');
+      writeFileSync(
+        join(workDir, '.claude-plugin', 'plugin.json'),
+        'not valid json',
+      );
       const marketplace = [{name: 'x', version: '1.2.3'}];
       writeFileSync(
         join(workDir, '.claude-plugin', 'marketplace.json'),
@@ -1608,7 +1614,10 @@ describe('Full tag-release-build pipeline', () => {
       });
 
       const marketplace = JSON.parse(
-        readFileSync(join(workDir, '.claude-plugin', 'marketplace.json'), 'utf8'),
+        readFileSync(
+          join(workDir, '.claude-plugin', 'marketplace.json'),
+          'utf8',
+        ),
       ) as Array<{version: string}>;
       expect(marketplace[0]?.version).toBe('1.3.0');
     });
