@@ -27,12 +27,14 @@ describe('Given a claude bumper service', () => {
     vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(pluginJson));
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    const marketplaceJson = [
-      {
-        name: pluginJson.name,
-        version: pluginJson.version,
-      },
-    ];
+    const marketplaceJson = {
+      plugins: [
+        {
+          name: pluginJson.name,
+          version: pluginJson.version,
+        },
+      ],
+    };
     vi.mocked(existsSync).mockReturnValueOnce(true);
     vi.mocked(readFileSync).mockReturnValueOnce(
       JSON.stringify(marketplaceJson),
@@ -57,12 +59,14 @@ describe('Given a claude bumper service', () => {
     vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(pluginJson));
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    const marketplaceJson = [
-      {
-        name: pluginJson.name,
-        version: pluginJson.version,
-      },
-    ];
+    const marketplaceJson = {
+      plugins: [
+        {
+          name: pluginJson.name,
+          version: pluginJson.version,
+        },
+      ],
+    };
     vi.mocked(existsSync).mockReturnValueOnce(true);
     vi.mocked(readFileSync).mockReturnValueOnce(
       JSON.stringify(marketplaceJson),
@@ -88,12 +92,14 @@ describe('Given a claude bumper service', () => {
     vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(pluginJson));
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    const marketplaceJson = [
-      {
-        name: pluginJson.name,
-        version: pluginJson.version,
-      },
-    ];
+    const marketplaceJson = {
+      plugins: [
+        {
+          name: pluginJson.name,
+          version: pluginJson.version,
+        },
+      ],
+    };
     vi.mocked(existsSync).mockReturnValueOnce(true);
     vi.mocked(readFileSync).mockReturnValueOnce(
       JSON.stringify(marketplaceJson),
@@ -106,8 +112,11 @@ describe('Given a claude bumper service', () => {
     expect(writeFileSync).toHaveBeenNthCalledWith(
       2,
       join(cwd, '.claude-plugin', 'marketplace.json'),
-      JSON.stringify([{name: pluginJson.name, version: newVersion}], null, 2) +
-        '\n',
+      JSON.stringify(
+        {plugins: [{name: pluginJson.name, version: newVersion}]},
+        null,
+        2,
+      ) + '\n',
     );
   });
 
@@ -121,12 +130,14 @@ describe('Given a claude bumper service', () => {
     vi.mocked(existsSync).mockReturnValueOnce(true);
     vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(pluginJson));
 
-    const marketplaceJson = [
-      {
-        name: pluginJson.name,
-        version: pluginJson.version,
-      },
-    ];
+    const marketplaceJson = {
+      plugins: [
+        {
+          name: pluginJson.name,
+          version: pluginJson.version,
+        },
+      ],
+    };
     vi.mocked(existsSync).mockReturnValueOnce(true);
     vi.mocked(readFileSync).mockReturnValueOnce(
       JSON.stringify(marketplaceJson),
@@ -147,12 +158,14 @@ describe('Given a claude bumper service', () => {
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
     const newVersion = faker.system.semver();
-    const marketplaceJson = [
-      {
-        name: pluginJson.name,
-        version: newVersion,
-      },
-    ];
+    const marketplaceJson = {
+      plugins: [
+        {
+          name: pluginJson.name,
+          version: newVersion,
+        },
+      ],
+    };
     vi.mocked(existsSync).mockReturnValueOnce(true);
     vi.mocked(readFileSync).mockReturnValueOnce(
       JSON.stringify(marketplaceJson),
@@ -176,12 +189,14 @@ describe('Given a claude bumper service', () => {
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
     const newVersion = faker.system.semver();
-    const marketplaceJson = [
-      {
-        name: pluginJson.name,
-        version: newVersion,
-      },
-    ];
+    const marketplaceJson = {
+      plugins: [
+        {
+          name: pluginJson.name,
+          version: newVersion,
+        },
+      ],
+    };
     vi.mocked(existsSync).mockReturnValueOnce(true);
     vi.mocked(readFileSync).mockReturnValueOnce(
       JSON.stringify(marketplaceJson),
@@ -255,12 +270,14 @@ describe('Given a claude bumper service', () => {
     vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(pluginJson));
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    const marketplaceJson = [
-      {
-        name: faker.lorem.word(),
-        version: faker.system.semver(),
-      },
-    ];
+    const marketplaceJson = {
+      plugins: [
+        {
+          name: faker.lorem.word(),
+          version: faker.system.semver(),
+        },
+      ],
+    };
     vi.mocked(existsSync).mockReturnValueOnce(true);
     vi.mocked(readFileSync).mockReturnValueOnce(
       JSON.stringify(marketplaceJson),
@@ -274,6 +291,29 @@ describe('Given a claude bumper service', () => {
       error: new Error(
         `marketplace.json has no entry matching plugin name '${pluginJson.name}'`,
       ),
+    });
+  });
+
+  it('Should return error when marketplace.json has no plugins array', () => {
+    const pluginJson = {
+      name: faker.lorem.word(),
+      version: faker.system.semver(),
+    };
+    vi.mocked(existsSync).mockReturnValueOnce(true);
+    vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(pluginJson));
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+    const marketplaceJson = {};
+    vi.mocked(existsSync).mockReturnValueOnce(true);
+    vi.mocked(readFileSync).mockReturnValueOnce(
+      JSON.stringify(marketplaceJson),
+    );
+
+    const output = service.bump(faker.system.semver());
+
+    expect(output).toStrictEqual({
+      ok: false,
+      error: new Error("marketplace.json has no 'plugins' array"),
     });
   });
 
@@ -308,12 +348,14 @@ describe('Given a claude bumper service', () => {
       vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(pluginJson));
       vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-      const marketplaceJson = [
-        {
-          name: pluginJson.name,
-          version: pluginJson.version,
-        },
-      ];
+      const marketplaceJson = {
+        plugins: [
+          {
+            name: pluginJson.name,
+            version: pluginJson.version,
+          },
+        ],
+      };
       vi.mocked(existsSync).mockReturnValueOnce(true);
       vi.mocked(readFileSync).mockReturnValueOnce(
         JSON.stringify(marketplaceJson),
