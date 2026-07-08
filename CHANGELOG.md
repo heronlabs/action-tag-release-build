@@ -1,3 +1,9 @@
+## v5.0.9 (2026-07-08)
+
+### Bug Fixes
+
+* fix(cli): use || instead of ?? for env var defaults (8d9507aa92e2bfa6ac4eec5abbb77f2d439316d6)
+
 ## v5.0.8 (2026-07-08)
 
 ### Bug Fixes
