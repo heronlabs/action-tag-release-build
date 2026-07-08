@@ -1,3 +1,9 @@
+## v5.2.0 (2026-07-08)
+
+### Features
+
+* feat: create composite action + workflow to build and commit bin/ artifact (#27) (3c68e26c36532674712c122876639a2f38cc1e3a)
+
 ## v5.1.1 (2026-07-08)
 
 
