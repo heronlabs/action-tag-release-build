@@ -3,21 +3,16 @@ import jsonc from 'eslint-plugin-jsonc';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import yml from 'eslint-plugin-yml';
 import gts from 'gts';
-import tseslint from 'typescript-eslint';
 
 export default defineConfig([
   ...gts,
   {
     plugins: {
       'simple-import-sort': simpleImportSort,
-      '@typescript-eslint': tseslint.plugin,
     },
     rules: {
       'simple-import-sort/exports': 'error',
       'simple-import-sort/imports': 'error',
-      '@typescript-eslint/no-unused-vars': 'error',
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-require-imports': 'off',
     },
     languageOptions: {
       parserOptions: {

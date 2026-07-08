@@ -4,4 +4,3 @@ allowBuilds:
 overrides:
   qs@<6.15.2: '>=6.15.2'
   tmp@<0.2.4: '>=0.2.4'
-minimumReleaseAge: 0

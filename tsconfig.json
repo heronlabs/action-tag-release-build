@@ -21,7 +21,8 @@
     "strict": true,
     "strictNullChecks": true,
     "strictPropertyInitialization": false,
-    "target": "ES2022"
+    "target": "ES2022",
+    "types": ["node"]
   },
   "extends": "gts/tsconfig-google.json",
   "include": ["src", "tests", "*.ts"]
