@@ -1,3 +1,9 @@
+## v5.0.8 (2026-07-08)
+
+### Bug Fixes
+
+* fix: enforce required pluginDir parameter in ClaudeService constructor (1cfd56f165685e88a040e8126dcfb72a1c68965f)
+
 ## v5.0.7 (2026-07-08)
 
 ### Bug Fixes
