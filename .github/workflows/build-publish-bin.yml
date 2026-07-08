@@ -27,6 +27,19 @@ jobs:
           node-version-file: '.node-version'
           cache: 'pnpm'
 
-      - uses: ./.github/actions/build-publish-bin
-        with:
-          github_token: ${{ github.token }}
+      - run: pnpm install --frozen-lockfile
+        shell: bash
+
+      - run: pnpm build
+        shell: bash
+
+      - name: Commit bin/ changes
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add --force bin/
+          git diff --staged --quiet || {
+            git commit -m "[skip ci] chore: update bin/ build artifact"
+            git push
+          }
