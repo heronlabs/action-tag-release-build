@@ -30,12 +30,12 @@ export class CommandsFactory {
 
     const bumpers: Bumper[] = [];
 
-    const bumpNpm = (process.env.BUMP_NPM ?? 'false') === 'true';
+    const bumpNpm = (process.env.BUMP_NPM || 'false') === 'true';
     if (bumpNpm) bumpers.push(new NpmService(childProcessService));
 
-    const bumpClaude = (process.env.BUMP_CLAUDE ?? 'false') === 'true';
+    const bumpClaude = (process.env.BUMP_CLAUDE || 'false') === 'true';
     if (bumpClaude) {
-      const pluginDir = process.env.PLUGIN_DIR ?? '.claude-plugin';
+      const pluginDir = process.env.PLUGIN_DIR || '.claude-plugin';
       bumpers.push(new ClaudeService(cwd, pluginDir));
     }
 
@@ -49,11 +49,11 @@ void (async () => {
 
     const inputs: BumpInputs = {
       semantic: process.env.SEMANTIC ?? '',
-      versionFile: process.env.VERSION_FILE ?? 'version.txt',
-      changelogFile: process.env.CHANGELOG_FILE ?? 'CHANGELOG.md',
-      refName: process.env.REF_NAME ?? 'main',
-      overrideTag: (process.env.OVERRIDE_TAG ?? 'true') === 'true',
-      tagPrefix: process.env.TAG_PREFIX ?? 'v',
+      versionFile: process.env.VERSION_FILE || 'version.txt',
+      changelogFile: process.env.CHANGELOG_FILE || 'CHANGELOG.md',
+      refName: process.env.REF_NAME || 'main',
+      overrideTag: (process.env.OVERRIDE_TAG || 'true') === 'true',
+      tagPrefix: process.env.TAG_PREFIX || 'v',
     };
 
     const {version, tag, tagMajor, tagMinor} = bumpCommand.run(inputs);
