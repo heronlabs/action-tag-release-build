@@ -18,6 +18,7 @@ The bump is driven by the `semantic` input. When `semantic` is omitted, the bump
 - [Outputs](#outputs)
 - [Permissions](#permissions)
 - [How it works](#how-it-works)
+- [Agentic / Autonomous Workflows](#agentic--autonomous-workflows)
 - [Notes](#notes)
 - [License](#license)
 
@@ -188,6 +189,79 @@ src/
    - **Create GitHub release** — `GhService.createRelease()` publishes the release with the generated notes.
 
 Outputs `version`, `tag`, `tag_major`, and `tag_minor` to stdout — one per line — which `entry-point.sh` redirects to `GITHUB_OUTPUT`.
+
+## Agentic / Autonomous Workflows
+
+This action is designed for **AI-assisted and agentic CI/CD pipelines** where a bot, AI agent, or autonomous process drives versioning and releases without manual intervention.
+
+### Fully automated release on merge
+
+The `semantic` input can be omitted — the action infers the bump type from the **HEAD commit** using Conventional Commits. This makes it trivial to wire up a fully autonomous release pipeline that triggers on push to `main`:
+
+```yaml
+name: 'Autonomous Release'
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.actor != 'github-actions[bot]'  # Skip re-triggers
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT }}
+
+      - run: git pull --rebase origin main
+
+      - uses: heronlabs/action-tag-release-build@v5
+        id: version
+        with:
+          gh_token: ${{ secrets.PAT }}
+          # semantic is omitted — bump is inferred from HEAD commit
+```
+
+A bot or agent (Claude Code, Copilot, a custom script) that merges a Conventional Commit PR triggers this automatically — no `workflow_dispatch` needed.
+
+### Agent-triggered releases (via API)
+
+An AI agent can trigger a release by calling the GitHub API:
+
+```bash
+gh workflow run bump.yml \
+  --ref main \
+  --field semantic=patch
+```
+
+This pattern lets an agent decide the version bump after analyzing the commit history, then step back and let the action handle the mechanics.
+
+### Claude Code ecosystem integration
+
+When `bump_claude: 'true'` is set, the action syncs the new version into Claude Code plugin files (`plugin.json` + `marketplace.json`). This pairs naturally with AI agents that use Claude Code — the plugin metadata stays current without manual updates.
+
+```yaml
+- uses: heronlabs/action-tag-release-build@v5
+  with:
+    gh_token: ${{ secrets.PAT }}
+    bump_claude: 'true'
+    plugin_dir: '.'
+```
+
+### Why it fits agentic patterns
+
+| Pattern | How this action supports it |
+|---------|-----------------------------|
+| **Hands-off releases** | Conventional Commit inference removes the need for a human to choose `major`/`minor`/`patch`. |
+| **Self-documenting changelogs** | Release notes are generated from commit history — no agent needs to write them. |
+| **Floating tags** | `v1` / `v1.0` tags let agents reference stable channels without tracking patch versions. |
+| **CI-loop safety** | `[skip ci]` on the bump commit prevents infinite CI re-triggers. |
+| **Deterministic outputs** | `version`, `tag`, `tag_major`, `tag_minor` are printed to `GITHUB_OUTPUT` — agents can read them in subsequent steps. |
 
 ## Notes
 
