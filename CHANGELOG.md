@@ -1,3 +1,9 @@
+## v5.0.13 (2026-07-08)
+
+### Bug Fixes
+
+* fix: add minimumReleaseAge=0 to .npmrc to prevent CI failure on fresh dependabot bumps (#26) (5e55a3d5bebbcf7d0a7b0574bf8ce320e9533234)
+
 ## v5.0.12 (2026-07-08)
 
 ### Bug Fixes
