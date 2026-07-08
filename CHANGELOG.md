@@ -1,3 +1,9 @@
+## v5.0.12 (2026-07-08)
+
+### Bug Fixes
+
+* fix: force-push moving tags on release to keep them in sync (#25) (a4ecbf1f2d980195e5163395ea26f03c7c371bc9)
+
 ## v5.0.11 (2026-07-08)
 
 ### Bug Fixes
