@@ -1,3 +1,9 @@
+## v5.0.11 (2026-07-08)
+
+### Bug Fixes
+
+* fix: update marketplace.json handling to check for 'plugins' array (f64ee09a698f64665ef749332c8f31a1ff60d9b0)
+
 ## v5.0.10 (2026-07-08)
 
 ### Bug Fixes
