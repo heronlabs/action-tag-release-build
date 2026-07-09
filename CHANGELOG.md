@@ -1,3 +1,9 @@
+## v5.3.0 (2026-07-09)
+
+### Features
+
+* feat: add CODEOWNERS file and update continuous deployment workflow (25d0edffcb4f74b0a1ac98f5f37c0043b4d40a8a)
+
 ## v5.2.1 (2026-07-09)
 
 ### Miscellaneous Chores
