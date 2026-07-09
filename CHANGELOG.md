@@ -1,3 +1,9 @@
+## v5.2.1 (2026-07-09)
+
+### Miscellaneous Chores
+
+* other: [skip ci] chore: update bin/ build artifact (ea43f9a219559b87d30ed6e933ecde35808af41a)
+
 ## v5.2.0 (2026-07-08)
 
 ### Features
