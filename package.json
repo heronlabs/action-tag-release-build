@@ -20,7 +20,7 @@
     "@vitest/coverage-v8": "^4.1.10",
     "@vitest/ui": "4.1.10",
     "dependency-cruiser": "^18.0.0",
-    "eslint": "^9.39.4",
+    "eslint": "^10.6.0",
     "eslint-plugin-jsonc": "^3.3.0",
     "eslint-plugin-simple-import-sort": "^13.0.0",
     "eslint-plugin-yml": "^3.6.0",
@@ -28,7 +28,7 @@
     "jiti": "^2.7.0",
     "moq.ts": "^10.0.8",
     "tsx": "^4.23.0",
-    "typescript": "~5.8.3",
+    "typescript": "~7.0.2",
     "typescript-eslint": "^8.63.0",
     "vitest": "^4.1.10"
   },
