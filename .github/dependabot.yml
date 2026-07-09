@@ -14,3 +14,14 @@ updates:
     groups:
       npm:
         patterns: ['*']
+    ignore:
+      - dependency-name: eslint
+        versions: ['*']
+      - dependency-name: typescript
+        versions: ['*']
+      - dependency-name: '@eslint/*'
+        versions: ['*']
+      - dependency-name: typescript-eslint
+        versions: ['*']
+      - dependency-name: gts
+        versions: ['*']
