@@ -63,5 +63,5 @@
     "test:ui": "vitest --ui",
     "test:unit": "vitest run tests/unit/"
   },
-  "version": "6.0.0"
+  "version": "6.0.1"
 }
