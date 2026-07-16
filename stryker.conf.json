@@ -10,7 +10,7 @@
   "ignoreStatic": true,
   "incremental": true,
   "incrementalFile": "reports/mutation/incremental.json",
-  "mutate": ["src/**/*.ts", "!src/cli.ts", "!src/**/*factory.ts"],
+  "mutate": ["src/**/*.ts", "!src/cli.ts"],
   "mutator": {
     "excludedMutations": [
       "ArrayDeclaration",
