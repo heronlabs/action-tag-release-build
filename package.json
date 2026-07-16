@@ -61,5 +61,5 @@
     "test:mutation": "stryker run stryker.conf.json",
     "test:unit": "vitest run tests/unit/ --coverage.reportsDirectory=reports/vitest/unit"
   },
-  "version": "6.0.6"
+  "version": "6.0.7"
 }
