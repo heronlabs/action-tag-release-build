@@ -10,7 +10,7 @@ export default defineConfig({
       reportsDirectory: 'reports/vitest',
       reporter: ['text', 'lcov', 'html'],
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['**/cli.ts', 'types/*', 'interfaces/*'],
+      exclude: ['**/cli.ts', '**/types/*', '**/interfaces/*'],
       enabled: true,
       thresholds: {
         lines: 100,
