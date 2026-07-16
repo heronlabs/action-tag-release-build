@@ -26,7 +26,7 @@ export class BumpCommand {
     for (const bumper of this.bumpers) {
       const bump = bumper.bump(nextVersion);
       if (!bump.ok) throw bump.error;
-      process.stdout.write(
+      process.stderr.write(
         `✅ Bumper ${bumper.constructor.name} ${nextVersion}\n`,
       );
     }
@@ -47,7 +47,7 @@ export class BumpCommand {
     let tagMessage = `🏷️ Tagged: ${tag}`;
     if (inputs.overrideTag)
       tagMessage += ` with major: ${tagMajor} and minor: ${tagMinor}`;
-    process.stdout.write(`${tagMessage}\n`);
+    process.stderr.write(`${tagMessage}\n`);
 
     return {
       version: nextVersion,

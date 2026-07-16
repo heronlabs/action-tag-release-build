@@ -15,7 +15,7 @@ class BumpCommand {
             const bump = bumper.bump(nextVersion);
             if (!bump.ok)
                 throw bump.error;
-            process.stdout.write(`✅ Bumper ${bumper.constructor.name} ${nextVersion}\n`);
+            process.stderr.write(`✅ Bumper ${bumper.constructor.name} ${nextVersion}\n`);
         }
         const tags = this.changelogService.applyReleaseChangelog({
             tagPrefix,
@@ -32,7 +32,7 @@ class BumpCommand {
         let tagMessage = `🏷️ Tagged: ${tag}`;
         if (inputs.overrideTag)
             tagMessage += ` with major: ${tagMajor} and minor: ${tagMinor}`;
-        process.stdout.write(`${tagMessage}\n`);
+        process.stderr.write(`${tagMessage}\n`);
         return {
             version: nextVersion,
             tag: tag,

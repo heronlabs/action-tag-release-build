@@ -19,7 +19,7 @@ describe('Given a bump command', () => {
   let bumpCommand: BumpCommand;
 
   beforeEach(() => {
-    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
 
     bumpCommand = new BumpCommand(
       [BumperMoq],
@@ -158,7 +158,7 @@ describe('Given a bump command', () => {
 
     bumpCommand.run(inputs);
 
-    expect(vi.mocked(process.stdout.write)).toHaveBeenNthCalledWith(
+    expect(vi.mocked(process.stderr.write)).toHaveBeenNthCalledWith(
       1,
       `✅ Bumper  ${nextVersion}\n`,
     );
@@ -201,7 +201,7 @@ describe('Given a bump command', () => {
 
     bumpCommand.run(inputs);
 
-    expect(vi.mocked(process.stdout.write)).toHaveBeenNthCalledWith(
+    expect(vi.mocked(process.stderr.write)).toHaveBeenNthCalledWith(
       2,
       `🏷️ Tagged: ${tag}\n`,
     );
@@ -337,7 +337,7 @@ describe('Given a bump command', () => {
 
     bumpCommand.run(inputs);
 
-    expect(vi.mocked(process.stdout.write)).toHaveBeenNthCalledWith(
+    expect(vi.mocked(process.stderr.write)).toHaveBeenNthCalledWith(
       2,
       `🏷️ Tagged: ${tag} with major: ${tagMajor} and minor: ${tagMinor}\n`,
     );
