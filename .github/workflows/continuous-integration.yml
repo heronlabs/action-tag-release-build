@@ -29,15 +29,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Cache build artifacts (bin/)
-        id: build-cache
-        uses: actions/cache@v6
-        with:
-          path: bin
-          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json') }}
-
-      - if: steps.build-cache.outputs.cache-hit != 'true'
-        run: pnpm build
+      - run: pnpm build
 
   audit:
     needs: install
@@ -54,11 +46,6 @@ jobs:
           cache: 'pnpm'
 
       - run: pnpm install --frozen-lockfile
-
-      - uses: actions/cache/restore@v6
-        with:
-          path: bin
-          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json') }}
 
       - run: pnpm dep:cruise
 
@@ -80,11 +67,6 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - uses: actions/cache/restore@v6
-        with:
-          path: bin
-          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json') }}
-
       - run: pnpm lint:check
 
   unit:
@@ -102,11 +84,6 @@ jobs:
           cache: 'pnpm'
 
       - run: pnpm install --frozen-lockfile
-
-      - uses: actions/cache/restore@v6
-        with:
-          path: bin
-          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json') }}
 
       - run: pnpm test:unit
 
@@ -134,11 +111,6 @@ jobs:
           cache: 'pnpm'
 
       - run: pnpm install --frozen-lockfile
-
-      - uses: actions/cache/restore@v6
-        with:
-          path: bin
-          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json') }}
 
       - run: pnpm test:integration
 
@@ -168,11 +140,6 @@ jobs:
           cache: 'pnpm'
 
       - run: pnpm install --frozen-lockfile
-
-      - uses: actions/cache/restore@v6
-        with:
-          path: bin
-          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json') }}
 
       - name: Mutation tests
         run: |
