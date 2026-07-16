@@ -61,9 +61,10 @@ reports
 # Legacy
 lib-cov
 
-# Misc tooling
-.supera/
+# Claude
 .superpowers
+.supera/
+.serena/
 .worktrees/
 
 # Shell (legacy — kept for test fixtures)
@@ -73,5 +74,3 @@ lib-cov
 # Release notes tmp file
 .release-notes.tmp.md
 
-# LLM
-.serena/

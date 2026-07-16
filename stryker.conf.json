@@ -6,17 +6,11 @@
   "dashboard": {
     "project": "@heronlabs/bump"
   },
-  "ignorePatterns": [
-    "bin",
-    "coverage",
-    "node_modules",
-    "reports",
-    "tests/.coverage"
-  ],
+  "ignorePatterns": ["bin", "node_modules", "reports"],
   "ignoreStatic": true,
   "incremental": true,
   "incrementalFile": "reports/mutation/incremental.json",
-  "mutate": ["src/**/*.ts", "!src/cli.ts", "!src/**/*.d.ts"],
+  "mutate": ["src/**/*.ts", "!src/cli.ts", "!src/**/*factory.ts"],
   "mutator": {
     "excludedMutations": [
       "ArrayDeclaration",
