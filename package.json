@@ -42,7 +42,7 @@
   "homepage": "https://github.com/heronlabs/action-tag-release-build#readme",
   "license": "MIT",
   "name": "@heronlabs/bump",
-  "packageManager": "pnpm@11.9.0",
+  "packageManager": "pnpm@11.13.1",
   "prettier": "gts/.prettierrc.json",
   "publishConfig": {
     "access": "public"
