@@ -1,3 +1,9 @@
+## v6.0.6 (2026-07-16)
+
+### Bug Fixes
+
+* fix: Replace stdout.write with stderr outside CLI (#39) (9297e26bde4d121e7334fe2c1bb63b8f6c3ae06d)
+
 ## v6.0.5 (2026-07-16)
 
 
