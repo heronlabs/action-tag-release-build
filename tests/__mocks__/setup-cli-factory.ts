@@ -5,11 +5,12 @@ import {NpmService} from '../../src/core/services/bumpers/npm-bumper-service';
 import {ChangelogService} from '../../src/core/services/changelog-service';
 import {CommitService} from '../../src/core/services/commit-service';
 import {SemverService} from '../../src/core/services/semver-service';
-import {Bumpers} from '../../src/core/types/bumpers';
 import {GhService} from '../../src/infrastructure/gh/gh-service';
 import {GitService} from '../../src/infrastructure/git/git-service';
 import {ChildProcessService} from '../../src/infrastructure/terminal/child-process-service';
 import {GhServiceMock, GhServiceMoq} from './infrastructure/gh-service-mock';
+
+export type Bumpers = 'claude' | 'npm';
 
 export interface TestingCliOptions {
   bumpers?: Bumpers[];

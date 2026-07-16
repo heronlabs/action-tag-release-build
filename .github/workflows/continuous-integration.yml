@@ -129,7 +129,7 @@ jobs:
         uses: actions/upload-artifact@v7 # v7.0.1
         with:
           name: unit-test-coverage
-          path: coverage/
+          path: reports/vitest/unit/
           retention-days: 14
           if-no-files-found: warn
 
@@ -158,6 +158,15 @@ jobs:
           key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json') }}
 
       - run: pnpm test:integration
+
+      - if: always()
+        name: Upload integration-test coverage
+        uses: actions/upload-artifact@v7 # v7.0.1
+        with:
+          name: integration-test-coverage
+          path: reports/vitest/integration/
+          retention-days: 14
+          if-no-files-found: warn
 
   mutation:
     needs: [unit, integration]

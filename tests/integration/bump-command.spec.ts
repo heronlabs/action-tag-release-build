@@ -26,7 +26,7 @@ describe('Full tag-release-build pipeline', () => {
 
   describe('Minor bump from feat commit', () => {
     let workDir: string;
-    let bumpCommand: BumpCommand;
+    let command: BumpCommand;
 
     beforeEach(() => {
       testRepo = createTestRepo({
@@ -34,7 +34,7 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
       });
       workDir = testRepo.workDir;
-      bumpCommand = testingCliFactory(workDir);
+      command = testingCliFactory(workDir);
     });
 
     it('Should bump version.txt from 1.2.3 to 1.3.0', () => {
@@ -46,7 +46,7 @@ describe('Full tag-release-build pipeline', () => {
         tagPrefix: 'v',
         overrideTag: false,
       };
-      bumpCommand.run(inputs);
+      command.run(inputs);
 
       const version = readFileSync(join(workDir, 'version.txt'), 'utf8').trim();
 
@@ -62,7 +62,7 @@ describe('Full tag-release-build pipeline', () => {
         tagPrefix: 'v',
         overrideTag: false,
       };
-      bumpCommand.run(inputs);
+      command.run(inputs);
 
       const tags = execSync('git tag -l', {
         cwd: workDir,
@@ -84,7 +84,7 @@ describe('Full tag-release-build pipeline', () => {
         tagPrefix: 'v',
         overrideTag: false,
       };
-      bumpCommand.run(inputs);
+      command.run(inputs);
 
       const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
 
@@ -100,7 +100,7 @@ describe('Full tag-release-build pipeline', () => {
         tagPrefix: 'v',
         overrideTag: false,
       };
-      bumpCommand.run(inputs);
+      command.run(inputs);
 
       const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
 
@@ -116,7 +116,7 @@ describe('Full tag-release-build pipeline', () => {
         tagPrefix: 'v',
         overrideTag: false,
       };
-      bumpCommand.run(inputs);
+      command.run(inputs);
 
       const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
 
