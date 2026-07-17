@@ -21,23 +21,14 @@ jobs:
 
       - uses: pnpm/action-setup@v6
 
-      - name: Setup Node.js (with pnpm store cache)
-        uses: actions/setup-node@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: '.node-version'
           cache: 'pnpm'
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Cache build artifacts (bin/)
-        id: build-cache
-        uses: actions/cache@v6
-        with:
-          path: bin
-          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json') }}
-
-      - if: steps.build-cache.outputs.cache-hit != 'true'
-        run: pnpm build
+      - run: pnpm build
 
   audit:
     needs: install
@@ -54,11 +45,6 @@ jobs:
           cache: 'pnpm'
 
       - run: pnpm install --frozen-lockfile
-
-      - uses: actions/cache/restore@v6
-        with:
-          path: bin
-          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json') }}
 
       - run: pnpm dep:cruise
 
@@ -80,11 +66,6 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - uses: actions/cache/restore@v6
-        with:
-          path: bin
-          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json') }}
-
       - run: pnpm lint:check
 
   unit:
@@ -103,11 +84,6 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - uses: actions/cache/restore@v6
-        with:
-          path: bin
-          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json') }}
-
       - run: pnpm test:unit
 
       - if: always()
@@ -120,7 +96,7 @@ jobs:
           if-no-files-found: warn
 
   integration:
-    needs: install
+    needs: unit
     name: 'Integration Tests'
     runs-on: ubuntu-24.04
     steps:
@@ -135,11 +111,6 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - uses: actions/cache/restore@v6
-        with:
-          path: bin
-          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json') }}
-
       - run: pnpm test:integration
 
       - if: always()
@@ -152,7 +123,7 @@ jobs:
           if-no-files-found: warn
 
   mutation:
-    needs: [unit, integration]
+    needs: unit
     name: 'Mutation Tests'
     runs-on: ubuntu-24.04
     steps:
@@ -168,11 +139,6 @@ jobs:
           cache: 'pnpm'
 
       - run: pnpm install --frozen-lockfile
-
-      - uses: actions/cache/restore@v6
-        with:
-          path: bin
-          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json') }}
 
       - name: Mutation tests
         run: |

@@ -17,8 +17,9 @@
 ## Commands
 | Command | Description |
 |---------|-------------|
-| `pnpm test` | Run Vitest tests |
-| `pnpm lint` | Run ESLint |
+| `pnpm test:unit` | Run Vitest unit tests |
+| `pnpm test:integration` | Run Vitest integration tests |
+| `pnpm lint:check` | Run ESLint + gts |
 | `pnpm build` | Compile TypeScript |
 
 ## Key files
