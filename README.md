@@ -55,7 +55,7 @@ jobs:
 
       - run: git pull --rebase origin main
 
-      - uses: heronlabs/action-tag-release-build@v5
+      - uses: heronlabs/action-tag-release-build@v6
         id: version
         with:
           gh_token: ${{ secrets.PAT }}
@@ -74,7 +74,7 @@ The `id: version` step exposes the `version`, `tag`, `tag_major`, and `tag_minor
 When `semantic` is omitted the bump is inferred from the HEAD commit.
 
 ```yaml
-- uses: heronlabs/action-tag-release-build@v5
+- uses: heronlabs/action-tag-release-build@v6
   with:
     gh_token: ${{ secrets.PAT }}
 ```
@@ -82,7 +82,7 @@ When `semantic` is omitted the bump is inferred from the HEAD commit.
 ### With package.json sync
 
 ```yaml
-- uses: heronlabs/action-tag-release-build@v5
+- uses: heronlabs/action-tag-release-build@v6
   with:
     gh_token: ${{ secrets.PAT }}
     semantic: minor
@@ -94,7 +94,7 @@ Requires `actions/setup-node` before this step.
 ### With Claude Code plugin sync
 
 ```yaml
-- uses: heronlabs/action-tag-release-build@v5
+- uses: heronlabs/action-tag-release-build@v6
   with:
     gh_token: ${{ secrets.PAT }}
     semantic: minor
@@ -116,7 +116,7 @@ Requires `jq` on the runner (GitHub-hosted runners include it).
 | `tag_prefix` | Prefix for created tags (e.g. `v` produces `v1.2.3`). | No | `v` |
 | `bump_npm` | Also bump `package.json` using `npm version`. Set up Node with `actions/setup-node` before this step. | No | `false` |
 | `bump_claude` | Sync the version into Claude Code plugin files (`plugin.json` + `marketplace.json`). Requires `jq`. | No | `false` |
-| `plugin_dir` | Directory containing the Claude plugin files. | No | `.` |
+| `plugin_dir` | Directory containing the Claude plugin files. | No | `.claude-plugin` |
 | `override_tag` | Move the floating major/minor tags (`v1`, `v1.0`) to the new release. | No | `true` |
 
 ## Outputs
