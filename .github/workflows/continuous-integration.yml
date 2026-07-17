@@ -96,7 +96,7 @@ jobs:
           if-no-files-found: warn
 
   integration:
-    needs: install
+    needs: unit
     name: 'Integration Tests'
     runs-on: ubuntu-24.04
     steps:
@@ -123,7 +123,7 @@ jobs:
           if-no-files-found: warn
 
   mutation:
-    needs: [unit, integration]
+    needs: unit
     name: 'Mutation Tests'
     runs-on: ubuntu-24.04
     steps:
