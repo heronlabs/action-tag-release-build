@@ -1,3 +1,9 @@
+## v6.0.9 (2026-07-17)
+
+### Miscellaneous Chores
+
+* other: [skip ci] chore: update bin/ build artifact (f3d6a95c9c30543ec0af55cd2a47028569288162)
+
 ## v6.0.8 (2026-07-17)
 
 ### Bug Fixes
