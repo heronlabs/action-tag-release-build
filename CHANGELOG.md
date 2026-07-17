@@ -1,3 +1,9 @@
+## v6.0.8 (2026-07-17)
+
+### Bug Fixes
+
+* fix: remove bin build cache from CI (#41) (9a7026b8d22a902417932fdbb665a12289bd9ee2)
+
 ## v6.0.7 (2026-07-16)
 
 
