@@ -1,3 +1,9 @@
+## v6.0.13 (2026-07-21)
+
+### Miscellaneous Chores
+
+* other: Revert "fix: fall back unknown commit types to other label (#44)" (9c9c84474113d1fd40546cc5d026991a2369c302)
+
 ## v6.0.12 (2026-07-21)
 
 ### Bug Fixes
