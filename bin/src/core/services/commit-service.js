@@ -5,19 +5,12 @@ class CommitService {
     gitService;
     parseCommit(subject) {
         const match = subject.match(/^(\w+)(?:\(([^)]+)\))?(!)?\s*:\s*(.*)/);
-        if (!match) {
-            return {
-                type: 'other',
-                breaking: false,
-                description: subject,
-            };
-        }
-        const [, type, scope, bang, description] = match;
+        const type = match?.[1];
         return {
-            type: type,
-            scope,
-            breaking: !!bang,
-            description: `${description}`,
+            type: (type ?? 'other'),
+            scope: match?.[2],
+            breaking: match ? !!match[3] : false,
+            description: match ? `${match[4]}` : subject,
         };
     }
     parseDescriptionSince(tagPrefix) {
