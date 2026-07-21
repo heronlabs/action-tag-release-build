@@ -1,3 +1,9 @@
+## v6.0.12 (2026-07-21)
+
+### Bug Fixes
+
+* fix: fall back unknown commit types to other label (#44) (78d603c091dd615cf87f014f1adb0dfed5939e6a)
+
 ## v6.0.11 (2026-07-19)
 
 
