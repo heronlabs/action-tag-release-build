@@ -17,7 +17,7 @@ class ChangelogService {
             const groups = new Map();
             const breaking = [];
             for (const c of commits.data) {
-                const label = commit_types_1.CommitTypeLabels[c.type] ?? commit_types_1.CommitTypeLabels.other;
+                const label = commit_types_1.CommitTypeLabels[c.type];
                 const list = groups.get(label) ?? [];
                 list.push(c);
                 groups.set(label, list);

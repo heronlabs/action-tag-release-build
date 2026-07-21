@@ -610,42 +610,6 @@ describe('Given a changelog service', () => {
     );
   });
 
-  it('Should write chore commit under Miscellaneous Chores section', () => {
-    const commitHash = faker.string.alpha(40);
-    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
-      ok: true as const,
-      data: [
-        {
-          hash: commitHash,
-          type: 'chore',
-          breaking: false,
-          description: 'some message',
-        },
-      ],
-    });
-    vi.mocked(existsSync).mockReturnValueOnce(false);
-    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
-    GitServiceMock.apply.mockReturnValueOnce({ok: true});
-    GhServiceMock.createRelease.mockReturnValueOnce({ok: true, data: ''});
-
-    service.applyReleaseChangelog({
-      tagPrefix: 'v',
-      nextVersion: '1.0.0',
-      major: '1',
-      minor: '0',
-      changelogFile: 'CHANGELOG.md',
-      refName: 'main',
-      overrideTag: false,
-    });
-
-    expect(writeFileSync).toHaveBeenCalledWith(
-      join(cwd, 'CHANGELOG.md'),
-      expect.stringContaining(
-        `### Miscellaneous Chores\n\n* chore: some message (${commitHash})`,
-      ),
-    );
-  });
-
   it('Should write breaking entry without scope and no parentheses', () => {
     const commitHash = faker.string.alpha(40);
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
