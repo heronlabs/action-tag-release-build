@@ -17,7 +17,7 @@ export class ChangelogService {
       const breaking: ParsedDescription[] = [];
 
       for (const c of commits.data) {
-        const label = CommitTypeLabels[c.type];
+        const label = CommitTypeLabels[c.type] ?? CommitTypeLabels.other;
         const list = groups.get(label) ?? [];
         list.push(c);
         groups.set(label, list);
