@@ -1,1 +1,0 @@
-{"version":3,"file":"outputs.js","sourceRoot":"","sources":["../../../../../../src/application/cli/sync-command/types/outputs.ts"],"names":[],"mappings":"","sourcesContent":["export type SyncOutputs = {\n  readonly synced: string;\n  readonly conflictsUrls: string;\n};\n"]}

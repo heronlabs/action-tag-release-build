@@ -5,5 +5,8 @@ export type BumpInputs = {
     readonly refName: string;
     readonly overrideTag: boolean;
     readonly tagPrefix: string;
+    readonly source?: string;
+    readonly target?: string;
+    readonly mergeMessage?: string;
 };
 //# sourceMappingURL=inputs.d.ts.map

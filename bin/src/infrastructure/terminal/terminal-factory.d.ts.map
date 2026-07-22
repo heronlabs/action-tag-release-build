@@ -1,0 +1,1 @@
+{"version":3,"file":"terminal-factory.d.ts","sourceRoot":"","sources":["../../../../src/infrastructure/terminal/terminal-factory.ts"],"names":[],"mappings":"AAAA,OAAO,EAAC,mBAAmB,EAAC,MAAM,kCAAkC,CAAC;AAErE,qBAAa,eAAe;IAKd,OAAO,CAAC,QAAQ,CAAC,GAAG;IAJzB,sBAAsB,IAAI,mBAAmB;gBAIvB,GAAG,EAAE,MAAM;IAExC,MAAM,CAAC,IAAI,CAAC,GAAG,EAAE,MAAM,GAAG,eAAe;CAG1C"}

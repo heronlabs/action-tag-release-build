@@ -1,5 +1,5 @@
-import { GhService } from '../../infrastructure/gh/gh-service';
-import { GitService } from '../../infrastructure/git/git-service';
+import { GhService } from '../../infrastructure/gh/services/gh-service';
+import { GitService } from '../../infrastructure/git/services/git-service';
 import { CommitService } from './commit-service';
 export declare class ChangelogService {
     private readonly cwd;

@@ -1,6 +1,6 @@
 import {Mock} from 'moq.ts';
 
-import {GitService} from '../../../src/infrastructure/git/git-service';
+import {GitService} from '../../../src/infrastructure/git/services/git-service';
 
 export const GitServiceMock = {
   getDescriptionSince: vi.fn(),

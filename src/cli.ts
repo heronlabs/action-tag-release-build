@@ -1,51 +1,26 @@
 #!/usr/bin/env node
 
-import {BumpCommand} from './application/cli/bump-command/bump-command';
 import {BumpInputs} from './application/cli/bump-command/types/inputs';
+import {CliFactory} from './application/cli/cli-factory';
 import {Bumper} from './core/interfaces/bumper';
-import {ClaudeService} from './core/services/bumpers/claude-bumper-service';
-import {NpmService} from './core/services/bumpers/npm-bumper-service';
-import {ChangelogService} from './core/services/changelog-service';
-import {CommitService} from './core/services/commit-service';
-import {SemverService} from './core/services/semver-service';
-import {GhService} from './infrastructure/gh/gh-service';
-import {GitService} from './infrastructure/git/git-service';
-import {ChildProcessService} from './infrastructure/terminal/child-process-service';
 
-export class CommandsFactory {
-  static makeBump(): BumpCommand {
+void (async () => {
+  try {
     const cwd = process.cwd();
-    const childProcessService = new ChildProcessService(cwd);
-
-    const gitService = new GitService(childProcessService);
-    const commitService = new CommitService(gitService);
-    const semverService = new SemverService(cwd, commitService);
-    const ghService = new GhService(cwd, childProcessService);
-    const changelogService = new ChangelogService(
-      cwd,
-      gitService,
-      ghService,
-      commitService,
-    );
+    const cliFactory = CliFactory.make(cwd);
 
     const bumpers: Bumper[] = [];
 
     const bumpNpm = (process.env.BUMP_NPM || 'false') === 'true';
-    if (bumpNpm) bumpers.push(new NpmService(childProcessService));
+    if (bumpNpm) bumpers.push(cliFactory.coreFactory.getNpmService());
 
     const bumpClaude = (process.env.BUMP_CLAUDE || 'false') === 'true';
     if (bumpClaude) {
       const pluginDir = process.env.PLUGIN_DIR || '.claude-plugin';
-      bumpers.push(new ClaudeService(cwd, pluginDir));
+      bumpers.push(cliFactory.coreFactory.getClaudeService(pluginDir));
     }
 
-    return new BumpCommand(bumpers, semverService, changelogService);
-  }
-}
-
-void (async () => {
-  try {
-    const bumpCommand = CommandsFactory.makeBump();
+    const bumpCommand = cliFactory.getBumpCommand(bumpers);
 
     const inputs: BumpInputs = {
       semantic: process.env.SEMANTIC ?? '',
@@ -54,6 +29,8 @@ void (async () => {
       refName: process.env.REF_NAME || 'main',
       overrideTag: (process.env.OVERRIDE_TAG || 'true') === 'true',
       tagPrefix: process.env.TAG_PREFIX || 'v',
+      target: process.env.TARGET || undefined,
+      mergeMessage: process.env.MERGE_MESSAGE || undefined,
     };
 
     const {version, tag, tagMajor, tagMinor} = bumpCommand.run(inputs);

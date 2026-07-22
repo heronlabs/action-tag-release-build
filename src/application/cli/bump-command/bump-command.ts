@@ -49,6 +49,12 @@ export class BumpCommand {
       tagMessage += ` with major: ${tagMajor} and minor: ${tagMinor}`;
     process.stderr.write(`${tagMessage}\n`);
 
+    // Given a source branch like main.
+    // Given target branches like sandbox, development, staging;
+    // Get the latest version of source branch and merge on each target branch.
+    // If mergeMessage is provided merge with message else merge without any merge commit.
+    // If a conflict appears during the merge, create or delete and recreate if any previously existing PR.
+
     return {
       version: nextVersion,
       tag: tag,

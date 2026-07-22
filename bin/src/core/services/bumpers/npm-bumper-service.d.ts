@@ -1,4 +1,4 @@
-import { ChildProcessService } from '../../../infrastructure/terminal/child-process-service';
+import { ChildProcessService } from '../../../infrastructure/terminal/services/child-process-service';
 import { Bumper } from '../../interfaces/bumper';
 export declare class NpmService implements Bumper {
     private readonly childProcessService;

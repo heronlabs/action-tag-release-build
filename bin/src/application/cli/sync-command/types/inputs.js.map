@@ -1,1 +1,0 @@
-{"version":3,"file":"inputs.js","sourceRoot":"","sources":["../../../../../../src/application/cli/sync-command/types/inputs.ts"],"names":[],"mappings":"","sourcesContent":["export type SyncInputs = {\n  readonly source: string;\n  readonly target: string;\n  readonly mergeMessage?: string;\n};\n"]}

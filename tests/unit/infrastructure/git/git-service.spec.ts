@@ -1,6 +1,6 @@
 import {faker} from '@faker-js/faker';
 
-import {GitService} from '../../../../src/infrastructure/git/git-service';
+import {GitService} from '../../../../src/infrastructure/git/services/git-service';
 import {
   ChildProcessServiceMock,
   ChildProcessServiceMoq,

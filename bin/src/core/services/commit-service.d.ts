@@ -1,5 +1,5 @@
 import { ParsedDescription } from '../../core/types/parsed-commit';
-import { GitService } from '../../infrastructure/git/git-service';
+import { GitService } from '../../infrastructure/git/services/git-service';
 import { Semantic } from '../types/semantic';
 export declare class CommitService {
     private readonly gitService;

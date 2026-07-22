@@ -14,7 +14,7 @@ export default defineConfig({
         '**/cli.ts',
         '**/types/*',
         '**/interfaces/*',
-        '**/sync-command/sync-command.ts',
+        '**/*-factory.ts',
       ],
       enabled: true,
       thresholds: {

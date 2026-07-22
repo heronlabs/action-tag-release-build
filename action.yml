@@ -51,6 +51,18 @@ inputs:
     description: Claude plugin directory
     required: false
     default: '.claude-plugin'
+  source:
+    description: Source branch to sync after bump (optional, future use)
+    required: false
+    default: ''
+  target:
+    description: Target branches to sync into, comma-separated (optional, future use)
+    required: false
+    default: ''
+  merge_message:
+    description: Custom merge commit message for sync (optional, future use)
+    required: false
+    default: ''
 
 outputs:
   version:
@@ -84,4 +96,7 @@ runs:
         PLUGIN_DIR: ${{ inputs.plugin_dir }}
         OVERRIDE_TAG: ${{ inputs.override_tag }}
         GH_TOKEN: ${{ inputs.gh_token }}
+        SOURCE: ${{ inputs.source }}
+        TARGET: ${{ inputs.target }}
+        MERGE_MESSAGE: ${{ inputs.merge_message }}
       run: bash ${{ github.action_path }}/entry-point.sh

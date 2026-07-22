@@ -5,4 +5,6 @@ export type BumpInputs = {
   readonly refName: string;
   readonly overrideTag: boolean;
   readonly tagPrefix: string;
+  readonly target?: string;
+  readonly mergeMessage?: string;
 };
