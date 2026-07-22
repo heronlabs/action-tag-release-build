@@ -269,7 +269,7 @@ describe('Given a commit service', () => {
         data: [
           {
             hash,
-            type: 'chore',
+            type: 'other',
             scope: undefined,
             breaking: false,
             description: 'update dependencies',
