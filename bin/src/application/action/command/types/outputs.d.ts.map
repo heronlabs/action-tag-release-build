@@ -1,0 +1,1 @@
+{"version":3,"file":"outputs.d.ts","sourceRoot":"","sources":["../../../../../../src/application/action/command/types/outputs.ts"],"names":[],"mappings":"AAAA,MAAM,MAAM,OAAO,GAAG;IACpB,QAAQ,CAAC,OAAO,EAAE,MAAM,CAAC;IACzB,QAAQ,CAAC,GAAG,EAAE,MAAM,CAAC;IACrB,QAAQ,CAAC,QAAQ,EAAE,MAAM,CAAC;IAC1B,QAAQ,CAAC,QAAQ,EAAE,MAAM,CAAC;CAC3B,CAAC"}

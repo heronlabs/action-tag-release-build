@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-output=$(node "$SCRIPT_DIR/bin/src/cli.js")
+output=$(node "$SCRIPT_DIR/bin/src/index.js")
 
 mapfile -t lines <<< "$output"
 

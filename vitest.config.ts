@@ -11,7 +11,7 @@ export default defineConfig({
       reporter: ['text', 'lcov', 'html'],
       include: ['src/**/*.{ts,tsx}'],
       exclude: [
-        '**/cli.ts',
+        '**/index.ts',
         '**/types/*',
         '**/interfaces/*',
         '**/*-factory.ts',
