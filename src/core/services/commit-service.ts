@@ -1,4 +1,4 @@
-import {CommitType} from '../../core/types/commit-types';
+import {CommitType, CommitTypeLabels} from '../../core/types/commit-types';
 import {ParsedCommit, ParsedDescription} from '../../core/types/parsed-commit';
 import {GitService} from '../../infrastructure/git/git-service';
 import {Semantic} from '../types/semantic';
@@ -6,19 +6,16 @@ import {Semantic} from '../types/semantic';
 export class CommitService {
   private parseCommit(subject: string) {
     const match = subject.match(/^(\w+)(?:\(([^)]+)\))?(!)?\s*:\s*(.*)/);
-    if (!match) {
-      return {
-        type: 'other' as CommitType,
-        breaking: false,
-        description: subject,
-      };
-    }
-    const [, type, scope, bang, description] = match;
+    const rawType = match?.[1];
+    const type = (
+      rawType && rawType in CommitTypeLabels ? rawType : 'other'
+    ) as CommitType;
+
     return {
-      type: type as CommitType,
-      scope,
-      breaking: !!bang,
-      description: `${description}`,
+      type,
+      scope: match?.[2],
+      breaking: match ? !!match[3] : false,
+      description: match ? `${match[4]}` : subject,
     };
   }
 

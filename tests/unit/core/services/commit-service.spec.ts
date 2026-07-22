@@ -102,6 +102,7 @@ describe('Given a commit service', () => {
           {
             hash,
             type: 'other',
+            scope: undefined,
             breaking: false,
             description: 'add some feature',
           },
@@ -173,6 +174,7 @@ describe('Given a commit service', () => {
           {
             hash,
             type: 'other',
+            scope: undefined,
             breaking: false,
             description: 'prefix text feat: add feature',
           },
@@ -252,6 +254,30 @@ describe('Given a commit service', () => {
       });
     });
 
+    it('Should handle unknown commit types', () => {
+      const hash = faker.string.alpha(40);
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: `${hash} chore: update dependencies`,
+      });
+
+      const tagPrefix = faker.string.alpha();
+      const output = service.parseDescriptionSince(tagPrefix);
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: [
+          {
+            hash,
+            type: 'other',
+            scope: undefined,
+            breaking: false,
+            description: 'update dependencies',
+          },
+        ],
+      });
+    });
+
     it('Should return error parsing descriptions', () => {
       GitServiceMock.getDescriptionSince.mockReturnValueOnce({
         ok: true,
@@ -301,6 +327,20 @@ describe('Given a commit service', () => {
       GitServiceMock.getLastCommit.mockReturnValueOnce({
         ok: true,
         data: 'fix(scope): add some feature\nfix: add some other feature',
+      });
+
+      const output = service.classifyLastCommit();
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: 'patch',
+      });
+    });
+
+    it('Should get patch for unknown commit type', () => {
+      GitServiceMock.getLastCommit.mockReturnValueOnce({
+        ok: true,
+        data: 'chore: update dependencies',
       });
 
       const output = service.classifyLastCommit();
