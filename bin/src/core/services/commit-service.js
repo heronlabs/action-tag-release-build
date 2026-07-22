@@ -1,13 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CommitService = void 0;
+const commit_types_1 = require("../../core/types/commit-types");
 class CommitService {
     gitService;
     parseCommit(subject) {
         const match = subject.match(/^(\w+)(?:\(([^)]+)\))?(!)?\s*:\s*(.*)/);
-        const type = match?.[1];
+        const rawType = match?.[1];
+        const type = (rawType && rawType in commit_types_1.CommitTypeLabels ? rawType : 'other');
         return {
-            type: (type ?? 'other'),
+            type,
             scope: match?.[2],
             breaking: match ? !!match[3] : false,
             description: match ? `${match[4]}` : subject,
