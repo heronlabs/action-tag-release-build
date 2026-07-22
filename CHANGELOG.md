@@ -1,3 +1,9 @@
+## v6.0.14 (2026-07-22)
+
+### Bug Fixes
+
+* fix: normalize unknown commit types to 'other' in parseCommit (#45) (b0b3d8680c2b5e6871699ce8fb7bed49cb25d324)
+
 ## v6.0.13 (2026-07-21)
 
 ### Miscellaneous Chores
