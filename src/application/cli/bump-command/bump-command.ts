@@ -1,8 +1,8 @@
-import {Bumper} from '../../core/interfaces/bumper';
-import {ChangelogService} from '../../core/services/changelog-service';
-import {SemverService} from '../../core/services/semver-service';
-import {BumpInputs} from './types/input-bump';
-import {BumpOutputs} from './types/output-bump';
+import {Bumper} from '../../../core/interfaces/bumper';
+import {ChangelogService} from '../../../core/services/changelog-service';
+import {SemverService} from '../../../core/services/semver-service';
+import {BumpInputs} from './types/inputs';
+import {BumpOutputs} from './types/outputs';
 
 export class BumpCommand {
   public run(inputs: BumpInputs): BumpOutputs {

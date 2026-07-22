@@ -6,4 +6,4 @@ export type BumpInputs = {
     readonly overrideTag: boolean;
     readonly tagPrefix: string;
 };
-//# sourceMappingURL=input-bump.d.ts.map
+//# sourceMappingURL=inputs.d.ts.map

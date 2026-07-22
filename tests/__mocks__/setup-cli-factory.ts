@@ -1,4 +1,4 @@
-import {BumpCommand} from '../../src/application/cli/bump-command';
+import {BumpCommand} from '../../src/application/cli/bump-command/bump-command';
 import {Bumper} from '../../src/core/interfaces/bumper';
 import {ClaudeService} from '../../src/core/services/bumpers/claude-bumper-service';
 import {NpmService} from '../../src/core/services/bumpers/npm-bumper-service';

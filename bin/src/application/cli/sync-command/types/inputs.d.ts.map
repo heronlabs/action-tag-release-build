@@ -1,0 +1,1 @@
+{"version":3,"file":"inputs.d.ts","sourceRoot":"","sources":["../../../../../../src/application/cli/sync-command/types/inputs.ts"],"names":[],"mappings":"AAAA,MAAM,MAAM,UAAU,GAAG;IACvB,QAAQ,CAAC,MAAM,EAAE,MAAM,CAAC;IACxB,QAAQ,CAAC,MAAM,EAAE,MAAM,CAAC;IACxB,QAAQ,CAAC,YAAY,CAAC,EAAE,MAAM,CAAC;CAChC,CAAC"}

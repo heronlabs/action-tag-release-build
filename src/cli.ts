@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import {BumpCommand} from './application/cli/bump-command';
-import {BumpInputs} from './application/cli/types/input-bump';
+import {BumpCommand} from './application/cli/bump-command/bump-command';
+import {BumpInputs} from './application/cli/bump-command/types/inputs';
 import {Bumper} from './core/interfaces/bumper';
 import {ClaudeService} from './core/services/bumpers/claude-bumper-service';
 import {NpmService} from './core/services/bumpers/npm-bumper-service';

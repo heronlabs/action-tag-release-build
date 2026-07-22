@@ -2,7 +2,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CommandsFactory = void 0;
-const bump_command_1 = require("./application/cli/bump-command");
+const bump_command_1 = require("./application/cli/bump-command/bump-command");
 const claude_bumper_service_1 = require("./core/services/bumpers/claude-bumper-service");
 const npm_bumper_service_1 = require("./core/services/bumpers/npm-bumper-service");
 const changelog_service_1 = require("./core/services/changelog-service");

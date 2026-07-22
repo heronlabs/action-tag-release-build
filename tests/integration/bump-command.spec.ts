@@ -8,8 +8,8 @@ import {
 } from 'node:fs';
 import {join} from 'node:path';
 
-import {BumpCommand} from '../../src/application/cli/bump-command';
-import {BumpInputs} from '../../src/application/cli/types/input-bump';
+import {BumpCommand} from '../../src/application/cli/bump-command/bump-command';
+import {BumpInputs} from '../../src/application/cli/bump-command/types/inputs';
 import {testingCliFactory} from '../__mocks__/setup-cli-factory';
 import {createTestRepo, TestRepo} from '../__mocks__/setup-git-repository';
 

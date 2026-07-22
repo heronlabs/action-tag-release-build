@@ -1,0 +1,1 @@
+{"version":3,"file":"outputs.js","sourceRoot":"","sources":["../../../../../../src/application/cli/bump-command/types/outputs.ts"],"names":[],"mappings":"","sourcesContent":["export type BumpOutputs = {\n  readonly version: string;\n  readonly tag: string;\n  readonly tagMajor: string;\n  readonly tagMinor: string;\n};\n"]}

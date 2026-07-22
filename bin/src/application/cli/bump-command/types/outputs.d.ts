@@ -4,4 +4,4 @@ export type BumpOutputs = {
     readonly tagMajor: string;
     readonly tagMinor: string;
 };
-//# sourceMappingURL=output-bump.d.ts.map
+//# sourceMappingURL=outputs.d.ts.map
