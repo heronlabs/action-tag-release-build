@@ -1,5 +1,5 @@
 export type Inputs = {
-  readonly semantic: string;
+  readonly semantic?: string;
   readonly versionFile: string;
   readonly changelogFile: string;
   readonly refName: string;

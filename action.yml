@@ -9,57 +9,50 @@ branding:
   color: blue
 
 inputs:
-  gh_token:
+  ghToken:
     description: GitHub token for creating tags
     required: true
   semantic:
-    description: >-
-      Semver bump type (major, minor, patch). When empty, the bump is inferred
-      from the merge/HEAD commit using Conventional Commits, defaulting to patch
-      when unclear.
+    description: Semver bump type (major, minor, patch)
     required: false
     default: ''
-  working-directory:
+  workingDirectory:
     description: Working directory (for monorepo sub-directories)
     required: false
     default: '.'
-  override_tag:
+  overrideTag:
     description: Update major and minor version floating tags (e.g., v1, v1.0)
     required: false
     default: 'true'
-  tag_prefix:
+  tagPrefix:
     description: Tag prefix (e.g., v for v1.2.3)
     required: false
     default: 'v'
-  version_file:
+  versionFile:
     description: File to read/write version
     required: false
     default: 'version.txt'
-  changelog_file:
+  changelogFile:
     description: Changelog file path
     required: false
     default: 'CHANGELOG.md'
-  bump_npm:
+  bumpNpm:
     description: Also bump package.json version via npm version
     required: false
     default: 'false'
-  bump_claude:
+  bumpClaude:
     description: Sync version into Claude Code plugin files (plugin.json + marketplace.json)
     required: false
     default: 'false'
-  plugin_dir:
+  pluginDir:
     description: Claude plugin directory
     required: false
     default: '.claude-plugin'
-  source:
-    description: Source branch to sync after bump (optional, future use)
-    required: false
-    default: ''
   target:
     description: Target branches to sync into, comma-separated (optional, future use)
     required: false
     default: ''
-  merge_message:
+  mergeMessage:
     description: Custom merge commit message for sync (optional, future use)
     required: false
     default: ''
@@ -67,36 +60,13 @@ inputs:
 outputs:
   version:
     description: The released version
-    value: ${{ steps.bump.outputs.version }}
   tag:
     description: The created tag (e.g., v1.2.3)
-    value: ${{ steps.bump.outputs.tag }}
-  tag_major:
+  tagMajor:
     description: The major version tag (e.g., v1)
-    value: ${{ steps.bump.outputs.tag_major }}
-  tag_minor:
+  tagMinor:
     description: The minor version tag (e.g., v1.0)
-    value: ${{ steps.bump.outputs.tag_minor }}
 
 runs:
-  using: composite
-  steps:
-    - name: 'Bump, tag, and release'
-      id: bump
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      env:
-        SEMANTIC: ${{ inputs.semantic }}
-        TAG_PREFIX: ${{ inputs.tag_prefix }}
-        VERSION_FILE: ${{ inputs.version_file }}
-        CHANGELOG_FILE: ${{ inputs.changelog_file }}
-        REF_NAME: ${{ github.ref_name }}
-        BUMP_NPM: ${{ inputs.bump_npm }}
-        BUMP_CLAUDE: ${{ inputs.bump_claude }}
-        PLUGIN_DIR: ${{ inputs.plugin_dir }}
-        OVERRIDE_TAG: ${{ inputs.override_tag }}
-        GH_TOKEN: ${{ inputs.gh_token }}
-        SOURCE: ${{ inputs.source }}
-        TARGET: ${{ inputs.target }}
-        MERGE_MESSAGE: ${{ inputs.merge_message }}
-      run: bash ${{ github.action_path }}/entry-point.sh
+  using: node24
+  main: bin/src/index.js

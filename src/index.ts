@@ -1,49 +1,50 @@
 #!/usr/bin/env node
 
+import * as core from '@actions/core';
+
 import {CliFactory} from './application/action/action-factory';
 import {Inputs} from './application/action/command/types/inputs';
 import {Bumper} from './core/interfaces/bumper';
 
-void (async () => {
-  try {
-    const cwd = process.cwd();
-    const cliFactory = CliFactory.make(cwd);
+const optionalInput = (name: string): string | undefined =>
+  core.getInput(name) || undefined;
 
-    const bumpers: Bumper[] = [];
+try {
+  process.chdir(core.getInput('workingDirectory'));
 
-    const bumpNpm = (process.env.BUMP_NPM || 'false') === 'true';
-    if (bumpNpm) bumpers.push(cliFactory.coreFactory.getNpmService());
+  process.env.GH_TOKEN = core.getInput('ghToken', {required: true});
 
-    const bumpClaude = (process.env.BUMP_CLAUDE || 'false') === 'true';
-    if (bumpClaude) {
-      const pluginDir = process.env.PLUGIN_DIR || '.claude-plugin';
-      bumpers.push(cliFactory.coreFactory.getClaudeService(pluginDir));
-    }
+  const cliFactory = CliFactory.make(process.cwd());
 
-    const command = cliFactory.getBumpCommand(bumpers);
+  const bumpers: Bumper[] = [];
 
-    const inputs: Inputs = {
-      semantic: process.env.SEMANTIC ?? '',
-      versionFile: process.env.VERSION_FILE || 'version.txt',
-      changelogFile: process.env.CHANGELOG_FILE || 'CHANGELOG.md',
-      refName: process.env.REF_NAME || 'main',
-      overrideTag: (process.env.OVERRIDE_TAG || 'true') === 'true',
-      tagPrefix: process.env.TAG_PREFIX || 'v',
-      target: process.env.TARGET || undefined,
-      mergeMessage: process.env.MERGE_MESSAGE || undefined,
-    };
+  const bumpNpm = core.getBooleanInput('bumpNpm');
+  if (bumpNpm) bumpers.push(cliFactory.coreFactory.getNpmService());
 
-    const {version, tag, tagMajor, tagMinor} = command.run(inputs);
-
-    process.stdout.write(`${version}\n`);
-    process.stdout.write(`${tag}\n`);
-    process.stdout.write(`${tagMajor}\n`);
-    process.stdout.write(`${tagMinor}\n`);
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Unexpected error\n';
-
-    process.stderr.write(`${message}\n`);
-    process.exit(1);
+  const bumpClaude = core.getBooleanInput('bumpClaude');
+  if (bumpClaude) {
+    const pluginDir = core.getInput('pluginDir');
+    bumpers.push(cliFactory.coreFactory.getClaudeService(pluginDir));
   }
-})();
+
+  const command = cliFactory.getBumpCommand(bumpers);
+
+  const inputs: Inputs = {
+    semantic: optionalInput('semantic'),
+    versionFile: core.getInput('versionFile'),
+    changelogFile: core.getInput('changelogFile'),
+    refName: process.env.GITHUB_REF_NAME || 'main',
+    overrideTag: core.getBooleanInput('overrideTag'),
+    tagPrefix: core.getInput('tagPrefix'),
+    target: optionalInput('target'),
+    mergeMessage: optionalInput('mergeMessage'),
+  };
+  const {version, tag, tagMajor, tagMinor} = command.run(inputs);
+
+  core.setOutput('version', version);
+  core.setOutput('tag', tag);
+  core.setOutput('tagMajor', tagMajor);
+  core.setOutput('tagMinor', tagMinor);
+} catch (error) {
+  core.setFailed(error instanceof Error ? error : String(error));
+}
