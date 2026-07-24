@@ -1,3 +1,10 @@
+## v6.0.15 (2026-07-24)
+
+### Miscellaneous Chores
+
+* other: scaffold environment sync command and plan (#46) (44f4cf3a40ead0ce8765c3c9fc8d674c7484d026)
+* other: [skip ci] chore: update bin/ build artifact (a64ab9c9b79720aeb697052bc61f28469f136c81)
+
 ## v6.0.14 (2026-07-22)
 
 ### Bug Fixes
