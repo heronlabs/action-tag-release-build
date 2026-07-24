@@ -3,7 +3,7 @@ import {join} from 'node:path';
 
 import {faker} from '@faker-js/faker';
 
-import {GhService} from '../../../../src/infrastructure/gh/services/gh-service';
+import {GhService} from '../../../../src/infrastructure/gh/gh-service';
 import {
   ChildProcessServiceMock,
   ChildProcessServiceMoq,

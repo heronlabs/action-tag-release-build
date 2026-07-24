@@ -1,0 +1,1 @@
+{"version":3,"file":"semantic.js","sourceRoot":"","sources":["../../../../src/core/types/semantic.ts"],"names":[],"mappings":"","sourcesContent":["export type Semantic = 'major' | 'minor' | 'patch';\n"]}

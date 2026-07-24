@@ -2,7 +2,7 @@ import {execSync} from 'node:child_process';
 
 import {faker} from '@faker-js/faker';
 
-import {ChildProcessService} from '../../../../src/infrastructure/terminal/services/child-process-service';
+import {ChildProcessService} from '../../../../src/infrastructure/terminal/child-process-service';
 
 vi.mock('node:child_process', () => ({
   execSync: vi.fn(),
