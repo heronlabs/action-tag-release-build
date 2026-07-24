@@ -10,7 +10,7 @@ Expect a response within 72 hours. After triage we will keep you updated on prog
 
 This repository is a GitHub Action that handles:
 
-- GitHub Personal Access Tokens (`gh_token` input)
+- GitHub Personal Access Tokens (`ghToken` input)
 - Git tag and release creation via the GitHub CLI
 
 Key concerns: token exposure in logs, supply chain integrity of bundled dependencies, tag/release manipulation.
