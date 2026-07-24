@@ -1,3 +1,9 @@
+## v6.0.16 (2026-07-24)
+
+### Reverts
+
+* revert: scaffold environment sync command and plan (#46) (#47) (6b02ddb851e427f9fbedc0e4a35354b925c40143)
+
 ## v6.0.15 (2026-07-24)
 
 ### Miscellaneous Chores
