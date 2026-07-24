@@ -1,3 +1,13 @@
+## v7.0.0 (2026-07-24)
+
+### ⚠ BREAKING CHANGES
+
+* feat!: scaffold environment sync command and plan (#48) (23b4ee7177744fbda42d4ebbd2cd43879e0fc1a6)
+
+### Features
+
+* feat!: scaffold environment sync command and plan (#48) (23b4ee7177744fbda42d4ebbd2cd43879e0fc1a6)
+
 ## v6.0.16 (2026-07-24)
 
 ### Reverts
