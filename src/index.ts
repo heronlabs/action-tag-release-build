@@ -6,11 +6,8 @@ import {CliFactory} from './application/action/action-factory';
 import {Inputs} from './application/action/command/types/inputs';
 import {Bumper} from './core/interfaces/bumper';
 
-const optionalInput = (name: string): string | undefined =>
-  core.getInput(name) || undefined;
-
 try {
-  process.chdir(core.getInput('workingDirectory'));
+  process.chdir(core.getInput('workingDirectory', {required: true}));
 
   process.env.GH_TOKEN = core.getInput('ghToken', {required: true});
 
@@ -18,26 +15,26 @@ try {
 
   const bumpers: Bumper[] = [];
 
-  const bumpNpm = core.getBooleanInput('bumpNpm');
+  const bumpNpm = core.getBooleanInput('bumpNpm', {required: true});
   if (bumpNpm) bumpers.push(cliFactory.coreFactory.getNpmService());
 
-  const bumpClaude = core.getBooleanInput('bumpClaude');
+  const bumpClaude = core.getBooleanInput('bumpClaude', {required: true});
   if (bumpClaude) {
-    const pluginDir = core.getInput('pluginDir');
+    const pluginDir = core.getInput('pluginDir', {required: true});
     bumpers.push(cliFactory.coreFactory.getClaudeService(pluginDir));
   }
 
   const command = cliFactory.getBumpCommand(bumpers);
 
   const inputs: Inputs = {
-    semantic: optionalInput('semantic'),
-    versionFile: core.getInput('versionFile'),
-    changelogFile: core.getInput('changelogFile'),
+    semantic: core.getInput('semantic') || undefined,
+    versionFile: core.getInput('versionFile', {required: true}),
+    changelogFile: core.getInput('changelogFile', {required: true}),
     refName: process.env.GITHUB_REF_NAME || 'main',
-    overrideTag: core.getBooleanInput('overrideTag'),
-    tagPrefix: core.getInput('tagPrefix'),
-    target: optionalInput('target'),
-    mergeMessage: optionalInput('mergeMessage'),
+    overrideTag: core.getBooleanInput('overrideTag', {required: true}),
+    tagPrefix: core.getInput('tagPrefix', {required: true}),
+    target: core.getInput('target') || undefined,
+    mergeMessage: core.getInput('mergeMessage') || undefined,
   };
   const {version, tag, tagMajor, tagMinor} = command.run(inputs);
 

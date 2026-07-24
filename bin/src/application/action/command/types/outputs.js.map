@@ -1,1 +1,0 @@
-{"version":3,"file":"outputs.js","sourceRoot":"","sources":["../../../../../../src/application/action/command/types/outputs.ts"],"names":[],"mappings":"","sourcesContent":["export type Outputs = {\n  readonly version: string;\n  readonly tag: string;\n  readonly tagMajor: string;\n  readonly tagMinor: string;\n};\n"]}
