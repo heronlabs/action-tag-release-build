@@ -12,9 +12,9 @@ importers:
 
   .:
     dependencies:
-      semver:
-        specifier: ^7.7.0
-        version: 7.8.5
+      '@actions/core':
+        specifier: ^3.0.1
+        version: 3.0.1
     devDependencies:
       '@faker-js/faker':
         specifier: ^10.5.0
@@ -31,15 +31,15 @@ importers:
       '@types/node':
         specifier: ^26.1.1
         version: 26.1.1
-      '@types/semver':
-        specifier: ^7.7.0
-        version: 7.7.1
       '@vitest/coverage-v8':
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
       dependency-cruiser:
         specifier: ^18.1.0
         version: 18.1.0
+      esbuild:
+        specifier: ^0.28.1
+        version: 0.28.1
       eslint:
         specifier: ^9.39.4
         version: 9.39.4(jiti@2.7.0)
@@ -61,20 +61,26 @@ importers:
       moq.ts:
         specifier: ^10.0.8
         version: 10.0.8
-      tsx:
-        specifier: ^4.23.1
-        version: 4.23.1
       typescript:
         specifier: ~5.8.3
         version: 5.8.3
-      typescript-eslint:
-        specifier: ^8.63.0
-        version: 8.63.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.8.3)
       vitest:
         specifier: ^4.1.10
         version: 4.1.10(@types/node@26.1.1)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(vite@8.1.0(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
 packages:
+
+  '@actions/core@3.0.1':
+    resolution: {integrity: sha512-a6d/Nwahm9fliVGRhdhofo40HjHQasUPusmc7vBfyky+7Z+P2A1J68zyFVaNcEclc/Se+eO595oAr5nwEIoIUA==}
+
+  '@actions/exec@3.0.0':
+    resolution: {integrity: sha512-6xH/puSoNBXb72VPlZVm7vQ+svQpFyA96qdDBvhB8eNZOE8LtPf9L4oAsfzK/crCL8YZ+19fKYVnM63Sl+Xzlw==}
+
+  '@actions/http-client@4.0.1':
+    resolution: {integrity: sha512-+Nvd1ImaOZBSoPbsUtEhv+1z99H12xzncCkz0a3RuehINE81FZSe2QTj3uvAPTcJX/SCzUQHQ0D1GrPMbrPitg==}
+
+  '@actions/io@3.0.2':
+    resolution: {integrity: sha512-nRBchcMM+QK1pdjO7/idu86rbJI5YHUKCvKs0KxnSYbVe3F51UfGxuZX4Qy/fWlp6l7gWFwIkrOzN+oUK03kfw==}
 
   '@babel/code-frame@7.29.7':
     resolution: {integrity: sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw==}
@@ -799,9 +805,6 @@ packages:
 
   '@types/normalize-package-data@2.4.4':
     resolution: {integrity: sha512-37i+OaWTh9qeK4LSHPsyRC7NahnGotNuZvjLSgcPzblpHB3rrCJxAOgI5gCdKm7coonsaX1Of0ILiTcnZjbfxA==}
-
-  '@types/semver@7.7.1':
-    resolution: {integrity: sha512-FmgJfu+MOcQ370SD0ev7EI8TlCAfKYU+B4m5T3yXc1CiRN94g/SZPtsCkk506aUDtlMnFZvasDwHHUcZUEaYuA==}
 
   '@typescript-eslint/eslint-plugin@8.62.1':
     resolution: {integrity: sha512-4EQM77WgVNxj7OkL/5b/D/xZsw00G577+UriYTC7JF5opcF3T2AuoeY7ueLaZgSVjSgCS6yOAJB5bRGLPSJUzA==}
@@ -2314,6 +2317,10 @@ packages:
   undici-types@8.3.0:
     resolution: {integrity: sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==}
 
+  undici@6.27.0:
+    resolution: {integrity: sha512-YmfV3YnEDzXRC5lZ2jWtWWHKGUm1zIt8AhesR1tens+HTNv+YZlN/dp6G727LOvMJ8xjP9Be7Y2Sdr96LDm+pg==}
+    engines: {node: '>=18.17'}
+
   unicorn-magic@0.3.0:
     resolution: {integrity: sha512-+QBBXBCvifc56fsbuxZQ6Sic3wqqc3WWaqxs58gvJrcOuN83HGTCwz3oS5phzU9LthRNE9VrJCFCLUgHeeFnfA==}
     engines: {node: '>=18'}
@@ -2471,6 +2478,22 @@ packages:
     resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
 snapshots:
+
+  '@actions/core@3.0.1':
+    dependencies:
+      '@actions/exec': 3.0.0
+      '@actions/http-client': 4.0.1
+
+  '@actions/exec@3.0.0':
+    dependencies:
+      '@actions/io': 3.0.2
+
+  '@actions/http-client@4.0.1':
+    dependencies:
+      tunnel: 0.0.6
+      undici: 6.27.0
+
+  '@actions/io@3.0.2': {}
 
   '@babel/code-frame@7.29.7':
     dependencies:
@@ -3166,8 +3189,6 @@ snapshots:
       undici-types: 8.3.0
 
   '@types/normalize-package-data@2.4.4': {}
-
-  '@types/semver@7.7.1': {}
 
   '@typescript-eslint/eslint-plugin@8.62.1(@typescript-eslint/parser@8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@5.8.3))(eslint@9.39.4(jiti@2.7.0))(typescript@5.8.3)':
     dependencies:
@@ -4677,6 +4698,7 @@ snapshots:
       esbuild: 0.28.1
     optionalDependencies:
       fsevents: 2.3.3
+    optional: true
 
   tunnel@0.0.6: {}
 
@@ -4718,6 +4740,8 @@ snapshots:
   underscore@1.13.8: {}
 
   undici-types@8.3.0: {}
+
+  undici@6.27.0: {}
 
   unicorn-magic@0.3.0: {}
 

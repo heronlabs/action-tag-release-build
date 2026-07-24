@@ -55,7 +55,7 @@
     {
       "comment": "Every module in src must be reachable from the CLI entry point (dead-code guard).",
       "from": {
-        "path": "^src/cli\\.ts$"
+        "path": "^src/index\\.ts$"
       },
       "name": "no-unreachable-from-entry",
       "severity": "error",

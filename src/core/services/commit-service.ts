@@ -1,6 +1,6 @@
 import {CommitType, CommitTypeLabels} from '../../core/types/commit-types';
 import {ParsedCommit, ParsedDescription} from '../../core/types/parsed-commit';
-import {GitService} from '../../infrastructure/git/git-service';
+import {GitService} from '../../infrastructure/git/services/git-service';
 import {Semantic} from '../types/semantic';
 
 export class CommitService {
