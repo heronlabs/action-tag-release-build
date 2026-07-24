@@ -30,9 +30,6 @@ jobs:
 
       - run: pnpm build
 
-      - name: Check bin/ freshness
-        run: git diff --exit-code bin/src/index.js
-
   audit:
     needs: install
     name: 'Audit & Supply Chain'

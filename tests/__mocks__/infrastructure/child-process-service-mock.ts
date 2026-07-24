@@ -1,6 +1,6 @@
 import {Mock} from 'moq.ts';
 
-import {ChildProcessService} from '../../../src/infrastructure/terminal/services/child-process-service';
+import {ChildProcessService} from '../../../src/infrastructure/terminal/child-process-service';
 
 export const ChildProcessServiceMock = {
   exec: vi.fn(),

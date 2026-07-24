@@ -8,11 +8,11 @@
 <!-- /supera:guardrails -->
 
 ## Stack
-- **Runtime**: TypeScript + Node.js (node24 GitHub Action, compiled `bin/src/index.js` entry)
+- **Runtime**: TypeScript + Node.js (composite GitHub Action with CLI)
 - **Package**: `@heronlabs/bump` — published to npm
 - **Test framework**: [Vitest](https://vitest.dev/) — `tests/`
 - **Linter**: [ESLint](https://eslint.org/) — `eslint.config.ts`
-- **Entry point**: `src/index.ts` (@actions/core inputs/outputs; built to `bin/src/index.js` with @actions/core inlined by esbuild) → CliFactory → Command
+- **Entry point**: `entry-point.sh` → `src/cli.ts` (CommandsFactory → BumpCommand)
 
 ## Commands
 | Command | Description |
@@ -25,19 +25,18 @@
 ## Key files
 | File | Purpose |
 |------|---------|
-| `action.yml` | Node action definition (inputs, outputs, runs.main) |
-| `src/index.ts` | Action entry point — @actions/core inputs/outputs, wires CliFactory |
-| `bin/` | Compiled output; `bin/src/index.js` is `runs.main` with @actions/core inlined — build artifact, do not edit |
-| `src/application/action/action-factory.ts` | CliFactory (wires all services) |
-| `src/application/action/command/command.ts` | Command — orchestrates the full pipeline |
+| `action.yml` | Composite action definition (inputs, outputs, steps) |
+| `entry-point.sh` | Shell wrapper — runs npx and maps outputs to GITHUB_OUTPUT |
+| `src/cli.ts` | CLI entry point + CommandsFactory (wires all services) |
+| `src/application/cli/bump-command.ts` | BumpCommand — orchestrates the full pipeline |
 | `src/core/services/semver-service.ts` | Read version file, calculate next semver, write version file |
 | `src/core/services/commit-service.ts` | Parse Conventional Commits, classify last commit type |
 | `src/core/services/changelog-service.ts` | Generate release notes, update changelog, tag + push + release |
 | `src/core/services/bumpers/npm-bumper-service.ts` | Sync version into package.json |
 | `src/core/services/bumpers/claude-bumper-service.ts` | Sync version into Claude Code plugin files |
-| `src/infrastructure/git/services/git-service.ts` | Git commands: log, describe, tag, push |
-| `src/infrastructure/gh/services/gh-service.ts` | GitHub CLI: release create |
-| `src/infrastructure/terminal/services/child-process-service.ts` | Shell command execution |
+| `src/infrastructure/git/git-service.ts` | Git commands: log, describe, tag, push |
+| `src/infrastructure/gh/gh-service.ts` | GitHub CLI: release create |
+| `src/infrastructure/terminal/child-process-service.ts` | Shell command execution |
 | `vitest.config.ts` | Vitest configuration |
 | `eslint.config.ts` | ESLint configuration |
 | `package.json` | Dependencies + scripts |

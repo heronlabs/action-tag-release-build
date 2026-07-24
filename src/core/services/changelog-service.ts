@@ -1,8 +1,8 @@
 import {existsSync, readFileSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 
-import {GhService} from '../../infrastructure/gh/services/gh-service';
-import {GitService} from '../../infrastructure/git/services/git-service';
+import {GhService} from '../../infrastructure/gh/gh-service';
+import {GitService} from '../../infrastructure/git/git-service';
 import {CommitTypeLabels} from '../types/commit-types';
 import {ParsedDescription} from '../types/parsed-commit';
 import {CommitService} from './commit-service';
