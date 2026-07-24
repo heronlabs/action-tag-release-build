@@ -11,10 +11,11 @@ overrides:
 importers:
 
   .:
-    devDependencies:
+    dependencies:
       '@actions/core':
         specifier: ^3.0.1
         version: 3.0.1
+    devDependencies:
       '@faker-js/faker':
         specifier: ^10.5.0
         version: 10.5.0
