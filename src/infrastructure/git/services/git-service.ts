@@ -16,15 +16,15 @@ export class GitService {
     );
   }
 
-  public apply({
+  public applyTags({
     version,
     tag,
-    refName,
+    ref,
     tags,
   }: {
     version: string;
     tag: string;
-    refName: string;
+    ref: string;
     tags?: {
       major: string;
       minor: string;
@@ -39,7 +39,7 @@ export class GitService {
       )
       .execChain('git add -A')
       .execChain(`git commit -m "${commitMessage}"`)
-      .execChain(`git pull --rebase origin "${refName}"`)
+      .execChain(`git pull --rebase origin "${ref}"`)
       .execChain(`git tag -a "${tag}" -m "Release ${version}"`);
 
     if (!chain.ok) {
@@ -66,6 +66,12 @@ export class GitService {
     if (!push.ok) return {ok: false as const, error: push.error};
 
     return {ok: true as const};
+  }
+
+  public mergeWithoutCommit(ref: string, environment: string) {
+    return this.childProcessService.exec(
+      `git push origin "refs/heads/${ref}:refs/heads/${environment}"`,
+    );
   }
 
   constructor(private readonly childProcessService: ChildProcessService) {}

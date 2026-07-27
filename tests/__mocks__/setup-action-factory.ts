@@ -5,17 +5,20 @@ import {NpmService} from '../../src/core/services/bumpers/npm-bumper-service';
 import {ChangelogService} from '../../src/core/services/changelog-service';
 import {CommitService} from '../../src/core/services/commit-service';
 import {SemverService} from '../../src/core/services/semver-service';
-import {GhService} from '../../src/infrastructure/gh/services/gh-service';
+import {ReleaseNotesService} from '../../src/infrastructure/gh/services/release-notes-service';
 import {GitService} from '../../src/infrastructure/git/services/git-service';
 import {ChildProcessService} from '../../src/infrastructure/terminal/services/child-process-service';
-import {GhServiceMock, GhServiceMoq} from './infrastructure/gh-service-mock';
+import {
+  ReleaseNotesServiceMock,
+  ReleaseNotesServiceMoq,
+} from './infrastructure/release-notes-service-mock';
 
 export type Bumpers = 'claude' | 'npm';
 
 export interface TestingCliOptions {
   bumpers?: Bumpers[];
   ghCreateReleaseReturn?: {ok: true} | {ok: false; error: Error};
-  useRealGhService?: boolean;
+  useRealReleaseNotesService?: boolean;
   patchServices?: (services: {
     gitService: GitService;
     commitService: CommitService;
@@ -29,13 +32,13 @@ export const testingCliFactory = (
   const childProcessService = new ChildProcessService(workDir);
   const gitService = new GitService(childProcessService);
 
-  const ghService = opts.useRealGhService
-    ? new GhService(workDir, childProcessService)
+  const releaseNotesService = opts.useRealReleaseNotesService
+    ? new ReleaseNotesService(workDir, childProcessService)
     : (() => {
-        GhServiceMock.createRelease.mockReturnValue(
+        ReleaseNotesServiceMock.createRelease.mockReturnValue(
           opts.ghCreateReleaseReturn ?? {ok: true},
         );
-        return GhServiceMoq;
+        return ReleaseNotesServiceMoq;
       })();
 
   const commitService = new CommitService(gitService);
@@ -43,7 +46,7 @@ export const testingCliFactory = (
   const changelogService = new ChangelogService(
     workDir,
     gitService,
-    ghService,
+    releaseNotesService,
     commitService,
   );
 

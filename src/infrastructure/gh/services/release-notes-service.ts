@@ -3,7 +3,7 @@ import {join} from 'node:path';
 
 import {ChildProcessService} from '../../terminal/services/child-process-service';
 
-export class GhService {
+export class ReleaseNotesService {
   public createRelease(tag: string, releaseNotes: string) {
     try {
       const releaseNotesFile = join(this.cwd, '.release-notes.tmp.md');

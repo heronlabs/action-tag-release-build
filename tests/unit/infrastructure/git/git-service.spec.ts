@@ -155,9 +155,9 @@ describe('Given a git service', () => {
       const input = {
         version: '1.2.3',
         tag: 'v1.2.3',
-        refName: 'main',
+        ref: 'main',
       };
-      service.apply(input);
+      service.applyTags(input);
 
       expect(execChainMock).toHaveBeenCalledTimes(7);
     });
@@ -173,13 +173,13 @@ describe('Given a git service', () => {
       const input = {
         version: '1.2.3',
         tag: 'v1.2.3',
-        refName: 'main',
+        ref: 'main',
         tags: {
           major: 'v1',
           minor: 'v2',
         },
       };
-      service.apply(input);
+      service.applyTags(input);
 
       expect(execChainMock).toHaveBeenCalledTimes(11);
     });
@@ -200,9 +200,9 @@ describe('Given a git service', () => {
       const input = {
         version: '1.2.3',
         tag: 'v1.2.3',
-        refName: 'main',
+        ref: 'main',
       };
-      const output = service.apply(input);
+      const output = service.applyTags(input);
 
       expect(output).toStrictEqual({
         ok: false,
@@ -239,9 +239,9 @@ describe('Given a git service', () => {
       const input = {
         version: '1.2.3',
         tag: 'v1.2.3',
-        refName: 'main',
+        ref: 'main',
       };
-      const output = service.apply(input);
+      const output = service.applyTags(input);
 
       expect(output).toStrictEqual({
         ok: false,
@@ -278,13 +278,13 @@ describe('Given a git service', () => {
       const input = {
         version: '1.2.3',
         tag: 'v1.2.3',
-        refName: 'main',
+        ref: 'main',
         tags: {
           major: 'v1',
           minor: 'v2',
         },
       };
-      const output = service.apply(input);
+      const output = service.applyTags(input);
 
       expect(output).toStrictEqual({
         ok: false,
@@ -300,7 +300,7 @@ describe('Given a git service', () => {
           ChildProcessServiceMock.execChain(nextCommand),
       });
 
-      service.apply({version: '1.2.3', tag: 'v1.2.3', refName: 'main'});
+      service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         1,
@@ -316,7 +316,7 @@ describe('Given a git service', () => {
           ChildProcessServiceMock.execChain(nextCommand),
       });
 
-      service.apply({version: '1.2.3', tag: 'v1.2.3', refName: 'main'});
+      service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         2,
@@ -332,7 +332,7 @@ describe('Given a git service', () => {
           ChildProcessServiceMock.execChain(nextCommand),
       });
 
-      service.apply({version: '1.2.3', tag: 'v1.2.3', refName: 'main'});
+      service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         3,
@@ -348,7 +348,7 @@ describe('Given a git service', () => {
           ChildProcessServiceMock.execChain(nextCommand),
       });
 
-      service.apply({version: '1.2.3', tag: 'v1.2.3', refName: 'main'});
+      service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         4,
@@ -364,7 +364,7 @@ describe('Given a git service', () => {
           ChildProcessServiceMock.execChain(nextCommand),
       });
 
-      service.apply({version: '1.2.3', tag: 'v1.2.3', refName: 'main'});
+      service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         5,
@@ -380,7 +380,7 @@ describe('Given a git service', () => {
           ChildProcessServiceMock.execChain(nextCommand),
       });
 
-      service.apply({version: '1.2.3', tag: 'v1.2.3', refName: 'main'});
+      service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         6,
@@ -396,7 +396,7 @@ describe('Given a git service', () => {
           ChildProcessServiceMock.execChain(nextCommand),
       });
 
-      service.apply({version: '1.2.3', tag: 'v1.2.3', refName: 'main'});
+      service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         7,
@@ -412,10 +412,10 @@ describe('Given a git service', () => {
           ChildProcessServiceMock.execChain(nextCommand),
       });
 
-      service.apply({
+      service.applyTags({
         version: '1.2.3',
         tag: 'v1.2.3',
-        refName: 'main',
+        ref: 'main',
         tags: {major: 'v1', minor: 'v2'},
       });
 
@@ -433,10 +433,10 @@ describe('Given a git service', () => {
           ChildProcessServiceMock.execChain(nextCommand),
       });
 
-      service.apply({
+      service.applyTags({
         version: '1.2.3',
         tag: 'v1.2.3',
-        refName: 'main',
+        ref: 'main',
         tags: {major: 'v1', minor: 'v2'},
       });
 
@@ -454,10 +454,10 @@ describe('Given a git service', () => {
           ChildProcessServiceMock.execChain(nextCommand),
       });
 
-      service.apply({
+      service.applyTags({
         version: '1.2.3',
         tag: 'v1.2.3',
-        refName: 'main',
+        ref: 'main',
         tags: {major: 'v1', minor: 'v2'},
       });
 
@@ -475,10 +475,10 @@ describe('Given a git service', () => {
           ChildProcessServiceMock.execChain(nextCommand),
       });
 
-      service.apply({
+      service.applyTags({
         version: '1.2.3',
         tag: 'v1.2.3',
-        refName: 'main',
+        ref: 'main',
         tags: {major: 'v1', minor: 'v2'},
       });
 
@@ -528,7 +528,7 @@ describe('Given a git service', () => {
             ChildProcessServiceMock.execChain(nextCommand),
         });
 
-      service.apply({version: '1.2.3', tag: 'v1.2.3', refName: 'main'});
+      service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenCalledTimes(6);
     });
@@ -541,10 +541,10 @@ describe('Given a git service', () => {
           ChildProcessServiceMock.execChain(nextCommand),
       });
 
-      const output = service.apply({
+      const output = service.applyTags({
         version: '1.2.3',
         tag: 'v1.2.3',
-        refName: 'main',
+        ref: 'main',
       });
 
       expect(output).toStrictEqual({ok: true});
@@ -558,10 +558,10 @@ describe('Given a git service', () => {
           ChildProcessServiceMock.execChain(nextCommand),
       });
 
-      const output = service.apply({
+      const output = service.applyTags({
         version: '1.2.3',
         tag: 'v1.2.3',
-        refName: 'main',
+        ref: 'main',
         tags: {major: 'v1', minor: 'v2'},
       });
 
@@ -576,10 +576,10 @@ describe('Given a git service', () => {
           ChildProcessServiceMock.execChain(nextCommand),
       });
 
-      service.apply({
+      service.applyTags({
         version: '1.2.3',
         tag: 'v1.2.3',
-        refName: 'main',
+        ref: 'main',
         tags: {major: 'v1', minor: 'v2'},
       });
 

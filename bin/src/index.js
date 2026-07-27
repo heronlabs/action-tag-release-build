@@ -19246,10 +19246,42 @@ function error(message, properties = {}) {
   issueCommand("error", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
 
-// src/infrastructure/gh/services/gh-service.ts
+// src/infrastructure/gh/services/pull-request-service.ts
+var PullRequestService = class {
+  constructor(childProcessService) {
+    this.childProcessService = childProcessService;
+  }
+  childProcessService;
+  hasPullRequest(ref, environment) {
+    try {
+      const result = this.childProcessService.exec(
+        `gh pr list --base "${environment}" --head "${ref}" --state open --json number --jq length`
+      );
+      if (!result.ok) return result;
+      return { ok: true, data: result.data !== "0" };
+    } catch (error2) {
+      return { ok: false, error: error2 };
+    }
+  }
+  createPullRequest(ref, environment) {
+    try {
+      const title = `\u{1F517} Sync ${ref} into ${environment}`;
+      let body = `Fast-forward sync from ${ref} was rejected because `;
+      body += `${environment} has diverged. Merge this pull request `;
+      body += `to sync ${environment} with ${ref}.`;
+      return this.childProcessService.exec(
+        `gh pr create --base "${environment}" --head "${ref}" --title "${title}" --body "${body}"`
+      );
+    } catch (error2) {
+      return { ok: false, error: error2 };
+    }
+  }
+};
+
+// src/infrastructure/gh/services/release-notes-service.ts
 var import_node_fs = require("node:fs");
 var import_node_path = require("node:path");
-var GhService = class {
+var ReleaseNotesService = class {
   constructor(cwd, childProcessService) {
     this.cwd = cwd;
     this.childProcessService = childProcessService;
@@ -19277,9 +19309,14 @@ var GhFactory = class _GhFactory {
   }
   cwd;
   terminalFactory;
-  getGhService() {
-    return new GhService(
+  getReleaseNotesService() {
+    return new ReleaseNotesService(
       this.cwd,
+      this.terminalFactory.getChildProcessService()
+    );
+  }
+  getPullRequestService() {
+    return new PullRequestService(
       this.terminalFactory.getChildProcessService()
     );
   }
@@ -19306,16 +19343,16 @@ var GitService = class {
       `git log --pretty=format:"%H %s" ${range}`
     );
   }
-  apply({
+  applyTags({
     version,
     tag,
-    refName,
+    ref,
     tags
   }) {
     const commitMessage = `[skip ci] bump ${tag}`;
     const chain = this.childProcessService.execChain('git config user.name  "github-actions[bot]"').execChain(
       'git config user.email "github-actions[bot]@users.noreply.github.com"'
-    ).execChain("git add -A").execChain(`git commit -m "${commitMessage}"`).execChain(`git pull --rebase origin "${refName}"`).execChain(`git tag -a "${tag}" -m "Release ${version}"`);
+    ).execChain("git add -A").execChain(`git commit -m "${commitMessage}"`).execChain(`git pull --rebase origin "${ref}"`).execChain(`git tag -a "${tag}" -m "Release ${version}"`);
     if (!chain.ok) {
       return { ok: false, error: chain.error };
     }
@@ -19331,6 +19368,11 @@ var GitService = class {
     ).execChain("git push --follow-tags").execChain(`git push origin "${tags.major}" --force`).execChain(`git push origin "${tags.minor}" --force`);
     if (!push.ok) return { ok: false, error: push.error };
     return { ok: true };
+  }
+  mergeWithoutCommit(ref, environment) {
+    return this.childProcessService.exec(
+      `git push origin "refs/heads/${ref}:refs/heads/${environment}"`
+    );
   }
 };
 
@@ -19514,15 +19556,15 @@ var CommitTypeLabels = {
 
 // src/core/services/changelog-service.ts
 var ChangelogService = class {
-  constructor(cwd, gitService, ghService, commitService) {
+  constructor(cwd, gitService, releaseNotesService, commitService) {
     this.cwd = cwd;
     this.gitService = gitService;
-    this.ghService = ghService;
+    this.releaseNotesService = releaseNotesService;
     this.commitService = commitService;
   }
   cwd;
   gitService;
-  ghService;
+  releaseNotesService;
   commitService;
   generateReleaseNotes(tagPrefix) {
     try {
@@ -19591,7 +19633,7 @@ ${releaseNotes}
     major,
     minor,
     changelogFile,
-    refName,
+    ref,
     overrideTag
   }) {
     const tag = `${tagPrefix}${nextVersion}`;
@@ -19606,14 +19648,17 @@ ${releaseNotes}
       changelogFile
     );
     if (!changelog.ok) return { ok: false, error: changelog.error };
-    const gitApply = this.gitService.apply({
+    const gitApply = this.gitService.applyTags({
       version: nextVersion,
       tag,
-      refName,
+      ref,
       tags: overrideTag ? { major: tagMajor, minor: tagMinor } : void 0
     });
     if (!gitApply.ok) return { ok: false, error: gitApply.error };
-    const ghRelease = this.ghService.createRelease(tag, releaseNotes.data);
+    const ghRelease = this.releaseNotesService.createRelease(
+      tag,
+      releaseNotes.data
+    );
     if (!ghRelease.ok) {
       return { ok: false, error: ghRelease.error };
     }
@@ -19782,6 +19827,39 @@ var SemverService = class {
   }
 };
 
+// src/core/services/sync-service.ts
+var SyncService = class {
+  constructor(gitService, pullRequestService) {
+    this.gitService = gitService;
+    this.pullRequestService = pullRequestService;
+  }
+  gitService;
+  pullRequestService;
+  cascadeEnvironments(ref, target) {
+    try {
+      const environments = target.trim().split(",").map((environment) => {
+        const syncEnvironment = this.gitService.mergeWithoutCommit(
+          ref,
+          environment
+        );
+        if (!syncEnvironment.ok) {
+          const existingPullRequest = this.pullRequestService.hasPullRequest(
+            ref,
+            environment
+          );
+          if (existingPullRequest.ok && !existingPullRequest.data)
+            this.pullRequestService.createPullRequest(ref, environment);
+          return `${environment} xx ${ref}`;
+        }
+        return `${environment} => ${ref}`;
+      });
+      return { ok: true, data: environments };
+    } catch (error2) {
+      return { ok: false, error: error2 };
+    }
+  }
+};
+
 // src/core/core-factory.ts
 var CoreFactory = class _CoreFactory {
   constructor(cwd, gitFactory, ghFactory, terminalFactory) {
@@ -19800,11 +19878,17 @@ var CoreFactory = class _CoreFactory {
   getSemverService() {
     return new SemverService(this.cwd, this.getCommitService());
   }
+  getSyncService() {
+    return new SyncService(
+      this.gitFactory.getGitService(),
+      this.ghFactory.getPullRequestService()
+    );
+  }
   getChangelogService() {
     return new ChangelogService(
       this.cwd,
       this.gitFactory.getGitService(),
-      this.ghFactory.getGhService(),
+      this.ghFactory.getReleaseNotesService(),
       this.getCommitService()
     );
   }
@@ -19824,22 +19908,25 @@ var CoreFactory = class _CoreFactory {
 
 // src/application/action/command/command.ts
 var Command2 = class {
-  constructor(bumpers, semverService, changelogService) {
+  constructor(bumpers, semverService, changelogService, syncService) {
     this.bumpers = bumpers;
     this.semverService = semverService;
     this.changelogService = changelogService;
+    this.syncService = syncService;
   }
   bumpers;
   semverService;
   changelogService;
+  syncService;
   run(inputs) {
     const {
       versionFile,
       semantic,
       tagPrefix,
       changelogFile,
-      refName,
-      overrideTag
+      ref,
+      overrideTag,
+      target
     } = inputs;
     const semver = this.semverService.calculateNextVersion(
       versionFile,
@@ -19861,16 +19948,25 @@ var Command2 = class {
       major,
       minor,
       changelogFile,
-      refName,
+      ref,
       overrideTag
     });
     if (!tags.ok) throw tags.error;
     const { tag, tagMajor, tagMinor } = tags.data;
     let tagMessage = `\u{1F3F7}\uFE0F Tagged: ${tag}`;
-    if (inputs.overrideTag)
+    if (overrideTag)
       tagMessage += ` with major: ${tagMajor} and minor: ${tagMinor}`;
     process.stderr.write(`${tagMessage}
 `);
+    if (target) {
+      const envsSynced = this.syncService.cascadeEnvironments(ref, target);
+      let syncMessage = "\u{1F517} Sync: ";
+      if (!envsSynced.ok)
+        syncMessage += "Error during environments syncronization";
+      else syncMessage += `Environments ${envsSynced.data.join(", ")} synced`;
+      process.stderr.write(`${syncMessage}
+`);
+    }
     return {
       version: nextVersion,
       tag,
@@ -19890,7 +19986,8 @@ var CliFactory = class _CliFactory {
     return new Command2(
       bumpers,
       this.coreFactory.getSemverService(),
-      this.coreFactory.getChangelogService()
+      this.coreFactory.getChangelogService(),
+      this.coreFactory.getSyncService()
     );
   }
   static make(cwd) {
@@ -19917,11 +20014,10 @@ try {
     semantic: getInput("semantic") || void 0,
     versionFile: getInput("versionFile", { required: true }),
     changelogFile: getInput("changelogFile", { required: true }),
-    refName: process.env.GITHUB_REF_NAME || "main",
+    ref: process.env.GITHUB_REF_NAME || "main",
     overrideTag: getBooleanInput("overrideTag", { required: true }),
     tagPrefix: getInput("tagPrefix", { required: true }),
-    target: getInput("target") || void 0,
-    mergeMessage: getInput("mergeMessage") || void 0
+    target: getInput("target") || void 0
   };
   const { version, tag, tagMajor, tagMinor } = command.run(inputs);
   setOutput("version", version);

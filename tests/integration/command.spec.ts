@@ -18,6 +18,7 @@ describe('Full tag-release-build pipeline', () => {
 
   beforeEach(() => {
     vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
   });
 
   afterEach(() => {
@@ -42,7 +43,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -58,7 +59,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -80,7 +81,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -96,7 +97,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -112,7 +113,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -142,7 +143,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -158,7 +159,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -180,7 +181,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -195,7 +196,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -210,7 +211,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -239,7 +240,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -254,7 +255,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -289,7 +290,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: 'major',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -319,7 +320,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: true,
       };
@@ -341,7 +342,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: true,
       };
@@ -377,7 +378,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -391,7 +392,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -419,7 +420,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -433,7 +434,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -461,7 +462,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -493,7 +494,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -507,7 +508,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -521,7 +522,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -551,7 +552,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -565,7 +566,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -579,7 +580,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -607,7 +608,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -635,7 +636,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: 'minor',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -663,7 +664,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: 'patch',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -692,7 +693,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -719,7 +720,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: 'foo',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -751,7 +752,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -778,7 +779,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'nonexistent-branch',
+        ref: 'nonexistent-branch',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -806,7 +807,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: 'major',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -833,7 +834,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: 'major',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'z',
         overrideTag: false,
       };
@@ -849,7 +850,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: 'major',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'z',
         overrideTag: false,
       };
@@ -861,7 +862,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Real GhService fails in test repo without GitHub remote', () => {
+  describe('Real ReleaseNotesService fails in test repo without GitHub remote', () => {
     let workDir: string;
     let command: Command;
 
@@ -871,7 +872,7 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
       });
       workDir = testRepo.workDir;
-      command = testingCliFactory(workDir, {useRealGhService: true});
+      command = testingCliFactory(workDir, {useRealReleaseNotesService: true});
     });
 
     it('Should throw error when real gh CLI cannot resolve repository', () => {
@@ -879,7 +880,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -888,7 +889,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Real GhService fails when release notes path is a directory', () => {
+  describe('Real ReleaseNotesService fails when release notes path is a directory', () => {
     let workDir: string;
     let command: Command;
 
@@ -899,7 +900,7 @@ describe('Full tag-release-build pipeline', () => {
       });
       workDir = testRepo.workDir;
       mkdirSync(join(workDir, '.release-notes.tmp.md'));
-      command = testingCliFactory(workDir, {useRealGhService: true});
+      command = testingCliFactory(workDir, {useRealReleaseNotesService: true});
     });
 
     it('Should throw error when release notes temp file is a directory', () => {
@@ -907,7 +908,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -935,7 +936,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -966,7 +967,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: 'major',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -996,7 +997,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: 'major',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -1024,7 +1025,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -1052,7 +1053,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: 'major',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -1085,7 +1086,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -1118,7 +1119,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: true,
       };
@@ -1150,7 +1151,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: 'minor',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -1192,7 +1193,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: 'minor',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -1208,7 +1209,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: 'minor',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -1242,7 +1243,7 @@ describe('Full tag-release-build pipeline', () => {
           semantic: 'minor',
           versionFile: 'version.txt',
           changelogFile: 'CHANGELOG.md',
-          refName: 'main',
+          ref: 'main',
           tagPrefix: 'v',
           overrideTag: false,
         }),
@@ -1276,7 +1277,7 @@ describe('Full tag-release-build pipeline', () => {
           semantic: 'minor',
           versionFile: 'version.txt',
           changelogFile: 'CHANGELOG.md',
-          refName: 'main',
+          ref: 'main',
           tagPrefix: 'v',
           overrideTag: false,
         }),
@@ -1315,7 +1316,7 @@ describe('Full tag-release-build pipeline', () => {
           semantic: 'minor',
           versionFile: 'version.txt',
           changelogFile: 'CHANGELOG.md',
-          refName: 'main',
+          ref: 'main',
           tagPrefix: 'v',
           overrideTag: false,
         }),
@@ -1354,7 +1355,7 @@ describe('Full tag-release-build pipeline', () => {
           semantic: 'minor',
           versionFile: 'version.txt',
           changelogFile: 'CHANGELOG.md',
-          refName: 'main',
+          ref: 'main',
           tagPrefix: 'v',
           overrideTag: false,
         }),
@@ -1393,7 +1394,7 @@ describe('Full tag-release-build pipeline', () => {
           semantic: 'minor',
           versionFile: 'version.txt',
           changelogFile: 'CHANGELOG.md',
-          refName: 'main',
+          ref: 'main',
           tagPrefix: 'v',
           overrideTag: false,
         }),
@@ -1431,7 +1432,7 @@ describe('Full tag-release-build pipeline', () => {
           semantic: 'minor',
           versionFile: 'version.txt',
           changelogFile: 'CHANGELOG.md',
-          refName: 'main',
+          ref: 'main',
           tagPrefix: 'v',
           overrideTag: false,
         }),
@@ -1464,7 +1465,7 @@ describe('Full tag-release-build pipeline', () => {
           semantic: 'minor',
           versionFile: 'version.txt',
           changelogFile: 'CHANGELOG.md',
-          refName: 'main',
+          ref: 'main',
           tagPrefix: 'v',
           overrideTag: false,
         }),
@@ -1497,7 +1498,7 @@ describe('Full tag-release-build pipeline', () => {
           semantic: '',
           versionFile: 'version.txt',
           changelogFile: 'CHANGELOG.md',
-          refName: 'main',
+          ref: 'main',
           tagPrefix: 'v',
           overrideTag: false,
         }),
@@ -1530,7 +1531,7 @@ describe('Full tag-release-build pipeline', () => {
           semantic: 'minor',
           versionFile: 'version.txt',
           changelogFile: 'CHANGELOG.md',
-          refName: 'main',
+          ref: 'main',
           tagPrefix: 'v',
           overrideTag: false,
         }),
@@ -1561,7 +1562,7 @@ describe('Full tag-release-build pipeline', () => {
           semantic: 'major',
           versionFile: 'version.txt',
           changelogFile: 'CHANGELOG.md',
-          refName: 'main',
+          ref: 'main',
           tagPrefix: 'v',
           overrideTag: false,
         }),
@@ -1591,7 +1592,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -1631,7 +1632,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: 'minor',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -1647,7 +1648,7 @@ describe('Full tag-release-build pipeline', () => {
         semantic: 'minor',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });

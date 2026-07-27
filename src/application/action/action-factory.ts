@@ -8,6 +8,7 @@ export class CliFactory {
       bumpers,
       this.coreFactory.getSemverService(),
       this.coreFactory.getChangelogService(),
+      this.coreFactory.getSyncService(),
     );
   }
 

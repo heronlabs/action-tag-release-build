@@ -54,7 +54,7 @@ describe('Given a bump command', () => {
       semantic: 'major',
       versionFile: 'version.txt',
       changelogFile: 'CHANGELOG.md',
-      refName: faker.string.alpha(4),
+      ref: faker.string.alpha(4),
       overrideTag: false,
       tagPrefix,
     };
@@ -99,7 +99,7 @@ describe('Given a bump command', () => {
       semantic: 'major',
       versionFile: 'version.txt',
       changelogFile: 'CHANGELOG.md',
-      refName: faker.string.alpha(4),
+      ref: faker.string.alpha(4),
       overrideTag: false,
       tagPrefix,
     };
@@ -112,7 +112,7 @@ describe('Given a bump command', () => {
       major: major,
       minor: minor,
       changelogFile: 'CHANGELOG.md',
-      refName: inputs.refName,
+      ref: inputs.ref,
       overrideTag: false,
     });
   });
@@ -147,7 +147,7 @@ describe('Given a bump command', () => {
       semantic: 'major',
       versionFile: 'version.txt',
       changelogFile: 'CHANGELOG.md',
-      refName: faker.string.alpha(4),
+      ref: faker.string.alpha(4),
       overrideTag: false,
       tagPrefix,
     };
@@ -190,7 +190,7 @@ describe('Given a bump command', () => {
       semantic: 'major',
       versionFile: 'version.txt',
       changelogFile: 'CHANGELOG.md',
-      refName: faker.string.alpha(4),
+      ref: faker.string.alpha(4),
       overrideTag: false,
       tagPrefix,
     };
@@ -233,7 +233,7 @@ describe('Given a bump command', () => {
       semantic: 'major',
       versionFile: 'version.txt',
       changelogFile: 'CHANGELOG.md',
-      refName: faker.string.alpha(4),
+      ref: faker.string.alpha(4),
       overrideTag: true,
       tagPrefix,
     };
@@ -278,7 +278,7 @@ describe('Given a bump command', () => {
       semantic: 'major',
       versionFile: 'version.txt',
       changelogFile: 'CHANGELOG.md',
-      refName: faker.string.alpha(4),
+      ref: faker.string.alpha(4),
       overrideTag: true,
       tagPrefix,
     };
@@ -291,7 +291,7 @@ describe('Given a bump command', () => {
       major: major,
       minor: minor,
       changelogFile: 'CHANGELOG.md',
-      refName: inputs.refName,
+      ref: inputs.ref,
       overrideTag: true,
     });
   });
@@ -326,7 +326,7 @@ describe('Given a bump command', () => {
       semantic: 'major',
       versionFile: 'version.txt',
       changelogFile: 'CHANGELOG.md',
-      refName: faker.string.alpha(4),
+      ref: faker.string.alpha(4),
       overrideTag: true,
       tagPrefix,
     };
@@ -350,7 +350,7 @@ describe('Given a bump command', () => {
       semantic: 'major',
       versionFile: 'version.txt',
       changelogFile: 'CHANGELOG.md',
-      refName: faker.string.alpha(4),
+      ref: faker.string.alpha(4),
       overrideTag: true,
       tagPrefix: faker.string.alpha(),
     };
@@ -379,7 +379,7 @@ describe('Given a bump command', () => {
       semantic: 'major',
       versionFile: 'version.txt',
       changelogFile: 'CHANGELOG.md',
-      refName: faker.string.alpha(4),
+      ref: faker.string.alpha(4),
       overrideTag: true,
       tagPrefix: faker.string.alpha(),
     };
@@ -413,7 +413,7 @@ describe('Given a bump command', () => {
       semantic: 'major',
       versionFile: 'version.txt',
       changelogFile: 'CHANGELOG.md',
-      refName: faker.string.alpha(4),
+      ref: faker.string.alpha(4),
       overrideTag: true,
       tagPrefix: faker.string.alpha(),
     };

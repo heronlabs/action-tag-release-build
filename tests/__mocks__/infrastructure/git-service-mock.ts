@@ -13,6 +13,6 @@ export const GitServiceMoq = new Mock<GitService>()
   .returns(GitServiceMock.getDescriptionSince)
   .setup(x => x.getLastCommit)
   .returns(GitServiceMock.getLastCommit)
-  .setup(x => x.apply)
+  .setup(x => x.applyTags)
   .returns(GitServiceMock.apply)
   .object();

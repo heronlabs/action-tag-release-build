@@ -6,6 +6,7 @@ import {NpmService} from './services/bumpers/npm-bumper-service';
 import {ChangelogService} from './services/changelog-service';
 import {CommitService} from './services/commit-service';
 import {SemverService} from './services/semver-service';
+import {SyncService} from './services/sync-service';
 
 export class CoreFactory {
   public getCommitService(): CommitService {
@@ -16,11 +17,18 @@ export class CoreFactory {
     return new SemverService(this.cwd, this.getCommitService());
   }
 
+  public getSyncService(): SyncService {
+    return new SyncService(
+      this.gitFactory.getGitService(),
+      this.ghFactory.getPullRequestService(),
+    );
+  }
+
   public getChangelogService(): ChangelogService {
     return new ChangelogService(
       this.cwd,
       this.gitFactory.getGitService(),
-      this.ghFactory.getGhService(),
+      this.ghFactory.getReleaseNotesService(),
       this.getCommitService(),
     );
   }
