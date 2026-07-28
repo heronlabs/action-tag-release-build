@@ -1,3 +1,9 @@
+## v7.1.0 (2026-07-28)
+
+### Features
+
+* feat: implement sync (66c4356fc8c0db7590d436c9a07644c4e2ab213d)
+
 ## v7.0.0 (2026-07-24)
 
 ### ⚠ BREAKING CHANGES
