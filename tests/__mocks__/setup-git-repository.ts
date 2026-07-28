@@ -3,21 +3,22 @@ import {mkdirSync, mkdtempSync, rmSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 
+/**
+ * Create a temporary git repository with a bare remote, version file,
+ * given commits, and an initial annotated tag. Designed for integration
+ * tests that exercise the real git pipeline.
+ */
 export interface TestRepo {
   workDir: string;
   bareDir: string;
   cleanup: () => void;
 }
 
-/**
- * Create a temporary git repository with a bare remote, version file,
- * given commits, and an initial annotated tag. Designed for integration
- * tests that exercise the real git pipeline.
- */
 export function createTestRepo(opts: {
   version: string;
   commits: string[];
   initialTag?: string;
+  targets?: {name: string; conflict?: boolean}[];
 }): TestRepo {
   const tmpDir = mkdtempSync(join(tmpdir(), 'bump-test-'));
   const bareDir = join(tmpDir, 'remote.git');
@@ -63,6 +64,21 @@ export function createTestRepo(opts: {
   // pipeline
   execSync('git push -u origin main', {cwd: workDir, stdio: 'pipe'});
   execSync('git push --tags', {cwd: workDir, stdio: 'pipe'});
+
+  // Create targets if any — create branch, optionally diverge
+  // (add commit not on main), and push to bare remote
+  opts.targets?.forEach(target => {
+    execSync(`git branch ${target.name}`, {cwd: workDir, stdio: 'pipe'});
+    if (target.conflict) {
+      execSync(`git checkout ${target.name}`, {cwd: workDir, stdio: 'pipe'});
+      execSync('git commit --allow-empty -m "chore: diverge"', {
+        cwd: workDir,
+        stdio: 'pipe',
+      });
+      execSync('git checkout main', {cwd: workDir, stdio: 'pipe'});
+    }
+    execSync(`git push origin ${target.name}`, {cwd: workDir, stdio: 'pipe'});
+  });
 
   return {
     workDir,

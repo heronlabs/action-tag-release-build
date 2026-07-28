@@ -144,13 +144,21 @@ describe('Given a git service', () => {
   });
 
   describe('Given apply', () => {
+    const success = {
+      ok: true as const,
+      data: 'OK',
+      execChain: (nextCommand: string) =>
+        ChildProcessServiceMock.execChain(nextCommand),
+    };
     it('Should add, commit and push the new tag', () => {
-      const execChainMock = ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (nextCommand: string) =>
-          ChildProcessServiceMock.execChain(nextCommand),
-      });
+      const execChainMock = ChildProcessServiceMock.execChain
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success);
 
       const input = {
         version: '1.2.3',
@@ -163,12 +171,18 @@ describe('Given a git service', () => {
     });
 
     it('Should add, commit and push the new tags including override', () => {
-      const execChainMock = ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (nextCommand: string) =>
-          ChildProcessServiceMock.execChain(nextCommand),
-      });
+      const execChainMock = ChildProcessServiceMock.execChain
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success);
 
       const input = {
         version: '1.2.3',
@@ -191,7 +205,7 @@ describe('Given a git service', () => {
         error,
         execChain: () => result,
       };
-      ChildProcessServiceMock.execChain.mockReturnValue({
+      ChildProcessServiceMock.execChain.mockReturnValueOnce({
         ok: false as const,
         error,
         execChain: () => result,
@@ -293,12 +307,14 @@ describe('Given a git service', () => {
     });
 
     it('Should call git config user name on first chain step', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (nextCommand: string) =>
-          ChildProcessServiceMock.execChain(nextCommand),
-      });
+      ChildProcessServiceMock.execChain
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success);
 
       service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
 
@@ -309,12 +325,14 @@ describe('Given a git service', () => {
     });
 
     it('Should call git config user email on second chain step', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (nextCommand: string) =>
-          ChildProcessServiceMock.execChain(nextCommand),
-      });
+      ChildProcessServiceMock.execChain
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success);
 
       service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
 
@@ -325,12 +343,14 @@ describe('Given a git service', () => {
     });
 
     it('Should call git add on third chain step', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (nextCommand: string) =>
-          ChildProcessServiceMock.execChain(nextCommand),
-      });
+      ChildProcessServiceMock.execChain
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success);
 
       service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
 
@@ -341,12 +361,14 @@ describe('Given a git service', () => {
     });
 
     it('Should call git commit with skip ci message and version tag', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (nextCommand: string) =>
-          ChildProcessServiceMock.execChain(nextCommand),
-      });
+      ChildProcessServiceMock.execChain
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success);
 
       service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
 
@@ -357,12 +379,14 @@ describe('Given a git service', () => {
     });
 
     it('Should call git pull rebase with origin and ref name', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (nextCommand: string) =>
-          ChildProcessServiceMock.execChain(nextCommand),
-      });
+      ChildProcessServiceMock.execChain
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success);
 
       service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
 
@@ -373,12 +397,14 @@ describe('Given a git service', () => {
     });
 
     it('Should call git tag with annotated tag and release message', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (nextCommand: string) =>
-          ChildProcessServiceMock.execChain(nextCommand),
-      });
+      ChildProcessServiceMock.execChain
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success);
 
       service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
 
@@ -389,12 +415,14 @@ describe('Given a git service', () => {
     });
 
     it('Should call git push with follow tags on final step', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (nextCommand: string) =>
-          ChildProcessServiceMock.execChain(nextCommand),
-      });
+      ChildProcessServiceMock.execChain
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success);
 
       service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
 
@@ -405,12 +433,18 @@ describe('Given a git service', () => {
     });
 
     it('Should call git tag force for major override on seventh step', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (nextCommand: string) =>
-          ChildProcessServiceMock.execChain(nextCommand),
-      });
+      ChildProcessServiceMock.execChain
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success);
 
       service.applyTags({
         version: '1.2.3',
@@ -426,12 +460,18 @@ describe('Given a git service', () => {
     });
 
     it('Should call git push with follow tags after override tags', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (nextCommand: string) =>
-          ChildProcessServiceMock.execChain(nextCommand),
-      });
+      ChildProcessServiceMock.execChain
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success);
 
       service.applyTags({
         version: '1.2.3',
@@ -447,12 +487,18 @@ describe('Given a git service', () => {
     });
 
     it('Should call git push force for major override tag on tenth step', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (nextCommand: string) =>
-          ChildProcessServiceMock.execChain(nextCommand),
-      });
+      ChildProcessServiceMock.execChain
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success);
 
       service.applyTags({
         version: '1.2.3',
@@ -468,12 +514,18 @@ describe('Given a git service', () => {
     });
 
     it('Should call git push force for minor override tag on eleventh step', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (nextCommand: string) =>
-          ChildProcessServiceMock.execChain(nextCommand),
-      });
+      ChildProcessServiceMock.execChain
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success);
 
       service.applyTags({
         version: '1.2.3',
@@ -534,12 +586,14 @@ describe('Given a git service', () => {
     });
 
     it('Should return ok true when apply succeeds without override tags', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (nextCommand: string) =>
-          ChildProcessServiceMock.execChain(nextCommand),
-      });
+      ChildProcessServiceMock.execChain
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success);
 
       const output = service.applyTags({
         version: '1.2.3',
@@ -551,12 +605,18 @@ describe('Given a git service', () => {
     });
 
     it('Should return ok true when apply succeeds with override tags', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (nextCommand: string) =>
-          ChildProcessServiceMock.execChain(nextCommand),
-      });
+      ChildProcessServiceMock.execChain
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success);
 
       const output = service.applyTags({
         version: '1.2.3',
@@ -569,12 +629,18 @@ describe('Given a git service', () => {
     });
 
     it('Should call git tag force for minor override on eighth step', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (nextCommand: string) =>
-          ChildProcessServiceMock.execChain(nextCommand),
-      });
+      ChildProcessServiceMock.execChain
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success)
+        .mockReturnValueOnce(success);
 
       service.applyTags({
         version: '1.2.3',
@@ -586,6 +652,51 @@ describe('Given a git service', () => {
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         8,
         'git tag -fa "v2" -m "Latest v2.x release"',
+      );
+    });
+  });
+
+  describe('Given merge without commit', () => {
+    it('Should merge without commit', () => {
+      const data = '';
+      ChildProcessServiceMock.exec.mockReturnValueOnce({
+        ok: true,
+        data,
+      });
+
+      const output = service.mergeWithoutCommit('main', 'development');
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data,
+      });
+    });
+
+    it('Should return error merging without commit', () => {
+      const error = new Error(faker.lorem.sentence());
+      ChildProcessServiceMock.exec.mockReturnValueOnce({
+        ok: false,
+        error,
+      });
+
+      const output = service.mergeWithoutCommit('main', 'development');
+
+      expect(output).toStrictEqual({
+        ok: false,
+        error,
+      });
+    });
+
+    it('Should call exec with git push refs command', () => {
+      ChildProcessServiceMock.exec.mockReturnValueOnce({
+        ok: true,
+        data: '',
+      });
+
+      service.mergeWithoutCommit('main', 'development');
+
+      expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith(
+        'git push origin "refs/heads/main:refs/heads/development"',
       );
     });
   });

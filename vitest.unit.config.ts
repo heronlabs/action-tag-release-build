@@ -7,7 +7,7 @@ export default defineConfig({
     include: ['tests/**/*.spec.ts'],
     coverage: {
       provider: 'v8',
-      reportsDirectory: 'reports/vitest',
+      reportsDirectory: 'reports/vitest/unit',
       reporter: ['text', 'lcov', 'html'],
       include: ['src/**/*.{ts,tsx}'],
       exclude: [

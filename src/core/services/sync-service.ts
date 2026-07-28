@@ -6,6 +6,7 @@ export class SyncService {
     try {
       const environments: string[] = target
         .trim()
+        .replace(/\s/g, '')
         .split(',')
         .map(environment => {
           const syncEnvironment = this.gitService.mergeWithoutCommit(
