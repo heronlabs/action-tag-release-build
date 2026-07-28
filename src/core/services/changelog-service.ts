@@ -1,7 +1,7 @@
 import {existsSync, readFileSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 
-import {GhService} from '../../infrastructure/gh/services/gh-service';
+import {ReleaseNotesService} from '../../infrastructure/gh/services/release-notes-service';
 import {GitService} from '../../infrastructure/git/services/git-service';
 import {CommitTypeLabels} from '../types/commit-types';
 import {ParsedDescription} from '../types/parsed-commit';
@@ -83,7 +83,7 @@ export class ChangelogService {
     major,
     minor,
     changelogFile,
-    refName,
+    ref,
     overrideTag,
   }: {
     tagPrefix: string;
@@ -91,7 +91,7 @@ export class ChangelogService {
     major: string;
     minor: string;
     changelogFile: string;
-    refName: string;
+    ref: string;
     overrideTag: boolean;
   }) {
     const tag = `${tagPrefix}${nextVersion}`;
@@ -109,15 +109,18 @@ export class ChangelogService {
     );
     if (!changelog.ok) return {ok: false as const, error: changelog.error};
 
-    const gitApply = this.gitService.apply({
+    const gitApply = this.gitService.applyTags({
       version: nextVersion,
       tag,
-      refName,
+      ref,
       tags: overrideTag ? {major: tagMajor, minor: tagMinor} : undefined,
     });
     if (!gitApply.ok) return {ok: false as const, error: gitApply.error};
 
-    const ghRelease = this.ghService.createRelease(tag, releaseNotes.data);
+    const ghRelease = this.releaseNotesService.createRelease(
+      tag,
+      releaseNotes.data,
+    );
     if (!ghRelease.ok) {
       return {ok: false as const, error: ghRelease.error};
     }
@@ -128,7 +131,7 @@ export class ChangelogService {
   constructor(
     private readonly cwd: string,
     private readonly gitService: GitService,
-    private readonly ghService: GhService,
+    private readonly releaseNotesService: ReleaseNotesService,
     private readonly commitService: CommitService,
   ) {}
 }

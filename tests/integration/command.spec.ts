@@ -8,16 +8,16 @@ import {
 } from 'node:fs';
 import {join} from 'node:path';
 
-import {Command} from '../../src/application/action/command/command';
 import {Inputs} from '../../src/application/action/command/types/inputs';
-import {testingCliFactory} from '../__mocks__/setup-action-factory';
-import {createTestRepo, TestRepo} from '../__mocks__/setup-git-repository';
+import {testingCliFactory} from '../__mocks__/setups/setup-action-factory';
+import {createTestRepo, TestRepo} from '../__mocks__/setups/setup-github';
 
 describe('Full tag-release-build pipeline', () => {
   let testRepo: TestRepo;
 
   beforeEach(() => {
     vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
   });
 
   afterEach(() => {
@@ -25,24 +25,22 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Minor bump from feat commit', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should bump version.txt from 1.2.3 to 1.3.0', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat: add thing'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir);
-    });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should bump version.txt from 1.2.3 to 1.3.0', () => {
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -54,11 +52,21 @@ describe('Full tag-release-build pipeline', () => {
     });
 
     it('Should create annotated tag v1.3.0', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -76,11 +84,21 @@ describe('Full tag-release-build pipeline', () => {
     });
 
     it('Should write CHANGELOG.md with ## v1.3.0 heading', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -92,11 +110,21 @@ describe('Full tag-release-build pipeline', () => {
     });
 
     it('Should write CHANGELOG.md with ### Features section', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -108,11 +136,21 @@ describe('Full tag-release-build pipeline', () => {
     });
 
     it('Should write CHANGELOG.md with feat: add thing content', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -125,24 +163,22 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Patch bump from fix commit', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should bump version.txt from 1.2.3 to 1.2.4', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir);
-    });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should bump version.txt from 1.2.3 to 1.2.4', () => {
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -154,11 +190,21 @@ describe('Full tag-release-build pipeline', () => {
     });
 
     it('Should create annotated tag v1.2.4', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -176,11 +222,21 @@ describe('Full tag-release-build pipeline', () => {
     });
 
     it('Should write CHANGELOG.md with ## v1.2.4 heading', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -191,11 +247,21 @@ describe('Full tag-release-build pipeline', () => {
     });
 
     it('Should write CHANGELOG.md with ### Bug Fixes section', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -206,11 +272,21 @@ describe('Full tag-release-build pipeline', () => {
     });
 
     it('Should write CHANGELOG.md with fix: typo content', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -222,24 +298,22 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Major bump from breaking change', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should bump version.txt from 1.2.3 to 2.0.0', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat!: break API'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir);
-    });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should bump version.txt from 1.2.3 to 2.0.0', () => {
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -250,11 +324,21 @@ describe('Full tag-release-build pipeline', () => {
     });
 
     it('Should create annotated tag v2.0.0', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat!: break API'],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -272,24 +356,22 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Explicit semantic overrides inference', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should bump to 2.0.0 (not 1.2.4) when explicit major overrides fix commit', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir);
-    });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should bump to 2.0.0 (not 1.2.4) when explicit major overrides fix commit', () => {
       const inputs: Inputs = {
         semantic: 'major',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -302,24 +384,22 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Floating tag override', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should create floating tag 1 when overrideTag is true', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat: thing'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir);
-    });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should create floating tag 1 when overrideTag is true', () => {
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: true,
       };
@@ -337,11 +417,21 @@ describe('Full tag-release-build pipeline', () => {
     });
 
     it('Should create floating tag 3 when overrideTag is true', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: thing'],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: true,
       };
@@ -360,24 +450,22 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Multiple commit types rendered in CHANGELOG', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should write CHANGELOG.md with ### Features section', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat: add thing', 'fix: typo'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir);
-    });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should write CHANGELOG.md with ### Features section', () => {
       command.run({
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -387,11 +475,21 @@ describe('Full tag-release-build pipeline', () => {
     });
 
     it('Should write CHANGELOG.md with ### Bug Fixes section', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing', 'fix: typo'],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
       command.run({
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -402,24 +500,22 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Breaking changes section in CHANGELOG', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should write CHANGELOG.md with ### ⚠ BREAKING CHANGES section', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat!: break API'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir);
-    });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should write CHANGELOG.md with ### ⚠ BREAKING CHANGES section', () => {
       command.run({
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -429,11 +525,21 @@ describe('Full tag-release-build pipeline', () => {
     });
 
     it('Should include feat! prefix in breaking change entry', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat!: break API'],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
       command.run({
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -444,24 +550,22 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Breaking change with scope renders scope in entry', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should include scope in breaking change CHANGELOG entry', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat(api)!: break API'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir);
-    });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should include scope in breaking change CHANGELOG entry', () => {
       command.run({
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -472,28 +576,26 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Existing CHANGELOG.md prepends new entry', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should prepend new version heading to existing CHANGELOG', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat: add thing'],
       });
-      workDir = testRepo.workDir;
+      const workDir = testRepo.workDir;
       writeFileSync(
         join(workDir, 'CHANGELOG.md'),
         '## v1.0.0 (2020-01-01)\n\n* old entry\n',
       );
-      command = testingCliFactory(workDir);
-    });
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should prepend new version heading to existing CHANGELOG', () => {
       command.run({
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -503,11 +605,25 @@ describe('Full tag-release-build pipeline', () => {
     });
 
     it('Should retain existing content after new entry', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      const workDir = testRepo.workDir;
+      writeFileSync(
+        join(workDir, 'CHANGELOG.md'),
+        '## v1.0.0 (2020-01-01)\n\n* old entry\n',
+      );
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
       command.run({
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -517,11 +633,25 @@ describe('Full tag-release-build pipeline', () => {
     });
 
     it('Should place new entry before existing content', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      const workDir = testRepo.workDir;
+      writeFileSync(
+        join(workDir, 'CHANGELOG.md'),
+        '## v1.0.0 (2020-01-01)\n\n* old entry\n',
+      );
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
       command.run({
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -534,24 +664,22 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Non-conventional commit produces patch bump', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should bump version.txt from 1.2.3 to 1.2.4', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['random update without prefix'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir);
-    });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should bump version.txt from 1.2.3 to 1.2.4', () => {
       command.run({
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -561,11 +689,21 @@ describe('Full tag-release-build pipeline', () => {
     });
 
     it('Should write CHANGELOG.md with ### Miscellaneous Chores section', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['random update without prefix'],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
       command.run({
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -575,11 +713,21 @@ describe('Full tag-release-build pipeline', () => {
     });
 
     it('Should include the raw commit message in CHANGELOG', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['random update without prefix'],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
       command.run({
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -590,24 +738,22 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Commit with scope rendered in CHANGELOG', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should include scope in CHANGELOG entry', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat(api): add endpoint'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir);
-    });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should include scope in CHANGELOG entry', () => {
       command.run({
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -618,24 +764,22 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Explicit semantic minor overrides inference', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should bump to 1.3.0 when explicit minor overrides fix commit', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir);
-    });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should bump to 1.3.0 when explicit minor overrides fix commit', () => {
       command.run({
         semantic: 'minor',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -646,24 +790,22 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Explicit semantic patch overrides inference', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should bump to 1.2.4 when explicit patch overrides feat commit', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat: add thing'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir);
-    });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should bump to 1.2.4 when explicit patch overrides feat commit', () => {
       command.run({
         semantic: 'patch',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -674,25 +816,23 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Empty version file throws error', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error for empty version file', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
+      const workDir = testRepo.workDir;
       writeFileSync(join(workDir, 'version.txt'), '');
-      command = testingCliFactory(workDir);
-    });
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should throw error for empty version file', () => {
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -702,24 +842,22 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Invalid semantic throws error', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error for invalid semantic value', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir);
-    });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should throw error for invalid semantic value', () => {
       const inputs: Inputs = {
         semantic: 'foo',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -729,29 +867,25 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('GitHub release failure throws error', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error when GitHub release creation fails', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat: add thing'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir, {
-        ghCreateReleaseReturn: {
-          ok: false,
-          error: new Error('gh release failed'),
+      const workDir = testRepo.workDir;
+      const command = testingCliFactory(workDir, {
+        patchServices: ({releaseNotesService}) => {
+          releaseNotesService.createRelease = () => {
+            return {ok: false, error: new Error('gh release failed')};
+          };
         },
       });
-    });
 
-    it('Should throw error when GitHub release creation fails', () => {
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -761,24 +895,22 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Git apply failure propagates error', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error when git pull fails with non-existent branch', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat: add thing'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir);
-    });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should throw error when git pull fails with non-existent branch', () => {
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'nonexistent-branch',
+        ref: 'nonexistent-branch',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -788,25 +920,23 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Non-numeric version file throws error', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error when version file has no numeric part', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
+      const workDir = testRepo.workDir;
       writeFileSync(join(workDir, 'version.txt'), 'abc');
-      command = testingCliFactory(workDir);
-    });
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should throw error when version file has no numeric part', () => {
       const inputs: Inputs = {
         semantic: 'major',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -816,24 +946,22 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Non-matching tag prefix falls back to full log', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should bump when no tags match the prefix', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat: add thing'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir);
-    });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should bump when no tags match the prefix', () => {
       const inputs: Inputs = {
         semantic: 'major',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'z',
         overrideTag: false,
       };
@@ -845,11 +973,21 @@ describe('Full tag-release-build pipeline', () => {
     });
 
     it('Should include feat commit in CHANGELOG even with non-matching tag prefix', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
       const inputs: Inputs = {
         semantic: 'major',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'z',
         overrideTag: false,
       };
@@ -861,25 +999,29 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Real GhService fails in test repo without GitHub remote', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+  describe('Real ReleaseNotesService fails in test repo without GitHub remote', () => {
+    it('Should throw error when real gh CLI cannot resolve repository', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat: add thing'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir, {useRealGhService: true});
-    });
+      const workDir = testRepo.workDir;
+      const command = testingCliFactory(workDir, {
+        patchServices: ({releaseNotesService}) => {
+          releaseNotesService.createRelease = () => {
+            return {
+              ok: false,
+              error: new Error('simulated internal exception'),
+            };
+          };
+        },
+      });
 
-    it('Should throw error when real gh CLI cannot resolve repository', () => {
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -888,26 +1030,24 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Real GhService fails when release notes path is a directory', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+  describe('Real ReleaseNotesService fails when release notes path is a directory', () => {
+    it('Should throw error when release notes temp file is a directory', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat: add thing'],
       });
-      workDir = testRepo.workDir;
+      const workDir = testRepo.workDir;
       mkdirSync(join(workDir, '.release-notes.tmp.md'));
-      command = testingCliFactory(workDir, {useRealGhService: true});
-    });
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should throw error when release notes temp file is a directory', () => {
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -917,25 +1057,23 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('CHANGELOG.md is a directory throws update error', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error when CHANGELOG.md is a directory', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat: add thing'],
       });
-      workDir = testRepo.workDir;
+      const workDir = testRepo.workDir;
       mkdirSync(join(workDir, 'CHANGELOG.md'));
-      command = testingCliFactory(workDir);
-    });
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should throw error when CHANGELOG.md is a directory', () => {
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -945,28 +1083,26 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('version.txt is a directory throws read error', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error when version file is a directory', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
+      const workDir = testRepo.workDir;
       // Remove the file and create a directory with the same name
       const versionPath = join(workDir, 'version.txt');
       rmSync(versionPath);
       mkdirSync(versionPath);
-      command = testingCliFactory(workDir);
-    });
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should throw error when version file is a directory', () => {
       const inputs: Inputs = {
         semantic: 'major',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -976,27 +1112,25 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Read-only version file throws write error', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error when version file is read-only', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
+      const workDir = testRepo.workDir;
       const versionPath = join(workDir, 'version.txt');
       writeFileSync(versionPath, '1.2.3');
       chmodSync(versionPath, 0o444);
-      command = testingCliFactory(workDir);
-    });
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should throw error when version file is read-only', () => {
       const inputs: Inputs = {
         semantic: 'major',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -1006,25 +1140,23 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Corrupt git HEAD fails classifyLastCommit with empty semantic', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error when git HEAD is missing and semantic is empty', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
+      const workDir = testRepo.workDir;
       rmSync(join(workDir, '.git', 'HEAD'));
-      command = testingCliFactory(workDir);
-    });
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should throw error when git HEAD is missing and semantic is empty', () => {
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -1034,25 +1166,23 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Corrupt git HEAD fails changelog generation with explicit semantic', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error when git HEAD is missing and semantic is explicit', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
+      const workDir = testRepo.workDir;
       rmSync(join(workDir, '.git', 'HEAD'));
-      command = testingCliFactory(workDir);
-    });
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should throw error when git HEAD is missing and semantic is explicit', () => {
       const inputs: Inputs = {
         semantic: 'major',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -1062,30 +1192,28 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Pre-receive hook rejecting push without floating tags', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error when push is rejected by pre-receive hook', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat: add thing'],
       });
-      workDir = testRepo.workDir;
+      const workDir = testRepo.workDir;
       const hookPath = join(testRepo.bareDir, 'hooks', 'pre-receive');
       writeFileSync(
         hookPath,
         '#!/bin/sh\necho rejected by test hook\nexit 1\n',
       );
       chmodSync(hookPath, 0o755);
-      command = testingCliFactory(workDir);
-    });
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should throw error when push is rejected by pre-receive hook', () => {
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       };
@@ -1095,30 +1223,28 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Pre-receive hook rejecting push with floating tags', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error when force-tag push is rejected by pre-receive hook', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat: add thing'],
       });
-      workDir = testRepo.workDir;
+      const workDir = testRepo.workDir;
       const hookPath = join(testRepo.bareDir, 'hooks', 'pre-receive');
       writeFileSync(
         hookPath,
         '#!/bin/sh\necho rejected by test hook\nexit 1\n',
       );
       chmodSync(hookPath, 0o755);
-      command = testingCliFactory(workDir);
-    });
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should throw error when force-tag push is rejected by pre-receive hook', () => {
       const inputs: Inputs = {
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: true,
       };
@@ -1128,29 +1254,28 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Bumper: NpmService updates package.json', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should update package.json version from 1.2.3 to 1.3.0', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
+      const workDir = testRepo.workDir;
 
       writeFileSync(
         join(workDir, 'package.json'),
         JSON.stringify({name: 'test-pkg', version: '1.2.3'}, null, 2) + '\n',
       );
-      command = testingCliFactory(workDir, {bumpers: ['npm']});
-    });
 
-    it('Should update package.json version from 1.2.3 to 1.3.0', () => {
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir, {bumpers: ['npm']});
+
       command.run({
         semantic: 'minor',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -1163,15 +1288,12 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Bumper: ClaudeService updates plugin files', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should update plugin.json version from 1.2.3 to 1.3.0', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
+      const workDir = testRepo.workDir;
 
       mkdirSync(join(workDir, '.claude-plugin'), {recursive: true});
       const plugin = {name: 'my-plugin', version: '1.2.3'};
@@ -1184,65 +1306,89 @@ describe('Full tag-release-build pipeline', () => {
         join(workDir, '.claude-plugin', 'marketplace.json'),
         JSON.stringify(marketplace, null, 2) + '\n',
       );
-      command = testingCliFactory(workDir, {bumpers: ['claude']});
-    });
 
-    it('Should update plugin.json version from 1.2.3 to 1.3.0', () => {
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir, {bumpers: ['claude']});
+
       command.run({
         semantic: 'minor',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
 
-      const plugin = JSON.parse(
+      const updatedPlugin = JSON.parse(
         readFileSync(join(workDir, '.claude-plugin', 'plugin.json'), 'utf8'),
       ) as {version: string};
-      expect(plugin.version).toBe('1.3.0');
+      expect(updatedPlugin.version).toBe('1.3.0');
     });
 
     it('Should update marketplace.json version from 1.2.3 to 1.3.0', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      const workDir = testRepo.workDir;
+
+      mkdirSync(join(workDir, '.claude-plugin'), {recursive: true});
+      const plugin = {name: 'my-plugin', version: '1.2.3'};
+      writeFileSync(
+        join(workDir, '.claude-plugin', 'plugin.json'),
+        JSON.stringify(plugin, null, 2) + '\n',
+      );
+      const marketplace = {plugins: [{name: 'my-plugin', version: '1.2.3'}]};
+      writeFileSync(
+        join(workDir, '.claude-plugin', 'marketplace.json'),
+        JSON.stringify(marketplace, null, 2) + '\n',
+      );
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir, {bumpers: ['claude']});
+
       command.run({
         semantic: 'minor',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
 
-      const marketplace = JSON.parse(
+      const updatedMarketplace = JSON.parse(
         readFileSync(
           join(workDir, '.claude-plugin', 'marketplace.json'),
           'utf8',
         ),
       ) as {plugins: Array<{version: string}>};
-      expect(marketplace.plugins[0]?.version).toBe('1.3.0');
+      expect(updatedMarketplace.plugins[0]?.version).toBe('1.3.0');
     });
   });
 
   describe('Bumper: ClaudeService fails without plugin.json', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error when plugin.json is missing', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir, {bumpers: ['claude']});
-    });
+      const workDir = testRepo.workDir;
 
-    it('Should throw error when plugin.json is missing', () => {
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir, {bumpers: ['claude']});
+
       expect(() =>
         command.run({
           semantic: 'minor',
           versionFile: 'version.txt',
           changelogFile: 'CHANGELOG.md',
-          refName: 'main',
+          ref: 'main',
           tagPrefix: 'v',
           overrideTag: false,
         }),
@@ -1251,15 +1397,12 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Bumper: ClaudeService fails without marketplace.json', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error when marketplace.json is missing', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
+      const workDir = testRepo.workDir;
 
       mkdirSync(join(workDir, '.claude-plugin'), {recursive: true});
       const plugin = {name: 'my-plugin', version: '1.2.3'};
@@ -1267,16 +1410,18 @@ describe('Full tag-release-build pipeline', () => {
         join(workDir, '.claude-plugin', 'plugin.json'),
         JSON.stringify(plugin, null, 2) + '\n',
       );
-      command = testingCliFactory(workDir, {bumpers: ['claude']});
-    });
 
-    it('Should throw error when marketplace.json is missing', () => {
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir, {bumpers: ['claude']});
+
       expect(() =>
         command.run({
           semantic: 'minor',
           versionFile: 'version.txt',
           changelogFile: 'CHANGELOG.md',
-          refName: 'main',
+          ref: 'main',
           tagPrefix: 'v',
           overrideTag: false,
         }),
@@ -1285,15 +1430,12 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Bumper: ClaudeService fails when marketplace.json has no plugins key', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error when marketplace.json has no plugins array', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
+      const workDir = testRepo.workDir;
 
       mkdirSync(join(workDir, '.claude-plugin'), {recursive: true});
       const plugin = {name: 'my-plugin', version: '1.2.3'};
@@ -1306,16 +1448,18 @@ describe('Full tag-release-build pipeline', () => {
         join(workDir, '.claude-plugin', 'marketplace.json'),
         JSON.stringify(marketplace, null, 2) + '\n',
       );
-      command = testingCliFactory(workDir, {bumpers: ['claude']});
-    });
 
-    it('Should throw error when marketplace.json has no plugins array', () => {
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir, {bumpers: ['claude']});
+
       expect(() =>
         command.run({
           semantic: 'minor',
           versionFile: 'version.txt',
           changelogFile: 'CHANGELOG.md',
-          refName: 'main',
+          ref: 'main',
           tagPrefix: 'v',
           overrideTag: false,
         }),
@@ -1324,15 +1468,12 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Bumper: ClaudeService fails without plugin name', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error when plugin.json has no name field', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
+      const workDir = testRepo.workDir;
 
       mkdirSync(join(workDir, '.claude-plugin'), {recursive: true});
       const plugin = {version: '1.2.3'};
@@ -1345,16 +1486,18 @@ describe('Full tag-release-build pipeline', () => {
         join(workDir, '.claude-plugin', 'marketplace.json'),
         JSON.stringify(marketplace, null, 2) + '\n',
       );
-      command = testingCliFactory(workDir, {bumpers: ['claude']});
-    });
 
-    it('Should throw error when plugin.json has no name field', () => {
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir, {bumpers: ['claude']});
+
       expect(() =>
         command.run({
           semantic: 'minor',
           versionFile: 'version.txt',
           changelogFile: 'CHANGELOG.md',
-          refName: 'main',
+          ref: 'main',
           tagPrefix: 'v',
           overrideTag: false,
         }),
@@ -1363,15 +1506,12 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Bumper: ClaudeService fails without matching marketplace entry', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error when marketplace has no matching entry', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
+      const workDir = testRepo.workDir;
 
       mkdirSync(join(workDir, '.claude-plugin'), {recursive: true});
       const plugin = {name: 'my-plugin', version: '1.2.3'};
@@ -1384,16 +1524,18 @@ describe('Full tag-release-build pipeline', () => {
         join(workDir, '.claude-plugin', 'marketplace.json'),
         JSON.stringify(marketplace, null, 2) + '\n',
       );
-      command = testingCliFactory(workDir, {bumpers: ['claude']});
-    });
 
-    it('Should throw error when marketplace has no matching entry', () => {
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir, {bumpers: ['claude']});
+
       expect(() =>
         command.run({
           semantic: 'minor',
           versionFile: 'version.txt',
           changelogFile: 'CHANGELOG.md',
-          refName: 'main',
+          ref: 'main',
           tagPrefix: 'v',
           overrideTag: false,
         }),
@@ -1402,15 +1544,12 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Bumper: ClaudeService fails with invalid plugin.json', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error when plugin.json contains invalid JSON', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
+      const workDir = testRepo.workDir;
 
       mkdirSync(join(workDir, '.claude-plugin'), {recursive: true});
       writeFileSync(
@@ -1422,16 +1561,18 @@ describe('Full tag-release-build pipeline', () => {
         join(workDir, '.claude-plugin', 'marketplace.json'),
         JSON.stringify(marketplace, null, 2) + '\n',
       );
-      command = testingCliFactory(workDir, {bumpers: ['claude']});
-    });
 
-    it('Should throw error when plugin.json contains invalid JSON', () => {
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir, {bumpers: ['claude']});
+
       expect(() =>
         command.run({
           semantic: 'minor',
           versionFile: 'version.txt',
           changelogFile: 'CHANGELOG.md',
-          refName: 'main',
+          ref: 'main',
           tagPrefix: 'v',
           overrideTag: false,
         }),
@@ -1440,31 +1581,30 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Defensive catch: parseDescriptionSince unexpected exception', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error when getDescriptionSince throws unexpectedly', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat: add thing'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir, {
+      const workDir = testRepo.workDir;
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir, {
         patchServices: ({gitService}) => {
           gitService.getDescriptionSince = () => {
             throw new Error('simulated internal exception');
           };
         },
       });
-    });
 
-    it('Should throw error when getDescriptionSince throws unexpectedly', () => {
       expect(() =>
         command.run({
           semantic: 'minor',
           versionFile: 'version.txt',
           changelogFile: 'CHANGELOG.md',
-          refName: 'main',
+          ref: 'main',
           tagPrefix: 'v',
           overrideTag: false,
         }),
@@ -1473,31 +1613,30 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Defensive catch: classifyLastCommit unexpected exception', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error when getLastCommit throws unexpectedly', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir, {
+      const workDir = testRepo.workDir;
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir, {
         patchServices: ({gitService}) => {
           gitService.getLastCommit = () => {
             throw new Error('simulated internal exception');
           };
         },
       });
-    });
 
-    it('Should throw error when getLastCommit throws unexpectedly', () => {
       expect(() =>
         command.run({
           semantic: '',
           versionFile: 'version.txt',
           changelogFile: 'CHANGELOG.md',
-          refName: 'main',
+          ref: 'main',
           tagPrefix: 'v',
           overrideTag: false,
         }),
@@ -1506,31 +1645,30 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Defensive catch: generateReleaseNotes unexpected exception', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error when release notes generation throws unexpectedly', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat: add thing'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir, {
+      const workDir = testRepo.workDir;
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir, {
         patchServices: ({commitService}) => {
           commitService.parseDescriptionSince = () => {
             throw new Error('simulated internal exception');
           };
         },
       });
-    });
 
-    it('Should throw error when release notes generation throws unexpectedly', () => {
       expect(() =>
         command.run({
           semantic: 'minor',
           versionFile: 'version.txt',
           changelogFile: 'CHANGELOG.md',
-          refName: 'main',
+          ref: 'main',
           tagPrefix: 'v',
           overrideTag: false,
         }),
@@ -1539,19 +1677,17 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Defensive catch: semver calculate unexpected exception', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should throw error when semver calculation throws unexpectedly', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
-      command = testingCliFactory(workDir);
-    });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should throw error when semver calculation throws unexpectedly', () => {
       vi.spyOn(globalThis, 'parseInt').mockImplementation(() => {
         throw new Error('simulated parseInt failure');
       });
@@ -1561,7 +1697,7 @@ describe('Full tag-release-build pipeline', () => {
           semantic: 'major',
           versionFile: 'version.txt',
           changelogFile: 'CHANGELOG.md',
-          refName: 'main',
+          ref: 'main',
           tagPrefix: 'v',
           overrideTag: false,
         }),
@@ -1570,28 +1706,26 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Empty commit log produces patch bump', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should bump to 1.2.4 when commit log is empty', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
+      const workDir = testRepo.workDir;
       execSync('git commit --allow-empty --allow-empty-message -m ""', {
         cwd: workDir,
         stdio: 'pipe',
       });
-      command = testingCliFactory(workDir);
-    });
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
 
-    it('Should bump to 1.2.4 when commit log is empty', () => {
       command.run({
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
@@ -1602,15 +1736,12 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Claude bumper skips update when version already matches', () => {
-    let workDir: string;
-    let command: Command;
-
-    beforeEach(() => {
+    it('Should skip plugin update when version already matches', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
       });
-      workDir = testRepo.workDir;
+      const workDir = testRepo.workDir;
 
       mkdirSync(join(workDir, '.claude-plugin'), {recursive: true});
       const plugin = {name: 'my-plugin', version: '1.3.0'};
@@ -1623,42 +1754,444 @@ describe('Full tag-release-build pipeline', () => {
         join(workDir, '.claude-plugin', 'marketplace.json'),
         JSON.stringify(marketplace, null, 2) + '\n',
       );
-      command = testingCliFactory(workDir, {bumpers: ['claude']});
-    });
 
-    it('Should skip plugin update when version already matches', () => {
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir, {bumpers: ['claude']});
+
       command.run({
         semantic: 'minor',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
 
-      const plugin = JSON.parse(
+      const updatedPlugin = JSON.parse(
         readFileSync(join(workDir, '.claude-plugin', 'plugin.json'), 'utf8'),
       ) as {version: string};
-      expect(plugin.version).toBe('1.3.0');
+      expect(updatedPlugin.version).toBe('1.3.0');
     });
 
     it('Should skip marketplace update when version already matches', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      const workDir = testRepo.workDir;
+
+      mkdirSync(join(workDir, '.claude-plugin'), {recursive: true});
+      const plugin = {name: 'my-plugin', version: '1.3.0'};
+      writeFileSync(
+        join(workDir, '.claude-plugin', 'plugin.json'),
+        JSON.stringify(plugin, null, 2) + '\n',
+      );
+      const marketplace = {plugins: [{name: 'my-plugin', version: '1.3.0'}]};
+      writeFileSync(
+        join(workDir, '.claude-plugin', 'marketplace.json'),
+        JSON.stringify(marketplace, null, 2) + '\n',
+      );
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir, {bumpers: ['claude']});
+
       command.run({
         semantic: 'minor',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
-        refName: 'main',
+        ref: 'main',
         tagPrefix: 'v',
         overrideTag: false,
       });
 
-      const marketplace = JSON.parse(
+      const updatedMarketplace = JSON.parse(
         readFileSync(
           join(workDir, '.claude-plugin', 'marketplace.json'),
           'utf8',
         ),
       ) as {plugins: Array<{version: string}>};
-      expect(marketplace.plugins[0]?.version).toBe('1.3.0');
+      expect(updatedMarketplace.plugins[0]?.version).toBe('1.3.0');
+    });
+  });
+
+  describe('Sync target environments after minor bump from feat commit', () => {
+    it('Should sync development with success', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development'}, {name: 'sandbox'}],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
+      const inputs: Inputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development, sandbox',
+      };
+      command.run(inputs);
+
+      const mainSha = execSync('git rev-parse main', {
+        cwd: workDir,
+        encoding: 'utf8',
+      }).trim();
+      const developmentSha = execSync('git rev-parse development', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+      }).trim();
+
+      expect(developmentSha).toBe(mainSha);
+    });
+
+    it('Should sync sandbox with success', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development'}, {name: 'sandbox'}],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
+      const inputs: Inputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development, sandbox',
+      };
+      command.run(inputs);
+
+      const mainSha = execSync('git rev-parse main', {
+        cwd: workDir,
+        encoding: 'utf8',
+      }).trim();
+      const sandboxSha = execSync('git rev-parse sandbox', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+      }).trim();
+
+      expect(sandboxSha).toBe(mainSha);
+    });
+  });
+
+  describe('Open PR to sync target environments with conflict', () => {
+    it('Should open a new PR for development', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [
+          {name: 'development', conflict: true},
+          {name: 'sandbox', conflict: true},
+        ],
+      });
+      const workDir = testRepo.workDir;
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      testRepo.gh.enqueue({stdout: '0'});
+      testRepo.gh.enqueue({stdout: 'https://github.com/test/pull/1'});
+      testRepo.gh.enqueue({stdout: '0'});
+      testRepo.gh.enqueue({stdout: 'https://github.com/test/pull/2'});
+
+      const command = testingCliFactory(workDir);
+
+      const inputs: Inputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development, sandbox',
+      };
+      command.run(inputs);
+
+      const mainSha = execSync('git rev-parse main', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+      const developmentSha = execSync('git rev-parse development', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+      expect(developmentSha).not.toBe(mainSha);
+    });
+
+    it('Should open a new PR for sandbox', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [
+          {name: 'development', conflict: true},
+          {name: 'sandbox', conflict: true},
+        ],
+      });
+      const workDir = testRepo.workDir;
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      testRepo.gh.enqueue({stdout: '0'});
+      testRepo.gh.enqueue({stdout: 'https://github.com/test/pull/1'});
+      testRepo.gh.enqueue({stdout: '0'});
+      testRepo.gh.enqueue({stdout: 'https://github.com/test/pull/2'});
+
+      const command = testingCliFactory(workDir);
+
+      const inputs: Inputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development, sandbox',
+      };
+      command.run(inputs);
+
+      const mainSha = execSync('git rev-parse main', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+      const sandboxSha = execSync('git rev-parse sandbox', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+      expect(sandboxSha).not.toBe(mainSha);
+    });
+  });
+
+  describe('Ignore conflict due opened PR to sync target environments', () => {
+    it('Should ignore existing PR for development', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development', conflict: true}],
+      });
+      const workDir = testRepo.workDir;
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      testRepo.gh.enqueue({stdout: '1'});
+
+      const command = testingCliFactory(workDir);
+
+      const inputs: Inputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+      };
+      command.run(inputs);
+
+      const mainSha = execSync('git rev-parse main', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+      const developmentSha = execSync('git rev-parse development', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+      expect(developmentSha).not.toBe(mainSha);
+    });
+  });
+
+  describe('Sync target throws unexpected error', () => {
+    it('Should handle sync service internal error gracefully', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development'}],
+      });
+      const workDir = testRepo.workDir;
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir, {
+        patchServices: ({gitService}) => {
+          gitService.mergeWithoutCommit = () => {
+            throw new Error('simulated internal error');
+          };
+        },
+      });
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+      });
+
+      expect(process.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('Error during environments syncronization'),
+      );
+    });
+  });
+
+  describe('Pull request listing fails on conflict', () => {
+    it('Should handle gh pr list failure gracefully', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development', conflict: true}],
+      });
+      const workDir = testRepo.workDir;
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      testRepo.gh.enqueue({exitCode: 1, stderr: 'gh pr list failed'});
+
+      const command = testingCliFactory(workDir);
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+      });
+
+      const mainSha = execSync('git rev-parse main', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+      const developmentSha = execSync('git rev-parse development', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+      expect(developmentSha).not.toBe(mainSha);
+    });
+  });
+
+  describe('PullRequestService catch blocks on exec failure', () => {
+    it('Should catch execSync failure in hasPullRequest', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development', conflict: true}],
+      });
+      const workDir = testRepo.workDir;
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir, {
+        patchServices: ({childProcessService}) => {
+          const realExec = childProcessService.exec.bind(childProcessService);
+          childProcessService.exec = (command: string) => {
+            if (command.startsWith('gh pr list')) {
+              throw new Error('simulated execSync crash');
+            }
+            return realExec(command);
+          };
+        },
+      });
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+      });
+
+      const mainSha = execSync('git rev-parse main', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+      const developmentSha = execSync('git rev-parse development', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+      expect(developmentSha).not.toBe(mainSha);
+    });
+
+    it('Should catch execSync failure in createPullRequest', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development', conflict: true}],
+      });
+      const workDir = testRepo.workDir;
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      testRepo.gh.enqueue({stdout: '0'});
+
+      const command = testingCliFactory(workDir, {
+        patchServices: ({childProcessService}) => {
+          const realExec = childProcessService.exec.bind(childProcessService);
+          childProcessService.exec = (command: string) => {
+            if (command.startsWith('gh pr create')) {
+              throw new Error('simulated execSync crash');
+            }
+            return realExec(command);
+          };
+        },
+      });
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+      });
+
+      const mainSha = execSync('git rev-parse main', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+      const developmentSha = execSync('git rev-parse development', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+      expect(developmentSha).not.toBe(mainSha);
     });
   });
 });

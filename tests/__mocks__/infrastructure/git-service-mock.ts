@@ -6,6 +6,7 @@ export const GitServiceMock = {
   getDescriptionSince: vi.fn(),
   getLastCommit: vi.fn(),
   apply: vi.fn(),
+  mergeWithoutCommit: vi.fn(),
 };
 
 export const GitServiceMoq = new Mock<GitService>()
@@ -13,6 +14,8 @@ export const GitServiceMoq = new Mock<GitService>()
   .returns(GitServiceMock.getDescriptionSince)
   .setup(x => x.getLastCommit)
   .returns(GitServiceMock.getLastCommit)
-  .setup(x => x.apply)
+  .setup(x => x.applyTags)
   .returns(GitServiceMock.apply)
+  .setup(x => x.mergeWithoutCommit)
+  .returns(GitServiceMock.mergeWithoutCommit)
   .object();

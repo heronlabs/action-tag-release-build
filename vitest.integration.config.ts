@@ -6,7 +6,9 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      reporters: ['default'],
+      coverage: {
+        reportsDirectory: 'reports/vitest/integration',
+      },
     },
   }),
 );

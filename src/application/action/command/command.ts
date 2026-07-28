@@ -1,6 +1,7 @@
 import {Bumper} from '../../../core/interfaces/bumper';
 import {ChangelogService} from '../../../core/services/changelog-service';
 import {SemverService} from '../../../core/services/semver-service';
+import {SyncService} from '../../../core/services/sync-service';
 import {Inputs} from './types/inputs';
 import {Outputs} from './types/outputs';
 
@@ -11,8 +12,9 @@ export class Command {
       semantic,
       tagPrefix,
       changelogFile,
-      refName,
+      ref,
       overrideTag,
+      target,
     } = inputs;
 
     const semver = this.semverService.calculateNextVersion(
@@ -37,7 +39,7 @@ export class Command {
       major,
       minor,
       changelogFile,
-      refName,
+      ref,
       overrideTag,
     });
     if (!tags.ok) throw tags.error;
@@ -45,15 +47,26 @@ export class Command {
     const {tag, tagMajor, tagMinor} = tags.data;
 
     let tagMessage = `🏷️ Tagged: ${tag}`;
-    if (inputs.overrideTag)
+    if (overrideTag)
       tagMessage += ` with major: ${tagMajor} and minor: ${tagMinor}`;
     process.stderr.write(`${tagMessage}\n`);
 
-    // Given a source branch like main.
-    // Given target branches like sandbox, development, staging;
-    // Get the latest version of source branch and merge on each target branch.
-    // If mergeMessage is provided merge with message else merge without any merge commit.
-    // If a conflict appears during the merge, create or delete and recreate if any previously existing PR.
+    if (target) {
+      const envsSynced = this.syncService.cascadeEnvironments(ref, target);
+      let syncMessage = '🔗 Sync: ';
+
+      if (!envsSynced.ok)
+        syncMessage += 'Error during environments syncronization';
+      else {
+        const results = envsSynced.data.join(', ');
+        const allSynced = envsSynced.data.every(e => !e.includes(' xx '));
+        syncMessage += allSynced
+          ? `Environments ${results} synced`
+          : `Environments ${results}`;
+      }
+
+      process.stderr.write(`${syncMessage}\n`);
+    }
 
     return {
       version: nextVersion,
@@ -67,5 +80,6 @@ export class Command {
     private readonly bumpers: Bumper[],
     private readonly semverService: SemverService,
     private readonly changelogService: ChangelogService,
+    private readonly syncService: SyncService,
   ) {}
 }

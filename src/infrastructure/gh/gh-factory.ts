@@ -1,10 +1,17 @@
 import {TerminalFactory} from '../terminal/terminal-factory';
-import {GhService} from './services/gh-service';
+import {PullRequestService} from './services/pull-request-service';
+import {ReleaseNotesService} from './services/release-notes-service';
 
 export class GhFactory {
-  public getGhService(): GhService {
-    return new GhService(
+  public getReleaseNotesService(): ReleaseNotesService {
+    return new ReleaseNotesService(
       this.cwd,
+      this.terminalFactory.getChildProcessService(),
+    );
+  }
+
+  public getPullRequestService(): PullRequestService {
+    return new PullRequestService(
       this.terminalFactory.getChildProcessService(),
     );
   }

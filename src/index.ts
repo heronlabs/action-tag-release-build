@@ -30,11 +30,10 @@ try {
     semantic: core.getInput('semantic') || undefined,
     versionFile: core.getInput('versionFile', {required: true}),
     changelogFile: core.getInput('changelogFile', {required: true}),
-    refName: process.env.GITHUB_REF_NAME || 'main',
+    ref: process.env.GITHUB_REF_NAME || 'main',
     overrideTag: core.getBooleanInput('overrideTag', {required: true}),
     tagPrefix: core.getInput('tagPrefix', {required: true}),
     target: core.getInput('target') || undefined,
-    mergeMessage: core.getInput('mergeMessage') || undefined,
   };
   const {version, tag, tagMajor, tagMinor} = command.run(inputs);
 

@@ -52,10 +52,6 @@ inputs:
     description: Target branches to sync into, comma-separated (optional, future use)
     required: false
     default: ''
-  mergeMessage:
-    description: Custom merge commit message for sync (optional, future use)
-    required: false
-    default: ''
 
 outputs:
   version:

@@ -36,7 +36,7 @@
 | `src/core/services/bumpers/npm-bumper-service.ts` | Sync version into package.json |
 | `src/core/services/bumpers/claude-bumper-service.ts` | Sync version into Claude Code plugin files |
 | `src/infrastructure/git/services/git-service.ts` | Git commands: log, describe, tag, push |
-| `src/infrastructure/gh/services/gh-service.ts` | GitHub CLI: release create |
+| `src/infrastructure/gh/services/release-notes-service.ts` | GitHub CLI: release create |
 | `src/infrastructure/terminal/services/child-process-service.ts` | Shell command execution |
 | `vitest.config.ts` | Vitest configuration |
 | `eslint.config.ts` | ESLint configuration |

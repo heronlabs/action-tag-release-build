@@ -3,7 +3,7 @@ import {join} from 'node:path';
 
 import {faker} from '@faker-js/faker';
 
-import {GhService} from '../../../../src/infrastructure/gh/services/gh-service';
+import {ReleaseNotesService} from '../../../../src/infrastructure/gh/services/release-notes-service';
 import {
   ChildProcessServiceMock,
   ChildProcessServiceMoq,
@@ -13,12 +13,12 @@ vi.mock('node:fs', () => ({
   writeFileSync: vi.fn(),
 }));
 
-describe('Given a gh service', () => {
+describe('Given a release notes service', () => {
   const cwd = faker.system.directoryPath();
-  let service: GhService;
+  let service: ReleaseNotesService;
 
   beforeEach(() => {
-    service = new GhService(cwd, ChildProcessServiceMoq);
+    service = new ReleaseNotesService(cwd, ChildProcessServiceMoq);
   });
 
   it('Should create release notes based on tmp file', () => {
@@ -57,7 +57,7 @@ describe('Given a gh service', () => {
     );
   });
 
-  it('Should call gh release create with correct command', () => {
+  it('Should call release notes create with correct command', () => {
     ChildProcessServiceMock.exec.mockReturnValueOnce({
       ok: true,
       data: 'OK',

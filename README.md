@@ -119,7 +119,6 @@ Requires `jq` on the runner (GitHub-hosted runners include it).
 | `pluginDir` | Directory containing the Claude plugin files. | No | `.claude-plugin` |
 | `overrideTag` | Move the floating major/minor tags (`v1`, `v1.0`) to the new release. | No | `true` |
 | `target` | Reserved for environment sync (not yet implemented). | No | `` |
-| `mergeMessage` | Reserved for environment sync (not yet implemented). | No | `` |
 
 ## Outputs
 
@@ -174,7 +173,7 @@ src/
     gh/
       gh-factory.ts                   # Wires the gh service
       services/
-        gh-service.ts                 # GitHub CLI: release create
+        release-notes-service.ts                 # GitHub CLI: release create
     terminal/
       terminal-factory.ts             # Wires the child process service
       services/

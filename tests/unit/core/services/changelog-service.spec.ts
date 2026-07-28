@@ -9,13 +9,13 @@ import {
   CommitServiceMoq,
 } from '../../../__mocks__/core/commit-service-mock';
 import {
-  GhServiceMock,
-  GhServiceMoq,
-} from '../../../__mocks__/infrastructure/gh-service-mock';
-import {
   GitServiceMock,
   GitServiceMoq,
 } from '../../../__mocks__/infrastructure/git-service-mock';
+import {
+  ReleaseNotesServiceMock,
+  ReleaseNotesServiceMoq,
+} from '../../../__mocks__/infrastructure/release-notes-service-mock';
 
 vi.mock('node:fs', () => ({
   readFileSync: vi.fn(),
@@ -31,7 +31,7 @@ describe('Given a changelog service', () => {
     service = new ChangelogService(
       cwd,
       GitServiceMoq,
-      GhServiceMoq,
+      ReleaseNotesServiceMoq,
       CommitServiceMoq,
     );
   });
@@ -57,7 +57,7 @@ describe('Given a changelog service', () => {
       ok: true,
     });
 
-    GhServiceMock.createRelease.mockReturnValueOnce({
+    ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
     });
@@ -68,7 +68,7 @@ describe('Given a changelog service', () => {
       major: faker.string.alpha(),
       minor: faker.string.alpha(),
       changelogFile: `${faker.string.alpha()}.md`,
-      refName: faker.string.alpha(),
+      ref: faker.string.alpha(),
       overrideTag: true,
     };
     service.applyReleaseChangelog(inputs);
@@ -76,7 +76,7 @@ describe('Given a changelog service', () => {
     expect(GitServiceMock.apply).toHaveBeenNthCalledWith(1, {
       version: inputs.nextVersion,
       tag: `${inputs.tagPrefix}${inputs.nextVersion}`,
-      refName: inputs.refName,
+      ref: inputs.ref,
       tags: {
         major: `${inputs.tagPrefix}${inputs.major}`,
         minor: `${inputs.tagPrefix}${inputs.major}.${inputs.minor}`,
@@ -105,7 +105,7 @@ describe('Given a changelog service', () => {
       ok: true,
     });
 
-    GhServiceMock.createRelease.mockReturnValueOnce({
+    ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
     });
@@ -116,7 +116,7 @@ describe('Given a changelog service', () => {
       major: faker.string.alpha(),
       minor: faker.string.alpha(),
       changelogFile: `${faker.string.alpha()}.md`,
-      refName: faker.string.alpha(),
+      ref: faker.string.alpha(),
       overrideTag: true,
     };
     const output = service.applyReleaseChangelog(inputs);
@@ -151,7 +151,7 @@ describe('Given a changelog service', () => {
       ok: true,
     });
 
-    GhServiceMock.createRelease.mockReturnValueOnce({
+    ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
     });
@@ -162,7 +162,7 @@ describe('Given a changelog service', () => {
       major: faker.string.alpha(),
       minor: faker.string.alpha(),
       changelogFile: `${faker.string.alpha()}.md`,
-      refName: faker.string.alpha(),
+      ref: faker.string.alpha(),
       overrideTag: true,
     };
     const output = service.applyReleaseChangelog(inputs);
@@ -197,7 +197,7 @@ describe('Given a changelog service', () => {
       ok: true,
     });
 
-    GhServiceMock.createRelease.mockReturnValueOnce({
+    ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
     });
@@ -208,7 +208,7 @@ describe('Given a changelog service', () => {
       major: faker.string.alpha(),
       minor: faker.string.alpha(),
       changelogFile: `${faker.string.alpha()}.md`,
-      refName: faker.string.alpha(),
+      ref: faker.string.alpha(),
       overrideTag: true,
     };
     const output = service.applyReleaseChangelog(inputs);
@@ -243,7 +243,7 @@ describe('Given a changelog service', () => {
       ok: true,
     });
 
-    GhServiceMock.createRelease.mockReturnValueOnce({
+    ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
     });
@@ -254,7 +254,7 @@ describe('Given a changelog service', () => {
       major: faker.string.alpha(),
       minor: faker.string.alpha(),
       changelogFile: `${faker.string.alpha()}.md`,
-      refName: faker.string.alpha(),
+      ref: faker.string.alpha(),
       overrideTag: true,
     };
     const output = service.applyReleaseChangelog(inputs);
@@ -289,7 +289,7 @@ describe('Given a changelog service', () => {
       ok: true,
     });
 
-    GhServiceMock.createRelease.mockReturnValueOnce({
+    ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
     });
@@ -300,7 +300,7 @@ describe('Given a changelog service', () => {
       major: faker.string.alpha(),
       minor: faker.string.alpha(),
       changelogFile: `${faker.string.alpha()}.md`,
-      refName: faker.string.alpha(),
+      ref: faker.string.alpha(),
       overrideTag: true,
     };
     const output = service.applyReleaseChangelog(inputs);
@@ -336,7 +336,7 @@ describe('Given a changelog service', () => {
       ok: true,
     });
 
-    GhServiceMock.createRelease.mockReturnValueOnce({
+    ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
     });
@@ -347,7 +347,7 @@ describe('Given a changelog service', () => {
       major: faker.string.alpha(),
       minor: faker.string.alpha(),
       changelogFile: `${faker.string.alpha()}.md`,
-      refName: faker.string.alpha(),
+      ref: faker.string.alpha(),
       overrideTag: true,
     };
     const output = service.applyReleaseChangelog(inputs);
@@ -375,7 +375,7 @@ describe('Given a changelog service', () => {
       major: faker.string.alpha(),
       minor: faker.string.alpha(),
       changelogFile: `${faker.string.alpha()}.md`,
-      refName: faker.string.alpha(),
+      ref: faker.string.alpha(),
       overrideTag: true,
     };
     const output = service.applyReleaseChangelog(inputs);
@@ -398,7 +398,7 @@ describe('Given a changelog service', () => {
       major: faker.string.alpha(),
       minor: faker.string.alpha(),
       changelogFile: `${faker.string.alpha()}.md`,
-      refName: faker.string.alpha(),
+      ref: faker.string.alpha(),
       overrideTag: true,
     };
     const output = service.applyReleaseChangelog(inputs);
@@ -436,7 +436,7 @@ describe('Given a changelog service', () => {
       major: faker.string.alpha(),
       minor: faker.string.alpha(),
       changelogFile: `${faker.string.alpha()}.md`,
-      refName: faker.string.alpha(),
+      ref: faker.string.alpha(),
       overrideTag: true,
     };
     const output = service.applyReleaseChangelog(inputs);
@@ -476,7 +476,7 @@ describe('Given a changelog service', () => {
       major: faker.string.alpha(),
       minor: faker.string.alpha(),
       changelogFile: `${faker.string.alpha()}.md`,
-      refName: faker.string.alpha(),
+      ref: faker.string.alpha(),
       overrideTag: true,
     };
     const output = service.applyReleaseChangelog(inputs);
@@ -509,7 +509,7 @@ describe('Given a changelog service', () => {
     });
 
     const error = new Error(faker.lorem.sentence());
-    GhServiceMock.createRelease.mockReturnValueOnce({
+    ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
       ok: false,
       error,
     });
@@ -520,7 +520,7 @@ describe('Given a changelog service', () => {
       major: faker.string.alpha(),
       minor: faker.string.alpha(),
       changelogFile: `${faker.string.alpha()}.md`,
-      refName: faker.string.alpha(),
+      ref: faker.string.alpha(),
       overrideTag: true,
     };
     const output = service.applyReleaseChangelog(inputs);
@@ -553,7 +553,7 @@ describe('Given a changelog service', () => {
     });
 
     const error = new Error(faker.lorem.sentence());
-    GhServiceMock.createRelease.mockReturnValueOnce({
+    ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
       ok: false,
       error,
     });
@@ -564,7 +564,7 @@ describe('Given a changelog service', () => {
       major: faker.string.alpha(),
       minor: faker.string.alpha(),
       changelogFile: `${faker.string.alpha()}.md`,
-      refName: faker.string.alpha(),
+      ref: faker.string.alpha(),
       overrideTag: false,
     };
     const output = service.applyReleaseChangelog(inputs);
@@ -592,7 +592,10 @@ describe('Given a changelog service', () => {
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
     GitServiceMock.apply.mockReturnValueOnce({ok: true});
-    GhServiceMock.createRelease.mockReturnValueOnce({ok: true, data: ''});
+    ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
+      ok: true,
+      data: '',
+    });
 
     service.applyReleaseChangelog({
       tagPrefix: 'v',
@@ -600,7 +603,7 @@ describe('Given a changelog service', () => {
       major: '1',
       minor: '0',
       changelogFile: 'CHANGELOG.md',
-      refName: 'main',
+      ref: 'main',
       overrideTag: false,
     });
 
@@ -627,7 +630,10 @@ describe('Given a changelog service', () => {
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
     GitServiceMock.apply.mockReturnValueOnce({ok: true});
-    GhServiceMock.createRelease.mockReturnValueOnce({ok: true, data: ''});
+    ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
+      ok: true,
+      data: '',
+    });
 
     service.applyReleaseChangelog({
       tagPrefix: 'v',
@@ -635,7 +641,7 @@ describe('Given a changelog service', () => {
       major: '1',
       minor: '0',
       changelogFile: 'CHANGELOG.md',
-      refName: 'main',
+      ref: 'main',
       overrideTag: false,
     });
 
@@ -662,7 +668,10 @@ describe('Given a changelog service', () => {
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
     GitServiceMock.apply.mockReturnValueOnce({ok: true});
-    GhServiceMock.createRelease.mockReturnValueOnce({ok: true, data: ''});
+    ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
+      ok: true,
+      data: '',
+    });
 
     service.applyReleaseChangelog({
       tagPrefix: 'v',
@@ -670,7 +679,7 @@ describe('Given a changelog service', () => {
       major: '1',
       minor: '0',
       changelogFile: 'CHANGELOG.md',
-      refName: 'main',
+      ref: 'main',
       overrideTag: false,
     });
 
@@ -688,7 +697,10 @@ describe('Given a changelog service', () => {
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
     GitServiceMock.apply.mockReturnValueOnce({ok: true});
-    GhServiceMock.createRelease.mockReturnValueOnce({ok: true, data: ''});
+    ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
+      ok: true,
+      data: '',
+    });
 
     service.applyReleaseChangelog({
       tagPrefix: 'v',
@@ -696,7 +708,7 @@ describe('Given a changelog service', () => {
       major: '1',
       minor: '0',
       changelogFile: 'CHANGELOG.md',
-      refName: 'main',
+      ref: 'main',
       overrideTag: false,
     });
 
@@ -731,7 +743,10 @@ describe('Given a changelog service', () => {
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
     GitServiceMock.apply.mockReturnValueOnce({ok: true});
-    GhServiceMock.createRelease.mockReturnValueOnce({ok: true, data: ''});
+    ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
+      ok: true,
+      data: '',
+    });
 
     service.applyReleaseChangelog({
       tagPrefix: 'v',
@@ -739,7 +754,7 @@ describe('Given a changelog service', () => {
       major: '1',
       minor: '0',
       changelogFile: 'CHANGELOG.md',
-      refName: 'main',
+      ref: 'main',
       overrideTag: false,
     });
 
@@ -768,7 +783,10 @@ describe('Given a changelog service', () => {
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
     GitServiceMock.apply.mockReturnValueOnce({ok: true});
-    GhServiceMock.createRelease.mockReturnValueOnce({ok: true, data: ''});
+    ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
+      ok: true,
+      data: '',
+    });
 
     service.applyReleaseChangelog({
       tagPrefix: 'v',
@@ -776,7 +794,7 @@ describe('Given a changelog service', () => {
       major: '1',
       minor: '0',
       changelogFile: 'CHANGELOG.md',
-      refName: 'main',
+      ref: 'main',
       overrideTag: false,
     });
 
@@ -802,7 +820,10 @@ describe('Given a changelog service', () => {
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
     GitServiceMock.apply.mockReturnValueOnce({ok: true});
-    GhServiceMock.createRelease.mockReturnValueOnce({ok: true, data: ''});
+    ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
+      ok: true,
+      data: '',
+    });
 
     service.applyReleaseChangelog({
       tagPrefix: 'v',
@@ -810,7 +831,7 @@ describe('Given a changelog service', () => {
       major: '1',
       minor: '0',
       changelogFile: 'CHANGELOG.md',
-      refName: 'main',
+      ref: 'main',
       overrideTag: false,
     });
 
@@ -836,7 +857,10 @@ describe('Given a changelog service', () => {
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
     GitServiceMock.apply.mockReturnValueOnce({ok: true});
-    GhServiceMock.createRelease.mockReturnValueOnce({ok: true, data: ''});
+    ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
+      ok: true,
+      data: '',
+    });
 
     service.applyReleaseChangelog({
       tagPrefix: 'v',
@@ -844,7 +868,7 @@ describe('Given a changelog service', () => {
       major: '1',
       minor: '0',
       changelogFile: 'CHANGELOG.md',
-      refName: 'main',
+      ref: 'main',
       overrideTag: false,
     });
 
@@ -872,7 +896,10 @@ describe('Given a changelog service', () => {
     vi.mocked(readFileSync).mockReturnValueOnce(existingContent);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
     GitServiceMock.apply.mockReturnValueOnce({ok: true});
-    GhServiceMock.createRelease.mockReturnValueOnce({ok: true, data: ''});
+    ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
+      ok: true,
+      data: '',
+    });
 
     service.applyReleaseChangelog({
       tagPrefix: 'v',
@@ -880,7 +907,7 @@ describe('Given a changelog service', () => {
       major: '1',
       minor: '0',
       changelogFile: 'CHANGELOG.md',
-      refName: 'main',
+      ref: 'main',
       overrideTag: false,
     });
 

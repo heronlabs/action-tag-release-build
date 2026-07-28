@@ -5,9 +5,10 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['tests/**/*.spec.ts'],
+    reporters: ['default'],
     coverage: {
       provider: 'v8',
-      reportsDirectory: 'reports/vitest',
+      reportsDirectory: 'reports/vitest/unit',
       reporter: ['text', 'lcov', 'html'],
       include: ['src/**/*.{ts,tsx}'],
       exclude: [

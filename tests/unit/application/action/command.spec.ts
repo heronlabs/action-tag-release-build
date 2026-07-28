@@ -14,6 +14,10 @@ import {
   SemverServiceMock,
   SemverServiceMoq,
 } from '../../../__mocks__/core/semver-service-mock';
+import {
+  SyncServiceMock,
+  SyncServiceMoq,
+} from '../../../__mocks__/core/sync-service-mock';
 
 describe('Given a bump command', () => {
   let command: Command;
@@ -21,7 +25,12 @@ describe('Given a bump command', () => {
   beforeEach(() => {
     vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
 
-    command = new Command([BumperMoq], SemverServiceMoq, ChangelogServiceMoq);
+    command = new Command(
+      [BumperMoq],
+      SemverServiceMoq,
+      ChangelogServiceMoq,
+      SyncServiceMoq,
+    );
   });
 
   it('Should calculate next version without tags override', () => {
@@ -54,7 +63,7 @@ describe('Given a bump command', () => {
       semantic: 'major',
       versionFile: 'version.txt',
       changelogFile: 'CHANGELOG.md',
-      refName: faker.string.alpha(4),
+      ref: faker.string.alpha(4),
       overrideTag: false,
       tagPrefix,
     };
@@ -99,7 +108,7 @@ describe('Given a bump command', () => {
       semantic: 'major',
       versionFile: 'version.txt',
       changelogFile: 'CHANGELOG.md',
-      refName: faker.string.alpha(4),
+      ref: faker.string.alpha(4),
       overrideTag: false,
       tagPrefix,
     };
@@ -112,7 +121,7 @@ describe('Given a bump command', () => {
       major: major,
       minor: minor,
       changelogFile: 'CHANGELOG.md',
-      refName: inputs.refName,
+      ref: inputs.ref,
       overrideTag: false,
     });
   });
@@ -147,7 +156,7 @@ describe('Given a bump command', () => {
       semantic: 'major',
       versionFile: 'version.txt',
       changelogFile: 'CHANGELOG.md',
-      refName: faker.string.alpha(4),
+      ref: faker.string.alpha(4),
       overrideTag: false,
       tagPrefix,
     };
@@ -190,7 +199,7 @@ describe('Given a bump command', () => {
       semantic: 'major',
       versionFile: 'version.txt',
       changelogFile: 'CHANGELOG.md',
-      refName: faker.string.alpha(4),
+      ref: faker.string.alpha(4),
       overrideTag: false,
       tagPrefix,
     };
@@ -233,7 +242,7 @@ describe('Given a bump command', () => {
       semantic: 'major',
       versionFile: 'version.txt',
       changelogFile: 'CHANGELOG.md',
-      refName: faker.string.alpha(4),
+      ref: faker.string.alpha(4),
       overrideTag: true,
       tagPrefix,
     };
@@ -278,7 +287,7 @@ describe('Given a bump command', () => {
       semantic: 'major',
       versionFile: 'version.txt',
       changelogFile: 'CHANGELOG.md',
-      refName: faker.string.alpha(4),
+      ref: faker.string.alpha(4),
       overrideTag: true,
       tagPrefix,
     };
@@ -291,7 +300,7 @@ describe('Given a bump command', () => {
       major: major,
       minor: minor,
       changelogFile: 'CHANGELOG.md',
-      refName: inputs.refName,
+      ref: inputs.ref,
       overrideTag: true,
     });
   });
@@ -326,7 +335,7 @@ describe('Given a bump command', () => {
       semantic: 'major',
       versionFile: 'version.txt',
       changelogFile: 'CHANGELOG.md',
-      refName: faker.string.alpha(4),
+      ref: faker.string.alpha(4),
       overrideTag: true,
       tagPrefix,
     };
@@ -350,7 +359,7 @@ describe('Given a bump command', () => {
       semantic: 'major',
       versionFile: 'version.txt',
       changelogFile: 'CHANGELOG.md',
-      refName: faker.string.alpha(4),
+      ref: faker.string.alpha(4),
       overrideTag: true,
       tagPrefix: faker.string.alpha(),
     };
@@ -379,7 +388,7 @@ describe('Given a bump command', () => {
       semantic: 'major',
       versionFile: 'version.txt',
       changelogFile: 'CHANGELOG.md',
-      refName: faker.string.alpha(4),
+      ref: faker.string.alpha(4),
       overrideTag: true,
       tagPrefix: faker.string.alpha(),
     };
@@ -413,11 +422,247 @@ describe('Given a bump command', () => {
       semantic: 'major',
       versionFile: 'version.txt',
       changelogFile: 'CHANGELOG.md',
-      refName: faker.string.alpha(4),
+      ref: faker.string.alpha(4),
       overrideTag: true,
       tagPrefix: faker.string.alpha(),
     };
 
     expect(() => command.run(inputs)).toThrow(error);
+  });
+
+  it('Should call cascade environments with ref and target', () => {
+    const nextVersion = faker.system.semver();
+    const major = `${nextVersion.split('.')[0]}`;
+    const minor = `${nextVersion.split('.')[1]}`;
+    const patch = `${nextVersion.split('.')[2]}`;
+
+    SemverServiceMock.calculateNextVersion.mockReturnValueOnce({
+      ok: true,
+      data: {nextVersion, major: major, minor: minor, patch: patch},
+    });
+
+    BumperMock.bump.mockReturnValueOnce({
+      ok: true,
+      data: 'OK',
+    });
+
+    const tag = `v${nextVersion}`;
+    const tagMajor = `v${major}`;
+    const tagMinor = `v${major}.${minor}`;
+    const tagPrefix = faker.string.alpha();
+
+    ChangelogServiceMock.applyReleaseChangelog.mockReturnValueOnce({
+      ok: true,
+      data: {tag, tagMajor, tagMinor},
+    });
+
+    SyncServiceMock.cascadeEnvironments.mockReturnValueOnce({
+      ok: true,
+      data: ['development => main'],
+    });
+
+    const inputs: Inputs = {
+      semantic: 'major',
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref: faker.string.alpha(4),
+      overrideTag: false,
+      tagPrefix,
+      target: 'development',
+    };
+
+    command.run(inputs);
+
+    expect(SyncServiceMock.cascadeEnvironments).toHaveBeenCalledWith(
+      inputs.ref,
+      'development',
+    );
+  });
+
+  it('Should log sync when environments are synced', () => {
+    const nextVersion = faker.system.semver();
+    const major = `${nextVersion.split('.')[0]}`;
+    const minor = `${nextVersion.split('.')[1]}`;
+    const patch = `${nextVersion.split('.')[2]}`;
+
+    SemverServiceMock.calculateNextVersion.mockReturnValueOnce({
+      ok: true,
+      data: {nextVersion, major: major, minor: minor, patch: patch},
+    });
+
+    BumperMock.bump.mockReturnValueOnce({
+      ok: true,
+      data: 'OK',
+    });
+
+    const tag = `v${nextVersion}`;
+    const tagMajor = `v${major}`;
+    const tagMinor = `v${major}.${minor}`;
+    const tagPrefix = faker.string.alpha();
+
+    ChangelogServiceMock.applyReleaseChangelog.mockReturnValueOnce({
+      ok: true,
+      data: {tag, tagMajor, tagMinor},
+    });
+
+    SyncServiceMock.cascadeEnvironments.mockReturnValueOnce({
+      ok: true,
+      data: ['development => main', 'sandbox => main'],
+    });
+
+    const inputs: Inputs = {
+      semantic: 'major',
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref: faker.string.alpha(4),
+      overrideTag: false,
+      tagPrefix,
+      target: 'development,sandbox',
+    };
+
+    command.run(inputs);
+
+    expect(vi.mocked(process.stderr.write)).toHaveBeenNthCalledWith(
+      3,
+      '🔗 Sync: Environments development => main, sandbox => main synced\n',
+    );
+  });
+
+  it('Should log sync without synced suffix when some environments fail', () => {
+    const nextVersion = faker.system.semver();
+    const major = `${nextVersion.split('.')[0]}`;
+    const minor = `${nextVersion.split('.')[1]}`;
+    const patch = `${nextVersion.split('.')[2]}`;
+
+    SemverServiceMock.calculateNextVersion.mockReturnValueOnce({
+      ok: true,
+      data: {nextVersion, major: major, minor: minor, patch: patch},
+    });
+
+    BumperMock.bump.mockReturnValueOnce({
+      ok: true,
+      data: 'OK',
+    });
+
+    const tag = `v${nextVersion}`;
+    const tagMajor = `v${major}`;
+    const tagMinor = `v${major}.${minor}`;
+    const tagPrefix = faker.string.alpha();
+
+    ChangelogServiceMock.applyReleaseChangelog.mockReturnValueOnce({
+      ok: true,
+      data: {tag, tagMajor, tagMinor},
+    });
+
+    SyncServiceMock.cascadeEnvironments.mockReturnValueOnce({
+      ok: true,
+      data: ['development => main', 'sandbox xx main'],
+    });
+
+    const inputs: Inputs = {
+      semantic: 'major',
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref: faker.string.alpha(4),
+      overrideTag: false,
+      tagPrefix,
+      target: 'development,sandbox',
+    };
+
+    command.run(inputs);
+
+    expect(vi.mocked(process.stderr.write)).toHaveBeenNthCalledWith(
+      3,
+      '🔗 Sync: Environments development => main, sandbox xx main\n',
+    );
+  });
+
+  it('Should log sync error when environments synchronization fails', () => {
+    const nextVersion = faker.system.semver();
+    const major = `${nextVersion.split('.')[0]}`;
+    const minor = `${nextVersion.split('.')[1]}`;
+    const patch = `${nextVersion.split('.')[2]}`;
+
+    SemverServiceMock.calculateNextVersion.mockReturnValueOnce({
+      ok: true,
+      data: {nextVersion, major: major, minor: minor, patch: patch},
+    });
+
+    BumperMock.bump.mockReturnValueOnce({
+      ok: true,
+      data: 'OK',
+    });
+
+    const tag = `v${nextVersion}`;
+    const tagMajor = `v${major}`;
+    const tagMinor = `v${major}.${minor}`;
+    const tagPrefix = faker.string.alpha();
+
+    ChangelogServiceMock.applyReleaseChangelog.mockReturnValueOnce({
+      ok: true,
+      data: {tag, tagMajor, tagMinor},
+    });
+
+    SyncServiceMock.cascadeEnvironments.mockReturnValueOnce({
+      ok: false,
+      error: new Error(faker.lorem.sentence()),
+    });
+
+    const inputs: Inputs = {
+      semantic: 'major',
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref: faker.string.alpha(4),
+      overrideTag: false,
+      tagPrefix,
+      target: 'development',
+    };
+
+    command.run(inputs);
+
+    expect(vi.mocked(process.stderr.write)).toHaveBeenNthCalledWith(
+      3,
+      '🔗 Sync: Error during environments syncronization\n',
+    );
+  });
+
+  it('Should not sync environments without target', () => {
+    const nextVersion = faker.system.semver();
+    const major = `${nextVersion.split('.')[0]}`;
+    const minor = `${nextVersion.split('.')[1]}`;
+    const patch = `${nextVersion.split('.')[2]}`;
+
+    SemverServiceMock.calculateNextVersion.mockReturnValueOnce({
+      ok: true,
+      data: {nextVersion, major: major, minor: minor, patch: patch},
+    });
+
+    BumperMock.bump.mockReturnValueOnce({
+      ok: true,
+      data: 'OK',
+    });
+
+    const tag = `v${nextVersion}`;
+    const tagMajor = `v${major}`;
+    const tagMinor = `v${major}.${minor}`;
+    const tagPrefix = faker.string.alpha();
+
+    ChangelogServiceMock.applyReleaseChangelog.mockReturnValueOnce({
+      ok: true,
+      data: {tag, tagMajor, tagMinor},
+    });
+
+    const inputs: Inputs = {
+      semantic: 'major',
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref: faker.string.alpha(4),
+      overrideTag: false,
+      tagPrefix,
+    };
+
+    command.run(inputs);
+
+    expect(SyncServiceMock.cascadeEnvironments).not.toHaveBeenCalled();
   });
 });
