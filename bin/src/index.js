@@ -19919,7 +19919,7 @@ var SyncService = class {
   pullRequestService;
   cascadeEnvironments(ref, target) {
     try {
-      const environments = target.trim().replace(/\s/g, "").split(",").map((environment) => {
+      const environments = target.replace(/\s/g, "").split(",").map((environment) => {
         const syncEnvironment = this.gitService.mergeWithoutCommit(
           ref,
           environment

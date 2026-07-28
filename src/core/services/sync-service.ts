@@ -5,7 +5,6 @@ export class SyncService {
   public cascadeEnvironments(ref: string, target: string) {
     try {
       const environments: string[] = target
-        .trim()
         .replace(/\s/g, '')
         .split(',')
         .map(environment => {
