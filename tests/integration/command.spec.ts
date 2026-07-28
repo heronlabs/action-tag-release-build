@@ -9,10 +9,8 @@ import {
 import {join} from 'node:path';
 
 import {Inputs} from '../../src/application/action/command/types/inputs';
-import {PullRequestServiceMock} from '../__mocks__/infrastructure/pull-request-service-mock';
-import {ReleaseNotesServiceMock} from '../__mocks__/infrastructure/release-notes-service-mock';
-import {testingCliFactory} from '../__mocks__/setup-action-factory';
-import {createTestRepo, TestRepo} from '../__mocks__/setup-git-repository';
+import {testingCliFactory} from '../__mocks__/setups/setup-action-factory';
+import {createTestRepo, TestRepo} from '../__mocks__/setups/setup-github';
 
 describe('Full tag-release-build pipeline', () => {
   let testRepo: TestRepo;
@@ -33,7 +31,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -57,7 +57,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -87,7 +89,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -111,7 +115,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -135,7 +141,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -161,7 +169,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['fix: typo'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -185,7 +195,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['fix: typo'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -215,7 +227,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['fix: typo'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -238,7 +252,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['fix: typo'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -261,7 +277,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['fix: typo'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -286,7 +304,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat!: break API'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -309,7 +329,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat!: break API'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -340,7 +362,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['fix: typo'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -366,7 +390,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: thing'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -396,7 +422,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: thing'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -428,7 +456,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing', 'fix: typo'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       command.run({
@@ -450,7 +480,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing', 'fix: typo'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       command.run({
@@ -474,7 +506,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat!: break API'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       command.run({
@@ -496,7 +530,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat!: break API'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       command.run({
@@ -520,7 +556,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat(api)!: break API'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       command.run({
@@ -548,7 +586,9 @@ describe('Full tag-release-build pipeline', () => {
         join(workDir, 'CHANGELOG.md'),
         '## v1.0.0 (2020-01-01)\n\n* old entry\n',
       );
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       command.run({
@@ -574,7 +614,9 @@ describe('Full tag-release-build pipeline', () => {
         join(workDir, 'CHANGELOG.md'),
         '## v1.0.0 (2020-01-01)\n\n* old entry\n',
       );
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       command.run({
@@ -600,7 +642,9 @@ describe('Full tag-release-build pipeline', () => {
         join(workDir, 'CHANGELOG.md'),
         '## v1.0.0 (2020-01-01)\n\n* old entry\n',
       );
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       command.run({
@@ -626,7 +670,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['random update without prefix'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       command.run({
@@ -648,7 +694,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['random update without prefix'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       command.run({
@@ -670,7 +718,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['random update without prefix'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       command.run({
@@ -694,7 +744,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat(api): add endpoint'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       command.run({
@@ -718,7 +770,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['fix: typo'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       command.run({
@@ -742,7 +796,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       command.run({
@@ -767,7 +823,9 @@ describe('Full tag-release-build pipeline', () => {
       });
       const workDir = testRepo.workDir;
       writeFileSync(join(workDir, 'version.txt'), '');
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -790,7 +848,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['fix: typo'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -813,11 +873,13 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
-        ok: false,
-        error: new Error('gh release failed'),
+      const command = testingCliFactory(workDir, {
+        patchServices: ({releaseNotesService}) => {
+          releaseNotesService.createRelease = () => {
+            return {ok: false, error: new Error('gh release failed')};
+          };
+        },
       });
-      const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
         semantic: '',
@@ -839,7 +901,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -863,7 +927,9 @@ describe('Full tag-release-build pipeline', () => {
       });
       const workDir = testRepo.workDir;
       writeFileSync(join(workDir, 'version.txt'), 'abc');
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -886,7 +952,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -910,7 +978,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -936,11 +1006,16 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
-        ok: false,
-        error: new Error('simulated internal exception'),
+      const command = testingCliFactory(workDir, {
+        patchServices: ({releaseNotesService}) => {
+          releaseNotesService.createRelease = () => {
+            return {
+              ok: false,
+              error: new Error('simulated internal exception'),
+            };
+          };
+        },
       });
-      const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
         semantic: '',
@@ -963,9 +1038,8 @@ describe('Full tag-release-build pipeline', () => {
       });
       const workDir = testRepo.workDir;
       mkdirSync(join(workDir, '.release-notes.tmp.md'));
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
-        ok: false,
-        error: new Error('simulated internal exception'),
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
       });
       const command = testingCliFactory(workDir);
 
@@ -990,7 +1064,9 @@ describe('Full tag-release-build pipeline', () => {
       });
       const workDir = testRepo.workDir;
       mkdirSync(join(workDir, 'CHANGELOG.md'));
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -1017,7 +1093,9 @@ describe('Full tag-release-build pipeline', () => {
       const versionPath = join(workDir, 'version.txt');
       rmSync(versionPath);
       mkdirSync(versionPath);
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -1043,7 +1121,9 @@ describe('Full tag-release-build pipeline', () => {
       const versionPath = join(workDir, 'version.txt');
       writeFileSync(versionPath, '1.2.3');
       chmodSync(versionPath, 0o444);
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -1067,7 +1147,9 @@ describe('Full tag-release-build pipeline', () => {
       });
       const workDir = testRepo.workDir;
       rmSync(join(workDir, '.git', 'HEAD'));
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -1091,7 +1173,9 @@ describe('Full tag-release-build pipeline', () => {
       });
       const workDir = testRepo.workDir;
       rmSync(join(workDir, '.git', 'HEAD'));
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -1120,7 +1204,9 @@ describe('Full tag-release-build pipeline', () => {
         '#!/bin/sh\necho rejected by test hook\nexit 1\n',
       );
       chmodSync(hookPath, 0o755);
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -1149,7 +1235,9 @@ describe('Full tag-release-build pipeline', () => {
         '#!/bin/sh\necho rejected by test hook\nexit 1\n',
       );
       chmodSync(hookPath, 0o755);
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -1177,7 +1265,10 @@ describe('Full tag-release-build pipeline', () => {
         join(workDir, 'package.json'),
         JSON.stringify({name: 'test-pkg', version: '1.2.3'}, null, 2) + '\n',
       );
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir, {bumpers: ['npm']});
 
       command.run({
@@ -1215,7 +1306,10 @@ describe('Full tag-release-build pipeline', () => {
         join(workDir, '.claude-plugin', 'marketplace.json'),
         JSON.stringify(marketplace, null, 2) + '\n',
       );
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir, {bumpers: ['claude']});
 
       command.run({
@@ -1251,7 +1345,10 @@ describe('Full tag-release-build pipeline', () => {
         join(workDir, '.claude-plugin', 'marketplace.json'),
         JSON.stringify(marketplace, null, 2) + '\n',
       );
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir, {bumpers: ['claude']});
 
       command.run({
@@ -1280,7 +1377,10 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['fix: typo'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir, {bumpers: ['claude']});
 
       expect(() =>
@@ -1310,7 +1410,10 @@ describe('Full tag-release-build pipeline', () => {
         join(workDir, '.claude-plugin', 'plugin.json'),
         JSON.stringify(plugin, null, 2) + '\n',
       );
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir, {bumpers: ['claude']});
 
       expect(() =>
@@ -1345,7 +1448,10 @@ describe('Full tag-release-build pipeline', () => {
         join(workDir, '.claude-plugin', 'marketplace.json'),
         JSON.stringify(marketplace, null, 2) + '\n',
       );
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir, {bumpers: ['claude']});
 
       expect(() =>
@@ -1380,7 +1486,10 @@ describe('Full tag-release-build pipeline', () => {
         join(workDir, '.claude-plugin', 'marketplace.json'),
         JSON.stringify(marketplace, null, 2) + '\n',
       );
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir, {bumpers: ['claude']});
 
       expect(() =>
@@ -1415,7 +1524,10 @@ describe('Full tag-release-build pipeline', () => {
         join(workDir, '.claude-plugin', 'marketplace.json'),
         JSON.stringify(marketplace, null, 2) + '\n',
       );
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir, {bumpers: ['claude']});
 
       expect(() =>
@@ -1449,7 +1561,10 @@ describe('Full tag-release-build pipeline', () => {
         join(workDir, '.claude-plugin', 'marketplace.json'),
         JSON.stringify(marketplace, null, 2) + '\n',
       );
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir, {bumpers: ['claude']});
 
       expect(() =>
@@ -1472,7 +1587,10 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir, {
         patchServices: ({gitService}) => {
           gitService.getDescriptionSince = () => {
@@ -1501,7 +1619,10 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['fix: typo'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir, {
         patchServices: ({gitService}) => {
           gitService.getLastCommit = () => {
@@ -1530,7 +1651,10 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir, {
         patchServices: ({commitService}) => {
           commitService.parseDescriptionSince = () => {
@@ -1559,7 +1683,9 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['fix: typo'],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       vi.spyOn(globalThis, 'parseInt').mockImplementation(() => {
@@ -1590,7 +1716,9 @@ describe('Full tag-release-build pipeline', () => {
         cwd: workDir,
         stdio: 'pipe',
       });
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       command.run({
@@ -1626,7 +1754,10 @@ describe('Full tag-release-build pipeline', () => {
         join(workDir, '.claude-plugin', 'marketplace.json'),
         JSON.stringify(marketplace, null, 2) + '\n',
       );
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir, {bumpers: ['claude']});
 
       command.run({
@@ -1662,7 +1793,10 @@ describe('Full tag-release-build pipeline', () => {
         join(workDir, '.claude-plugin', 'marketplace.json'),
         JSON.stringify(marketplace, null, 2) + '\n',
       );
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir, {bumpers: ['claude']});
 
       command.run({
@@ -1692,7 +1826,9 @@ describe('Full tag-release-build pipeline', () => {
         targets: [{name: 'development'}, {name: 'sandbox'}],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -1725,7 +1861,9 @@ describe('Full tag-release-build pipeline', () => {
         targets: [{name: 'development'}, {name: 'sandbox'}],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -1763,13 +1901,15 @@ describe('Full tag-release-build pipeline', () => {
         ],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
-      PullRequestServiceMock.hasPullRequest
-        .mockReturnValueOnce({ok: true, data: false})
-        .mockReturnValueOnce({ok: true, data: false});
-      PullRequestServiceMock.createPullRequest
-        .mockReturnValueOnce({ok: true})
-        .mockReturnValueOnce({ok: true});
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      testRepo.gh.enqueue({stdout: '0'});
+      testRepo.gh.enqueue({stdout: 'https://github.com/test/pull/1'});
+      testRepo.gh.enqueue({stdout: '0'});
+      testRepo.gh.enqueue({stdout: 'https://github.com/test/pull/2'});
+
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -1782,11 +1922,6 @@ describe('Full tag-release-build pipeline', () => {
         target: 'development, sandbox',
       };
       command.run(inputs);
-
-      expect(PullRequestServiceMock.createPullRequest).toHaveBeenCalledWith(
-        'main',
-        'development',
-      );
 
       const mainSha = execSync('git rev-parse main', {
         cwd: testRepo.bareDir,
@@ -1811,13 +1946,15 @@ describe('Full tag-release-build pipeline', () => {
         ],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
-      PullRequestServiceMock.hasPullRequest
-        .mockReturnValueOnce({ok: true, data: false})
-        .mockReturnValueOnce({ok: true, data: false});
-      PullRequestServiceMock.createPullRequest
-        .mockReturnValueOnce({ok: true})
-        .mockReturnValueOnce({ok: true});
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      testRepo.gh.enqueue({stdout: '0'});
+      testRepo.gh.enqueue({stdout: 'https://github.com/test/pull/1'});
+      testRepo.gh.enqueue({stdout: '0'});
+      testRepo.gh.enqueue({stdout: 'https://github.com/test/pull/2'});
+
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -1830,11 +1967,6 @@ describe('Full tag-release-build pipeline', () => {
         target: 'development, sandbox',
       };
       command.run(inputs);
-
-      expect(PullRequestServiceMock.createPullRequest).toHaveBeenCalledWith(
-        'main',
-        'sandbox',
-      );
 
       const mainSha = execSync('git rev-parse main', {
         cwd: testRepo.bareDir,
@@ -1858,11 +1990,12 @@ describe('Full tag-release-build pipeline', () => {
         targets: [{name: 'development', conflict: true}],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
-      PullRequestServiceMock.hasPullRequest.mockReturnValueOnce({
-        ok: true,
-        data: true,
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
       });
+      testRepo.gh.enqueue({stdout: '1'});
+
       const command = testingCliFactory(workDir);
 
       const inputs: Inputs = {
@@ -1875,8 +2008,6 @@ describe('Full tag-release-build pipeline', () => {
         target: 'development',
       };
       command.run(inputs);
-
-      expect(PullRequestServiceMock.createPullRequest).not.toHaveBeenCalled();
 
       const mainSha = execSync('git rev-parse main', {
         cwd: testRepo.bareDir,
@@ -1900,7 +2031,10 @@ describe('Full tag-release-build pipeline', () => {
         targets: [{name: 'development'}],
       });
       const workDir = testRepo.workDir;
-      ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({ok: true});
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
       const command = testingCliFactory(workDir, {
         patchServices: ({gitService}) => {
           gitService.mergeWithoutCommit = () => {
@@ -1922,6 +2056,142 @@ describe('Full tag-release-build pipeline', () => {
       expect(process.stderr.write).toHaveBeenCalledWith(
         expect.stringContaining('Error during environments syncronization'),
       );
+    });
+  });
+
+  describe('Pull request listing fails on conflict', () => {
+    it('Should handle gh pr list failure gracefully', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development', conflict: true}],
+      });
+      const workDir = testRepo.workDir;
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      testRepo.gh.enqueue({exitCode: 1, stderr: 'gh pr list failed'});
+
+      const command = testingCliFactory(workDir);
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+      });
+
+      const mainSha = execSync('git rev-parse main', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+      const developmentSha = execSync('git rev-parse development', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+      expect(developmentSha).not.toBe(mainSha);
+    });
+  });
+
+  describe('PullRequestService catch blocks on exec failure', () => {
+    it('Should catch execSync failure in hasPullRequest', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development', conflict: true}],
+      });
+      const workDir = testRepo.workDir;
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir, {
+        patchServices: ({childProcessService}) => {
+          const realExec = childProcessService.exec.bind(childProcessService);
+          childProcessService.exec = (command: string) => {
+            if (command.startsWith('gh pr list')) {
+              throw new Error('simulated execSync crash');
+            }
+            return realExec(command);
+          };
+        },
+      });
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+      });
+
+      const mainSha = execSync('git rev-parse main', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+      const developmentSha = execSync('git rev-parse development', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+      expect(developmentSha).not.toBe(mainSha);
+    });
+
+    it('Should catch execSync failure in createPullRequest', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development', conflict: true}],
+      });
+      const workDir = testRepo.workDir;
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      testRepo.gh.enqueue({stdout: '0'});
+
+      const command = testingCliFactory(workDir, {
+        patchServices: ({childProcessService}) => {
+          const realExec = childProcessService.exec.bind(childProcessService);
+          childProcessService.exec = (command: string) => {
+            if (command.startsWith('gh pr create')) {
+              throw new Error('simulated execSync crash');
+            }
+            return realExec(command);
+          };
+        },
+      });
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+      });
+
+      const mainSha = execSync('git rev-parse main', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+      const developmentSha = execSync('git rev-parse development', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+      expect(developmentSha).not.toBe(mainSha);
     });
   });
 });

@@ -8,7 +8,6 @@ export default mergeConfig(
     test: {
       coverage: {
         reportsDirectory: 'reports/vitest/integration',
-        exclude: ['src/infrastructure/gh/**'],
       },
     },
   }),

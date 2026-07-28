@@ -1,25 +1,36 @@
 import {execSync} from 'node:child_process';
-import {mkdirSync, mkdtempSync, rmSync, writeFileSync} from 'node:fs';
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 
-/**
- * Create a temporary git repository with a bare remote, version file,
- * given commits, and an initial annotated tag. Designed for integration
- * tests that exercise the real git pipeline.
- */
-export interface TestRepo {
-  workDir: string;
-  bareDir: string;
-  cleanup: () => void;
+interface GhResponse {
+  stdout?: string;
+  stderr?: string;
+  exitCode?: number;
 }
 
-export function createTestRepo(opts: {
+interface GhMock {
+  enqueue(response: GhResponse): void;
+  enqueueAll(responses: GhResponse[]): void;
+  getQueueFile(): string;
+  expectEmpty(): void;
+  cleanup(): void;
+}
+
+function createGitMock(opts: {
   version: string;
   commits: string[];
   initialTag?: string;
   targets?: {name: string; conflict?: boolean}[];
-}): TestRepo {
+}) {
   const tmpDir = mkdtempSync(join(tmpdir(), 'bump-test-'));
   const bareDir = join(tmpDir, 'remote.git');
   const workDir = join(tmpDir, 'work');
@@ -35,7 +46,6 @@ export function createTestRepo(opts: {
   });
   execSync(`git remote add origin "${bareDir}"`, {cwd: workDir, stdio: 'pipe'});
 
-  // Write version file as the initial tracked content
   writeFileSync(join(workDir, 'version.txt'), `${opts.version}\n`);
   execSync('git add version.txt', {cwd: workDir, stdio: 'pipe'});
   execSync('git commit -m "chore: initial version"', {
@@ -43,16 +53,12 @@ export function createTestRepo(opts: {
     stdio: 'pipe',
   });
 
-  // Tag the version commit BEFORE feature commits, so git describe
-  // resolves to this tag and the changelog range picks up the commits
-  // between the last release and HEAD
   const initialTag = opts.initialTag ?? `v${opts.version}`;
   execSync(`git tag -a "${initialTag}" -m "initial release"`, {
     cwd: workDir,
     stdio: 'pipe',
   });
 
-  // Create requested commits on top (after the tag)
   for (const msg of opts.commits) {
     execSync(`git commit --allow-empty -m '${msg}'`, {
       cwd: workDir,
@@ -60,13 +66,9 @@ export function createTestRepo(opts: {
     });
   }
 
-  // Push everything to the bare remote so pull --rebase works in the
-  // pipeline
   execSync('git push -u origin main', {cwd: workDir, stdio: 'pipe'});
   execSync('git push --tags', {cwd: workDir, stdio: 'pipe'});
 
-  // Create targets if any — create branch, optionally diverge
-  // (add commit not on main), and push to bare remote
   opts.targets?.forEach(target => {
     execSync(`git branch ${target.name}`, {cwd: workDir, stdio: 'pipe'});
     if (target.conflict) {
@@ -80,10 +82,82 @@ export function createTestRepo(opts: {
     execSync(`git push origin ${target.name}`, {cwd: workDir, stdio: 'pipe'});
   });
 
+  return {workDir, bareDir, tmpDir};
+}
+
+export interface TestRepo {
+  workDir: string;
+  bareDir: string;
+  gh: GhMock;
+  cleanup: () => void;
+}
+
+export function createTestRepo(opts: {
+  version: string;
+  commits: string[];
+  initialTag?: string;
+  targets?: {name: string; conflict?: boolean}[];
+}): TestRepo {
+  const {workDir, bareDir, tmpDir} = createGitMock(opts);
+
+  const mockDir = __dirname;
+  const fakeGh = join(mockDir, 'gh');
+  chmodSync(fakeGh, 0o755);
+
+  const queueFile = join(
+    tmpdir(),
+    `gh-mock-${process.pid}-${Date.now()}.jsonl`,
+  );
+  writeFileSync(queueFile, '', 'utf8');
+
+  const gh: GhMock = {
+    enqueue(response: GhResponse) {
+      const line = JSON.stringify({
+        stdout: response.stdout ?? '',
+        stderr: response.stderr ?? '',
+        exitCode: response.exitCode ?? 0,
+      });
+      writeFileSync(queueFile, line + '\n', {flag: 'a'});
+    },
+
+    enqueueAll(responses: GhResponse[]) {
+      for (const r of responses) this.enqueue(r);
+    },
+
+    getQueueFile() {
+      return queueFile;
+    },
+
+    expectEmpty() {
+      const remaining = readFileSync(queueFile, 'utf8').trim();
+      if (remaining) {
+        throw new Error(`Unconsumed gh mock responses: ${remaining}`);
+      }
+    },
+
+    cleanup() {
+      try {
+        unlinkSync(queueFile);
+      } catch {
+        // already removed
+      }
+    },
+  };
+
+  const prevPath = process.env.PATH;
+  const prevQueue = process.env.GH_MOCK_QUEUE;
+
+  process.env.GH_MOCK_QUEUE = gh.getQueueFile();
+  process.env.PATH = `${mockDir}:${prevPath}`;
+
   return {
     workDir,
     bareDir,
+    gh,
     cleanup: () => {
+      process.env.PATH = prevPath;
+      process.env.GH_MOCK_QUEUE = prevQueue;
+      gh.cleanup();
       rmSync(tmpDir, {recursive: true, force: true});
     },
   };
