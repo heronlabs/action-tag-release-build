@@ -7,6 +7,7 @@ export class SyncService {
       const environments: string[] = target
         .replace(/\s/g, '')
         .split(',')
+        .filter(Boolean)
         .map(environment => {
           const syncEnvironment = this.gitService.mergeWithoutCommit(
             ref,
@@ -19,8 +20,17 @@ export class SyncService {
               environment,
             );
 
-            if (existingPullRequest.ok && !existingPullRequest.data)
-              this.pullRequestService.createPullRequest(ref, environment);
+            if (existingPullRequest.ok && !existingPullRequest.data) {
+              const prCreated = this.pullRequestService.createPullRequest(
+                ref,
+                environment,
+              );
+
+              if (!prCreated.ok)
+                return `${environment} xx ${ref} (PR creation failed)`;
+
+              return `${environment} xx ${ref} (PR created)`;
+            }
 
             return `${environment} xx ${ref}`;
           }

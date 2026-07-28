@@ -19919,7 +19919,7 @@ var SyncService = class {
   pullRequestService;
   cascadeEnvironments(ref, target) {
     try {
-      const environments = target.replace(/\s/g, "").split(",").map((environment) => {
+      const environments = target.replace(/\s/g, "").split(",").filter(Boolean).map((environment) => {
         const syncEnvironment = this.gitService.mergeWithoutCommit(
           ref,
           environment
@@ -19929,8 +19929,15 @@ var SyncService = class {
             ref,
             environment
           );
-          if (existingPullRequest.ok && !existingPullRequest.data)
-            this.pullRequestService.createPullRequest(ref, environment);
+          if (existingPullRequest.ok && !existingPullRequest.data) {
+            const prCreated = this.pullRequestService.createPullRequest(
+              ref,
+              environment
+            );
+            if (!prCreated.ok)
+              return `${environment} xx ${ref} (PR creation failed)`;
+            return `${environment} xx ${ref} (PR created)`;
+          }
           return `${environment} xx ${ref}`;
         }
         return `${environment} => ${ref}`;
@@ -20045,7 +20052,11 @@ var Command2 = class {
       let syncMessage = "\u{1F517} Sync: ";
       if (!envsSynced.ok)
         syncMessage += "Error during environments syncronization";
-      else syncMessage += `Environments ${envsSynced.data.join(", ")} synced`;
+      else {
+        const results = envsSynced.data.join(", ");
+        const allSynced = envsSynced.data.every((e) => !e.includes(" xx "));
+        syncMessage += allSynced ? `Environments ${results} synced` : `Environments ${results}`;
+      }
       process.stderr.write(`${syncMessage}
 `);
     }

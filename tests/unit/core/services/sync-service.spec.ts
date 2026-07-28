@@ -108,6 +108,50 @@ describe('Given a sync service', () => {
       );
     });
 
+    it('Should mark PR created when pull request creation succeeds', () => {
+      GitServiceMock.mergeWithoutCommit.mockReturnValueOnce({
+        ok: false,
+        error: new Error(faker.lorem.sentence()),
+      });
+      PullRequestServiceMock.hasPullRequest.mockReturnValueOnce({
+        ok: true,
+        data: false,
+      });
+      PullRequestServiceMock.createPullRequest.mockReturnValueOnce({
+        ok: true,
+        data: 'OK',
+      });
+
+      const output = service.cascadeEnvironments('main', 'development');
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: ['development xx main (PR created)'],
+      });
+    });
+
+    it('Should mark PR creation failure when pull request creation fails', () => {
+      GitServiceMock.mergeWithoutCommit.mockReturnValueOnce({
+        ok: false,
+        error: new Error(faker.lorem.sentence()),
+      });
+      PullRequestServiceMock.hasPullRequest.mockReturnValueOnce({
+        ok: true,
+        data: false,
+      });
+      PullRequestServiceMock.createPullRequest.mockReturnValueOnce({
+        ok: false,
+        error: new Error(faker.lorem.sentence()),
+      });
+
+      const output = service.cascadeEnvironments('main', 'development');
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: ['development xx main (PR creation failed)'],
+      });
+    });
+
     it('Should not create pull request when one already open', () => {
       GitServiceMock.mergeWithoutCommit.mockReturnValueOnce({
         ok: false,
@@ -136,6 +180,25 @@ describe('Given a sync service', () => {
       service.cascadeEnvironments('main', 'development');
 
       expect(PullRequestServiceMock.createPullRequest).not.toHaveBeenCalled();
+    });
+
+    it('Should filter empty environment names from consecutive commas', () => {
+      GitServiceMock.mergeWithoutCommit
+        .mockReturnValueOnce({
+          ok: true,
+          data: '',
+        })
+        .mockReturnValueOnce({
+          ok: true,
+          data: '',
+        });
+
+      const output = service.cascadeEnvironments('main', 'sandbox,,staging');
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: ['sandbox => main', 'staging => main'],
+      });
     });
 
     it('Should return error when merge throws', () => {

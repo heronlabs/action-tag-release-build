@@ -57,7 +57,13 @@ export class Command {
 
       if (!envsSynced.ok)
         syncMessage += 'Error during environments syncronization';
-      else syncMessage += `Environments ${envsSynced.data.join(', ')} synced`;
+      else {
+        const results = envsSynced.data.join(', ');
+        const allSynced = envsSynced.data.every(e => !e.includes(' xx '));
+        syncMessage += allSynced
+          ? `Environments ${results} synced`
+          : `Environments ${results}`;
+      }
 
       process.stderr.write(`${syncMessage}\n`);
     }
