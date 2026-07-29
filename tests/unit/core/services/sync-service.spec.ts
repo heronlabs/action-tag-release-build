@@ -6,6 +6,10 @@ import {
   GitServiceMoq,
 } from '../../../__mocks__/infrastructure/git-service-mock';
 import {
+  MergeServiceMock,
+  MergeServiceMoq,
+} from '../../../__mocks__/infrastructure/merge-service-mock';
+import {
   PullRequestServiceMock,
   PullRequestServiceMoq,
 } from '../../../__mocks__/infrastructure/pull-request-service-mock';
@@ -14,7 +18,11 @@ describe('Given a sync service', () => {
   let service: SyncService;
 
   beforeEach(() => {
-    service = new SyncService(GitServiceMoq, PullRequestServiceMoq);
+    service = new SyncService(
+      GitServiceMoq,
+      PullRequestServiceMoq,
+      MergeServiceMoq,
+    );
   });
 
   describe('Given cascade environments', () => {
@@ -66,6 +74,45 @@ describe('Given a sync service', () => {
         'main',
         'development',
       );
+    });
+
+    it('Should sync environment when merge commit enabled', () => {
+      MergeServiceMock.mergeWithCommit.mockReturnValueOnce({
+        ok: true,
+        data: 'OK',
+      });
+
+      const output = service.cascadeEnvironments('main', 'development', true);
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: ['development => main'],
+      });
+    });
+
+    it('Should call merge with commit with ref and environment', () => {
+      MergeServiceMock.mergeWithCommit.mockReturnValueOnce({
+        ok: true,
+        data: 'OK',
+      });
+
+      service.cascadeEnvironments('main', 'development', true);
+
+      expect(MergeServiceMock.mergeWithCommit).toHaveBeenCalledWith(
+        'main',
+        'development',
+      );
+    });
+
+    it('Should not merge without commit when merge commit enabled', () => {
+      MergeServiceMock.mergeWithCommit.mockReturnValueOnce({
+        ok: true,
+        data: 'OK',
+      });
+
+      service.cascadeEnvironments('main', 'development', true);
+
+      expect(GitServiceMock.mergeWithoutCommit).not.toHaveBeenCalled();
     });
 
     it('Should mark environment as not synced when merge fails', () => {

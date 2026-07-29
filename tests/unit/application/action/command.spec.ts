@@ -476,6 +476,7 @@ describe('Given a bump command', () => {
     expect(SyncServiceMock.cascadeEnvironments).toHaveBeenCalledWith(
       inputs.ref,
       'development',
+      undefined,
     );
   });
 

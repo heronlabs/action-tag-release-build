@@ -19328,6 +19328,24 @@ function error(message, properties = {}) {
   issueCommand("error", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
 
+// src/infrastructure/gh/services/merge-service.ts
+var MergeService = class {
+  constructor(childProcessService) {
+    this.childProcessService = childProcessService;
+  }
+  childProcessService;
+  mergeWithCommit(ref, environment) {
+    try {
+      const message = `Merge ${ref} into ${environment}`;
+      return this.childProcessService.exec(
+        `gh api "repos/{owner}/{repo}/merges" -f base="${environment}" -f head="${ref}" -f commit_message="${message}"`
+      );
+    } catch (error2) {
+      return { ok: false, error: error2 };
+    }
+  }
+};
+
 // src/infrastructure/gh/services/pull-request-service.ts
 var PullRequestService = class {
   constructor(childProcessService) {
@@ -19401,6 +19419,9 @@ var GhFactory = class _GhFactory {
     return new PullRequestService(
       this.terminalFactory.getChildProcessService()
     );
+  }
+  getMergeService() {
+    return new MergeService(this.terminalFactory.getChildProcessService());
   }
   static make(cwd, terminalFactory) {
     return new _GhFactory(cwd, terminalFactory);
@@ -19911,19 +19932,18 @@ var SemverService = class {
 
 // src/core/services/sync-service.ts
 var SyncService = class {
-  constructor(gitService, pullRequestService) {
+  constructor(gitService, pullRequestService, mergeService) {
     this.gitService = gitService;
     this.pullRequestService = pullRequestService;
+    this.mergeService = mergeService;
   }
   gitService;
   pullRequestService;
-  cascadeEnvironments(ref, target) {
+  mergeService;
+  cascadeEnvironments(ref, target, mergeCommit) {
     try {
       const environments = target.replace(/\s/g, "").split(",").filter(Boolean).map((environment) => {
-        const syncEnvironment = this.gitService.mergeWithoutCommit(
-          ref,
-          environment
-        );
+        const syncEnvironment = mergeCommit ? this.mergeService.mergeWithCommit(ref, environment) : this.gitService.mergeWithoutCommit(ref, environment);
         if (!syncEnvironment.ok) {
           const existingPullRequest = this.pullRequestService.hasPullRequest(
             ref,
@@ -19970,7 +19990,8 @@ var CoreFactory = class _CoreFactory {
   getSyncService() {
     return new SyncService(
       this.gitFactory.getGitService(),
-      this.ghFactory.getPullRequestService()
+      this.ghFactory.getPullRequestService(),
+      this.ghFactory.getMergeService()
     );
   }
   getChangelogService() {
@@ -20015,7 +20036,8 @@ var Command2 = class {
       changelogFile,
       ref,
       overrideTag,
-      target
+      target,
+      mergeCommit
     } = inputs;
     const semver = this.semverService.calculateNextVersion(
       versionFile,
@@ -20048,7 +20070,11 @@ var Command2 = class {
     process.stderr.write(`${tagMessage}
 `);
     if (target) {
-      const envsSynced = this.syncService.cascadeEnvironments(ref, target);
+      const envsSynced = this.syncService.cascadeEnvironments(
+        ref,
+        target,
+        mergeCommit
+      );
       let syncMessage = "\u{1F517} Sync: ";
       if (!envsSynced.ok)
         syncMessage += "Error during environments syncronization";
@@ -20110,7 +20136,8 @@ try {
     ref: process.env.GITHUB_REF_NAME || "main",
     overrideTag: getBooleanInput("overrideTag", { required: true }),
     tagPrefix: getInput("tagPrefix", { required: true }),
-    target: getInput("target") || void 0
+    target: getInput("target") || void 0,
+    mergeCommit: getBooleanInput("mergeCommit", { required: true })
   };
   const { version, tag, tagMajor, tagMinor } = command.run(inputs);
   setOutput("version", version);

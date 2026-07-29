@@ -1,18 +1,22 @@
+import {MergeService} from '../../infrastructure/gh/services/merge-service';
 import {PullRequestService} from '../../infrastructure/gh/services/pull-request-service';
 import {GitService} from '../../infrastructure/git/services/git-service';
 
 export class SyncService {
-  public cascadeEnvironments(ref: string, target: string) {
+  public cascadeEnvironments(
+    ref: string,
+    target: string,
+    mergeCommit?: boolean,
+  ) {
     try {
       const environments: string[] = target
         .replace(/\s/g, '')
         .split(',')
         .filter(Boolean)
         .map(environment => {
-          const syncEnvironment = this.gitService.mergeWithoutCommit(
-            ref,
-            environment,
-          );
+          const syncEnvironment = mergeCommit
+            ? this.mergeService.mergeWithCommit(ref, environment)
+            : this.gitService.mergeWithoutCommit(ref, environment);
 
           if (!syncEnvironment.ok) {
             const existingPullRequest = this.pullRequestService.hasPullRequest(
@@ -47,5 +51,6 @@ export class SyncService {
   constructor(
     private readonly gitService: GitService,
     private readonly pullRequestService: PullRequestService,
+    private readonly mergeService: MergeService,
   ) {}
 }
