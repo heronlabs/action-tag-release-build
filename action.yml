@@ -49,7 +49,7 @@ inputs:
     required: false
     default: '.claude-plugin'
   target:
-    description: Target branches to sync into, comma-separated (optional, future use)
+    description: Target branches to sync the released ref into, comma-separated (empty disables sync)
     required: false
     default: ''
   mergeCommit:

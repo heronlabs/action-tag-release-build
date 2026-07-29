@@ -19366,8 +19366,8 @@ var PullRequestService = class {
   createPullRequest(ref, environment) {
     try {
       const title = `\u{1F517} Sync ${ref} into ${environment}`;
-      let body = `Fast-forward sync from ${ref} was rejected because `;
-      body += `${environment} has diverged. Merge this pull request `;
+      let body = `Automatic sync of ${ref} into ${environment} failed `;
+      body += "(diverged branch or merge conflict). Merge this pull request ";
       body += `to sync ${environment} with ${ref}.`;
       return this.childProcessService.exec(
         `gh pr create --base "${environment}" --head "${ref}" --title "${title}" --body "${body}"`

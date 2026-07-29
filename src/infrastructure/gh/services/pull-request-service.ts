@@ -19,8 +19,8 @@ export class PullRequestService {
     try {
       const title = `🔗 Sync ${ref} into ${environment}`;
 
-      let body = `Fast-forward sync from ${ref} was rejected because `;
-      body += `${environment} has diverged. Merge this pull request `;
+      let body = `Automatic sync of ${ref} into ${environment} failed `;
+      body += '(diverged branch or merge conflict). Merge this pull request ';
       body += `to sync ${environment} with ${ref}.`;
 
       return this.childProcessService.exec(
