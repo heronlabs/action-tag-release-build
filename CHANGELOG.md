@@ -1,3 +1,9 @@
+## v7.2.0 (2026-07-29)
+
+### Features
+
+* feat: add merge commit functionality to sync environments (#51) (49d7d504c8f4d86a8ff9e6f488c7dfc8bea847f3)
+
 ## v7.1.1 (2026-07-28)
 
 ### Miscellaneous Chores
