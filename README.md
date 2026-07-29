@@ -18,6 +18,9 @@ The bump is driven by the `semantic` input. When `semantic` is omitted, the bump
 - [Inputs](#inputs)
 - [Outputs](#outputs)
 - [Permissions](#permissions)
+  - [Why `target` needs a PAT](#why-target-needs-a-pat)
+  - [Where the PAT goes](#where-the-pat-goes)
+  - [PAT scopes](#pat-scopes)
 - [How it works](#how-it-works)
 - [Notes](#notes)
 - [License](#license)
@@ -125,11 +128,13 @@ Each target is synced in order:
 
 When a target cannot be synced (diverged branch or merge conflict), the action opens a pull request from `ref` into that target instead of failing the run. The sync summary is written to the step log — `target => ref` on success, `target xx ref` when it fell back.
 
+Sync with `github.token` succeeds but will not trigger workflows on the target branches. See [Permissions](#permissions) for the PAT setup each mode needs.
+
 ## Inputs
 
 | Name | Description | Required | Default |
 |------|-------------|----------|---------|
-| `ghToken` | Token used to push tags and create the release. Use a PAT to trigger downstream workflows. | Yes | — |
+| `ghToken` | Token for the merges API, tag/release creation, and the sync PR fallback. A PAT is needed for the sync to trigger downstream workflows — see [Permissions](#permissions). | Yes | — |
 | `semantic` | Semver bump type: `major`, `minor`, or `patch`. When empty, the bump is inferred from the merge/HEAD commit (Conventional Commits), defaulting to `patch` when unclear. | No | `` (inferred) |
 | `workingDirectory` | Sub-directory to operate in (for monorepos). | No | `.` |
 | `versionFile` | File to read and write the version number. | No | `version.txt` |
@@ -153,10 +158,87 @@ When a target cannot be synced (diverged branch or merge conflict), the action o
 
 ## Permissions
 
+Without `target` (no environment sync), the default `GITHUB_TOKEN` is enough:
+
 ```yaml
 permissions:
   contents: write
 ```
+
+With `target`, add `pull-requests: write` — an explicit `permissions:` block zeroes every scope it does not list, so `contents: write` alone leaves `pull-requests: none` and the sync PR fallback fails:
+
+```yaml
+permissions:
+  contents: write
+  pull-requests: write
+```
+
+### Why `target` needs a PAT
+
+A PAT is never required for the action to *succeed* — the sync works with `GITHUB_TOKEN`. It is required for the sync to *trigger downstream workflows*.
+
+GitHub never triggers a workflow from an event created with the `GITHUB_TOKEN` credential (anti-recursion, no exceptions). So syncing into `staging` with `github.token` reports `staging => v1.2.3` and pushes the commit, but any `on: push: branches: [staging]` workflow stays silent — a deploy chain that breaks with no error.
+
+The **credential** decides this, not the commit author. A push made with a PAT still triggers even when the commit is authored by `github-actions[bot]`.
+
+### Where the PAT goes
+
+The two sync modes use different credentials, so the PAT goes in different places:
+
+| Sync mode | Underlying call | Credential used | Put the PAT in |
+|---|---|---|---|
+| `mergeCommit: 'true'` | `gh api repos/{owner}/{repo}/merges` | `ghToken` (exported as `GH_TOKEN`) | the `ghToken` input |
+| `mergeCommit: 'false'` | `git push origin refs/heads/<ref>:refs/heads/<target>` | credential persisted by `actions/checkout` | the `actions/checkout` `token:` input |
+
+`ghToken` is only exported as `GH_TOKEN` for the `gh` CLI. A plain `git push` never reads it — so with `mergeCommit: 'false'`, a PAT in `ghToken` has no effect on the sync.
+
+```yaml
+# mergeCommit: 'true' — PAT on the action
+- uses: actions/checkout@v7
+  with:
+    fetch-depth: 0
+
+- uses: heronlabs/action-tag-release-build@v7
+  with:
+    ghToken: ${{ secrets.PAT }}
+    target: 'staging,production'
+    mergeCommit: 'true'
+```
+
+```yaml
+# mergeCommit: 'false' — PAT on the checkout
+- uses: actions/checkout@v7
+  with:
+    fetch-depth: 0
+    token: ${{ secrets.PAT }}
+
+- uses: heronlabs/action-tag-release-build@v7
+  with:
+    ghToken: ${{ github.token }}
+    target: 'staging,production'
+```
+
+With `mergeCommit: 'false'`, the checkout PAT is used by *every* `git push` the action makes, including the version bump push onto the base branch. That commit carries `[skip ci]`, so the release workflow does not re-trigger itself — but pushed tags will now trigger `on: push: tags` workflows if the repository has any.
+
+### PAT scopes
+
+Fine-grained PAT, scoped to the repository:
+
+| Permission | Level | Why |
+|---|---|---|
+| Metadata | Read | Required for private repositories |
+| Contents | Read and write | Tags, bump commit, merges API, `gh release create` |
+| Pull requests | Read and write | Sync fallback — `gh pr list` / `gh pr create` when a target cannot be synced |
+| Workflows | Read and write | Only for `mergeCommit: 'false'` when the synced diff touches `.github/workflows/`; `git push` rejects workflow-file changes without it. The merges API path (`mergeCommit: 'true'`) does not need it. |
+
+Classic PAT equivalent: `repo`, plus `workflow` if the caveat above applies.
+
+Operational caveats:
+
+- Organizations must allow fine-grained PATs; owner approval may be required before the token works.
+- The PAT owner needs write access. Merges, tags, and releases are then attributed to that user instead of `github-actions[bot]`.
+- If the target branches have branch protection, the PAT owner must be on the bypass list — otherwise every sync fails and falls back to opening a pull request.
+- Fine-grained PATs expire. On expiry the silent no-deploy symptom returns. A GitHub App installation token (`contents: write`, `pull_requests: write`) avoids the expiry.
 
 ## Architecture
 
