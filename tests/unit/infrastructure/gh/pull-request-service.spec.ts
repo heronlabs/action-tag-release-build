@@ -110,8 +110,8 @@ describe('Given a pull request service', () => {
 
       const title = '🔗 Sync main into development';
       const body =
-        'Fast-forward sync from main was rejected because ' +
-        'development has diverged. Merge this pull request ' +
+        'Automatic sync of main into development failed ' +
+        '(diverged branch or merge conflict). Merge this pull request ' +
         'to sync development with main.';
       expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith(
         `gh pr create --base "development" --head "main" --title "${title}" --body "${body}"`,

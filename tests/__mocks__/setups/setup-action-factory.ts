@@ -6,6 +6,7 @@ import {ChangelogService} from '../../../src/core/services/changelog-service';
 import {CommitService} from '../../../src/core/services/commit-service';
 import {SemverService} from '../../../src/core/services/semver-service';
 import {SyncService} from '../../../src/core/services/sync-service';
+import {MergeService} from '../../../src/infrastructure/gh/services/merge-service';
 import {PullRequestService} from '../../../src/infrastructure/gh/services/pull-request-service';
 import {ReleaseNotesService} from '../../../src/infrastructure/gh/services/release-notes-service';
 import {GitService} from '../../../src/infrastructure/git/services/git-service';
@@ -20,6 +21,7 @@ export interface TestingCliOptions {
     commitService: CommitService;
     releaseNotesService: ReleaseNotesService;
     pullRequestService: PullRequestService;
+    mergeService: MergeService;
     childProcessService: ChildProcessService;
   }) => void;
 }
@@ -38,10 +40,16 @@ export const testingCliFactory = (
 
   const pullRequestService = new PullRequestService(childProcessService);
 
+  const mergeService = new MergeService(childProcessService);
+
   const commitService = new CommitService(gitService);
   const semverService = new SemverService(workDir, commitService);
 
-  const syncService = new SyncService(gitService, pullRequestService);
+  const syncService = new SyncService(
+    gitService,
+    pullRequestService,
+    mergeService,
+  );
   const changelogService = new ChangelogService(
     workDir,
     gitService,
@@ -55,6 +63,7 @@ export const testingCliFactory = (
       commitService,
       releaseNotesService,
       pullRequestService,
+      mergeService,
       childProcessService,
     });
   }

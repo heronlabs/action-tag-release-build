@@ -34,7 +34,9 @@ try {
     overrideTag: core.getBooleanInput('overrideTag', {required: true}),
     tagPrefix: core.getInput('tagPrefix', {required: true}),
     target: core.getInput('target') || undefined,
+    mergeCommit: core.getBooleanInput('mergeCommit', {required: true}),
   };
+
   const {version, tag, tagMajor, tagMinor} = command.run(inputs);
 
   core.setOutput('version', version);

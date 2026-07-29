@@ -1890,6 +1890,146 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
+  describe('Sync target environments with merge commit when merge commit enabled', () => {
+    it('Should sync development with success', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development'}],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      testRepo.gh.enqueue({stdout: '{"sha":"abc123"}'});
+      const command = testingCliFactory(workDir);
+
+      const inputs: Inputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+        mergeCommit: true,
+      };
+      command.run(inputs);
+
+      expect(process.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('Environments development => main synced'),
+      );
+    });
+
+    it('Should consume the queued gh api merges response', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development'}],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      testRepo.gh.enqueue({stdout: '{"sha":"abc123"}'});
+      const command = testingCliFactory(workDir);
+
+      const inputs: Inputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+        mergeCommit: true,
+      };
+      command.run(inputs);
+
+      expect(() => testRepo.gh.expectEmpty()).not.toThrow();
+    });
+  });
+
+  describe('Open PR to sync target environments when merge commit fails', () => {
+    it('Should open a new PR for development', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development', conflict: true}],
+      });
+      const workDir = testRepo.workDir;
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      testRepo.gh.enqueue({exitCode: 1, stderr: 'HTTP 409: Merge conflict'});
+      testRepo.gh.enqueue({stdout: '0'});
+      testRepo.gh.enqueue({stdout: 'https://github.com/test/pull/1'});
+
+      const command = testingCliFactory(workDir);
+
+      const inputs: Inputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+        mergeCommit: true,
+      };
+      command.run(inputs);
+
+      expect(process.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('development xx main (PR created)'),
+      );
+    });
+  });
+
+  describe('MergeService catch block on exec failure', () => {
+    it('Should catch execSync failure in mergeWithCommit', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development'}],
+      });
+      const workDir = testRepo.workDir;
+
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      testRepo.gh.enqueue({stdout: '0'});
+      testRepo.gh.enqueue({stdout: 'https://github.com/test/pull/1'});
+
+      const command = testingCliFactory(workDir, {
+        patchServices: ({childProcessService}) => {
+          const realExec = childProcessService.exec.bind(childProcessService);
+          childProcessService.exec = (command: string) => {
+            if (command.startsWith('gh api')) {
+              throw new Error('simulated execSync crash');
+            }
+            return realExec(command);
+          };
+        },
+      });
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+        mergeCommit: true,
+      });
+
+      expect(process.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('development xx main (PR created)'),
+      );
+    });
+  });
+
   describe('Open PR to sync target environments with conflict', () => {
     it('Should open a new PR for development', () => {
       testRepo = createTestRepo({

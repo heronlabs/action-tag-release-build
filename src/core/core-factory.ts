@@ -21,6 +21,7 @@ export class CoreFactory {
     return new SyncService(
       this.gitFactory.getGitService(),
       this.ghFactory.getPullRequestService(),
+      this.ghFactory.getMergeService(),
     );
   }
 

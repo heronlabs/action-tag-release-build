@@ -15,6 +15,7 @@ export class Command {
       ref,
       overrideTag,
       target,
+      mergeCommit,
     } = inputs;
 
     const semver = this.semverService.calculateNextVersion(
@@ -52,7 +53,11 @@ export class Command {
     process.stderr.write(`${tagMessage}\n`);
 
     if (target) {
-      const envsSynced = this.syncService.cascadeEnvironments(ref, target);
+      const envsSynced = this.syncService.cascadeEnvironments(
+        ref,
+        target,
+        mergeCommit,
+      );
       let syncMessage = '🔗 Sync: ';
 
       if (!envsSynced.ok)

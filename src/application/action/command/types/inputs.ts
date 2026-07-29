@@ -6,4 +6,5 @@ export type Inputs = {
   readonly overrideTag: boolean;
   readonly tagPrefix: string;
   readonly target?: string;
+  readonly mergeCommit?: boolean;
 };
