@@ -20,6 +20,7 @@ The bump is driven by the `semantic` input. When `semantic` is omitted, the bump
 - [Permissions](#permissions)
   - [Why `target` needs a PAT](#why-target-needs-a-pat)
   - [Where the PAT goes](#where-the-pat-goes)
+  - [Alternative: dispatch the downstream workflow](#alternative-dispatch-the-downstream-workflow)
   - [PAT scopes](#pat-scopes)
 - [How it works](#how-it-works)
 - [Notes](#notes)
@@ -177,7 +178,7 @@ permissions:
 
 A PAT is never required for the action to *succeed* — the sync works with `GITHUB_TOKEN`. It is required for the sync to *trigger downstream workflows*.
 
-GitHub never triggers a workflow from an event created with the `GITHUB_TOKEN` credential (anti-recursion, no exceptions). So syncing into `staging` with `github.token` reports `staging => v1.2.3` and pushes the commit, but any `on: push: branches: [staging]` workflow stays silent — a deploy chain that breaks with no error.
+GitHub does not trigger a workflow from an event created with the `GITHUB_TOKEN` credential — this is anti-recursion. `workflow_dispatch` and `repository_dispatch` are the documented exceptions; `push` is not one of them. So syncing into `staging` with `github.token` reports `staging => v1.2.3` and pushes the commit, but any `on: push: branches: [staging]` workflow stays silent — a deploy chain that breaks with no error.
 
 The **credential** decides this, not the commit author. A push made with a PAT still triggers even when the commit is authored by `github-actions[bot]`.
 
@@ -219,6 +220,34 @@ The two sync modes use different credentials, so the PAT goes in different place
 ```
 
 With `mergeCommit: 'false'`, the checkout PAT is used by *every* `git push` the action makes, including the version bump push onto the base branch. That commit carries `[skip ci]`, so the release workflow does not re-trigger itself — but pushed tags will now trigger `on: push: tags` workflows if the repository has any.
+
+### Alternative: dispatch the downstream workflow
+
+Because `workflow_dispatch` is an exception to the anti-recursion rule, a `GITHUB_TOKEN` can still start a downstream workflow — it just has to be dispatched by name rather than reached through the sync push. This avoids a PAT entirely:
+
+```yaml
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+steps:
+  - uses: heronlabs/action-tag-release-build@v7
+    with:
+      ghToken: ${{ github.token }}
+      target: 'staging,production'
+      mergeCommit: 'true'
+
+  - run: |
+      gh workflow run deploy.yml --ref staging
+      gh workflow run deploy.yml --ref production
+    env:
+      GH_TOKEN: ${{ github.token }}
+```
+
+This requires the downstream workflow to declare a `workflow_dispatch:` trigger, and `actions: write` on the job that dispatches it. The trade-off is that the target branches are named twice — once in `target`, once in the dispatch step.
+
+Prefer the PAT route when the downstream workflow must stay `on: push` only, when other repositories or workflows also react to the target branches, or when you do not want every consumer to duplicate the branch list.
 
 ### PAT scopes
 
