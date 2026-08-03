@@ -53,18 +53,6 @@ describe('Given a child process service', () => {
       });
     });
 
-    it('Should default args to an empty array in exec', () => {
-      vi.mocked(execFileSync).mockImplementationOnce(() => 'OK');
-
-      service.exec('pwd');
-
-      expect(execFileSync).toHaveBeenCalledWith('pwd', [], {
-        cwd,
-        encoding: 'utf8',
-        stdio: 'pipe',
-      });
-    });
-
     it('Should not interpret shell syntax in arguments', () => {
       vi.mocked(execFileSync).mockImplementationOnce(() => 'OK');
 
@@ -92,6 +80,47 @@ describe('Given a child process service', () => {
       expect(output).toStrictEqual({
         ok: false,
         error,
+      });
+    });
+
+    it('Should append the failed invocation to the error message', () => {
+      const error = new Error('Command failed: git');
+      vi.mocked(execFileSync).mockImplementationOnce(() => {
+        throw error;
+      });
+
+      service.exec('git', ['push', '--follow-tags']);
+
+      expect(error.message).toBe(
+        'Command failed: git [git push --follow-tags]',
+      );
+    });
+
+    it('Should append stderr to the error message when present', () => {
+      const error = Object.assign(new Error('Command failed: git'), {
+        stderr: Buffer.from('fatal: not a git repository\n'),
+      });
+      vi.mocked(execFileSync).mockImplementationOnce(() => {
+        throw error;
+      });
+
+      service.exec('git', ['status']);
+
+      expect(error.message).toBe(
+        'Command failed: git [git status]\nfatal: not a git repository',
+      );
+    });
+
+    it('Should return a non Error rejection untouched', () => {
+      vi.mocked(execFileSync).mockImplementationOnce(() => {
+        throw 'boom';
+      });
+
+      const output = service.exec('git', ['status']);
+
+      expect(output).toStrictEqual({
+        ok: false,
+        error: 'boom',
       });
     });
   });
@@ -135,18 +164,6 @@ describe('Given a child process service', () => {
       service.execChain('git', ['add', '-A']);
 
       expect(execFileSync).toHaveBeenCalledWith('git', ['add', '-A'], {
-        cwd,
-        encoding: 'utf8',
-        stdio: 'pipe',
-      });
-    });
-
-    it('Should default args to an empty array in execChain', () => {
-      vi.mocked(execFileSync).mockImplementationOnce(() => 'OK');
-
-      service.execChain('pwd');
-
-      expect(execFileSync).toHaveBeenCalledWith('pwd', [], {
         cwd,
         encoding: 'utf8',
         stdio: 'pipe',

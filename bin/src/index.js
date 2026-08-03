@@ -19556,7 +19556,7 @@ var ChildProcessService = class {
     return {
       ok: true,
       data,
-      execChain: (command, args = []) => this.execChain(command, args)
+      execChain: (command, args) => this.execChain(command, args)
     };
   }
   failure(error2) {
@@ -19567,12 +19567,12 @@ var ChildProcessService = class {
     };
     return result;
   }
-  execChain(command, args = []) {
+  execChain(command, args) {
     const result = this.exec(command, args);
     if (!result.ok) return this.failure(result.error);
     return this.success(result.data);
   }
-  exec(command, args = []) {
+  exec(command, args) {
     try {
       const data = (0, import_node_child_process.execFileSync)(command, args, {
         cwd: this.cwd,
@@ -19581,6 +19581,11 @@ var ChildProcessService = class {
       }).toString().trim();
       return { ok: true, data };
     } catch (error2) {
+      if (error2 instanceof Error) {
+        const stderr = error2.stderr?.toString().trim();
+        error2.message = `${error2.message} [${[command, ...args].join(" ")}]` + (stderr ? `
+${stderr}` : "");
+      }
       return { ok: false, error: error2 };
     }
   }

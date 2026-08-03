@@ -5,7 +5,7 @@ export class ChildProcessService {
     return {
       ok: true as const,
       data,
-      execChain: (command: string, args: string[] = []) =>
+      execChain: (command: string, args: string[]) =>
         this.execChain(command, args),
     };
   }
@@ -19,7 +19,7 @@ export class ChildProcessService {
     return result;
   }
 
-  execChain(command: string, args: string[] = []) {
+  execChain(command: string, args: string[]) {
     const result = this.exec(command, args);
 
     if (!result.ok) return this.failure(result.error);
@@ -27,7 +27,7 @@ export class ChildProcessService {
     return this.success(result.data);
   }
 
-  exec(command: string, args: string[] = []) {
+  exec(command: string, args: string[]) {
     try {
       const data = execFileSync(command, args, {
         cwd: this.cwd,
@@ -38,6 +38,16 @@ export class ChildProcessService {
         .trim();
       return {ok: true as const, data};
     } catch (error) {
+      if (error instanceof Error) {
+        const stderr = (error as {stderr?: Buffer | string}).stderr
+          ?.toString()
+          .trim();
+
+        error.message =
+          `${error.message} [${[command, ...args].join(' ')}]` +
+          (stderr ? `\n${stderr}` : '');
+      }
+
       return {ok: false as const, error};
     }
   }
