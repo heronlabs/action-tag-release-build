@@ -10,9 +10,15 @@ export class ReleaseNotesService {
 
       writeFileSync(releaseNotesFile, releaseNotes, 'utf8');
 
-      return this.childProcessService.exec(
-        `gh release create "${tag}" --title "${tag}" --notes-file "${releaseNotesFile}"`,
-      );
+      return this.childProcessService.exec('gh', [
+        'release',
+        'create',
+        tag,
+        '--title',
+        tag,
+        '--notes-file',
+        releaseNotesFile,
+      ]);
     } catch (error) {
       return {ok: false as const, error};
     }

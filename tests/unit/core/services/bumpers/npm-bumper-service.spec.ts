@@ -37,9 +37,11 @@ describe('Given a npm bumper service', () => {
 
     service.bump(version);
 
-    expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith(
-      `npm version "${version}" --no-git-tag-version`,
-    );
+    expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith('npm', [
+      'version',
+      version,
+      '--no-git-tag-version',
+    ]);
   });
 
   it('Should return error when npm version command fails', () => {
