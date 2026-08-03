@@ -49,6 +49,7 @@ export default defineConfig([
       'pnpm-lock.yaml',
       '.serena/',
       '.supera/',
+      '.worktrees/',
       '.stryker-tmp/',
     ],
   },
