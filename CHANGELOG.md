@@ -1,3 +1,9 @@
+## v7.2.1 (2026-08-03)
+
+### Miscellaneous Chores
+
+* other: add '.worktrees/' to eslint ignore list (6272ad09d13a095bee84666f2b8294e8607588cf)
+
 ## v7.2.0 (2026-07-29)
 
 ### Features
