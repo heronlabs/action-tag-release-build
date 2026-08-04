@@ -1,3 +1,9 @@
+## v7.2.2 (2026-08-04)
+
+### Miscellaneous Chores
+
+* other: Refactor command execution in services to use argument arrays for improved clarity and safety. (#53) (f8dc9d6ed2b6aab6fa5947b761744233e4e9a787)
+
 ## v7.2.1 (2026-08-03)
 
 ### Miscellaneous Chores
