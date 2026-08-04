@@ -38,16 +38,6 @@ export class ChildProcessService {
         .trim();
       return {ok: true as const, data};
     } catch (error) {
-      if (error instanceof Error) {
-        const stderr = (error as {stderr?: Buffer | string}).stderr
-          ?.toString()
-          .trim();
-
-        error.message =
-          `${error.message} [${[command, ...args].join(' ')}]` +
-          (stderr ? `\n${stderr}` : '');
-      }
-
       return {ok: false as const, error};
     }
   }

@@ -19581,11 +19581,6 @@ var ChildProcessService = class {
       }).toString().trim();
       return { ok: true, data };
     } catch (error2) {
-      if (error2 instanceof Error) {
-        const stderr = error2.stderr?.toString().trim();
-        error2.message = `${error2.message} [${[command, ...args].join(" ")}]` + (stderr ? `
-${stderr}` : "");
-      }
       return { ok: false, error: error2 };
     }
   }

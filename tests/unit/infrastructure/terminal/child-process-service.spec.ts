@@ -82,47 +82,6 @@ describe('Given a child process service', () => {
         error,
       });
     });
-
-    it('Should append the failed invocation to the error message', () => {
-      const error = new Error('Command failed: git');
-      vi.mocked(execFileSync).mockImplementationOnce(() => {
-        throw error;
-      });
-
-      service.exec('git', ['push', '--follow-tags']);
-
-      expect(error.message).toBe(
-        'Command failed: git [git push --follow-tags]',
-      );
-    });
-
-    it('Should append stderr to the error message when present', () => {
-      const error = Object.assign(new Error('Command failed: git'), {
-        stderr: Buffer.from('fatal: not a git repository\n'),
-      });
-      vi.mocked(execFileSync).mockImplementationOnce(() => {
-        throw error;
-      });
-
-      service.exec('git', ['status']);
-
-      expect(error.message).toBe(
-        'Command failed: git [git status]\nfatal: not a git repository',
-      );
-    });
-
-    it('Should return a non Error rejection untouched', () => {
-      vi.mocked(execFileSync).mockImplementationOnce(() => {
-        throw 'boom';
-      });
-
-      const output = service.exec('git', ['status']);
-
-      expect(output).toStrictEqual({
-        ok: false,
-        error: 'boom',
-      });
-    });
   });
 
   describe('Given exec chain method', () => {
@@ -189,6 +148,20 @@ describe('Given a child process service', () => {
         error,
         execChain: expect.any(Function),
       });
+    });
+
+    it('Should stop running commands after a failed chain step', () => {
+      vi.mocked(execFileSync)
+        .mockImplementationOnce(() => {
+          throw new Error(faker.lorem.sentence());
+        })
+        .mockImplementationOnce(() => 'Commited')
+        .mockImplementationOnce(() => 'Everything up to date');
+
+      service
+        .execChain('git', ['add', '.'])
+        .execChain('git', ['commit', '-m', 'dooby'])
+        .execChain('git', ['push']);
 
       expect(execFileSync).toHaveBeenCalledTimes(1);
     });
