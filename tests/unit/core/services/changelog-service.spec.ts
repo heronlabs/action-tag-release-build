@@ -37,6 +37,7 @@ describe('Given a changelog service', () => {
   });
 
   it('Should apply git changes with tags', () => {
+    const appliedSha = faker.git.commitSha();
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true as const,
       data: [
@@ -55,6 +56,7 @@ describe('Given a changelog service', () => {
 
     GitServiceMock.apply.mockReturnValueOnce({
       ok: true,
+      data: appliedSha,
     });
 
     ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
@@ -85,6 +87,7 @@ describe('Given a changelog service', () => {
   });
 
   it('Should generate release notes on empty changelog and github with conventional commits', () => {
+    const appliedSha = faker.git.commitSha();
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true as const,
       data: [
@@ -103,6 +106,7 @@ describe('Given a changelog service', () => {
 
     GitServiceMock.apply.mockReturnValueOnce({
       ok: true,
+      data: appliedSha,
     });
 
     ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
@@ -127,11 +131,13 @@ describe('Given a changelog service', () => {
         tag: `${inputs.tagPrefix}${inputs.nextVersion}`,
         tagMajor: `${inputs.tagPrefix}${inputs.major}`,
         tagMinor: `${inputs.tagPrefix}${inputs.major}.${inputs.minor}`,
+        sha: appliedSha,
       },
     });
   });
 
   it('Should generate release notes on empty changelog and github with conventional commits without scope', () => {
+    const appliedSha = faker.git.commitSha();
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
       data: [
@@ -149,6 +155,7 @@ describe('Given a changelog service', () => {
 
     GitServiceMock.apply.mockReturnValueOnce({
       ok: true,
+      data: appliedSha,
     });
 
     ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
@@ -173,11 +180,13 @@ describe('Given a changelog service', () => {
         tag: `${inputs.tagPrefix}${inputs.nextVersion}`,
         tagMajor: `${inputs.tagPrefix}${inputs.major}`,
         tagMinor: `${inputs.tagPrefix}${inputs.major}.${inputs.minor}`,
+        sha: appliedSha,
       },
     });
   });
 
   it('Should generate release notes on empty changelog and github with different conventional commits', () => {
+    const appliedSha = faker.git.commitSha();
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
       data: [
@@ -195,6 +204,7 @@ describe('Given a changelog service', () => {
 
     GitServiceMock.apply.mockReturnValueOnce({
       ok: true,
+      data: appliedSha,
     });
 
     ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
@@ -219,11 +229,13 @@ describe('Given a changelog service', () => {
         tag: `${inputs.tagPrefix}${inputs.nextVersion}`,
         tagMajor: `${inputs.tagPrefix}${inputs.major}`,
         tagMinor: `${inputs.tagPrefix}${inputs.major}.${inputs.minor}`,
+        sha: appliedSha,
       },
     });
   });
 
   it('Should generate release notes on empty changelog and github without conventional commits', () => {
+    const appliedSha = faker.git.commitSha();
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
       data: [
@@ -241,6 +253,7 @@ describe('Given a changelog service', () => {
 
     GitServiceMock.apply.mockReturnValueOnce({
       ok: true,
+      data: appliedSha,
     });
 
     ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
@@ -265,11 +278,13 @@ describe('Given a changelog service', () => {
         tag: `${inputs.tagPrefix}${inputs.nextVersion}`,
         tagMajor: `${inputs.tagPrefix}${inputs.major}`,
         tagMinor: `${inputs.tagPrefix}${inputs.major}.${inputs.minor}`,
+        sha: appliedSha,
       },
     });
   });
 
   it('Should generate release notes on empty changelog and github with edge case commit', () => {
+    const appliedSha = faker.git.commitSha();
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
       data: [
@@ -287,6 +302,7 @@ describe('Given a changelog service', () => {
 
     GitServiceMock.apply.mockReturnValueOnce({
       ok: true,
+      data: appliedSha,
     });
 
     ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
@@ -311,11 +327,13 @@ describe('Given a changelog service', () => {
         tag: `${inputs.tagPrefix}${inputs.nextVersion}`,
         tagMajor: `${inputs.tagPrefix}${inputs.major}`,
         tagMinor: `${inputs.tagPrefix}${inputs.major}.${inputs.minor}`,
+        sha: appliedSha,
       },
     });
   });
 
   it('Should generate release notes on existing changelog and github without conventional commits', () => {
+    const appliedSha = faker.git.commitSha();
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
       data: [
@@ -334,6 +352,7 @@ describe('Given a changelog service', () => {
 
     GitServiceMock.apply.mockReturnValueOnce({
       ok: true,
+      data: appliedSha,
     });
 
     ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
@@ -358,6 +377,7 @@ describe('Given a changelog service', () => {
         tag: `${inputs.tagPrefix}${inputs.nextVersion}`,
         tagMajor: `${inputs.tagPrefix}${inputs.major}`,
         tagMinor: `${inputs.tagPrefix}${inputs.major}.${inputs.minor}`,
+        sha: appliedSha,
       },
     });
   });
@@ -488,6 +508,7 @@ describe('Given a changelog service', () => {
   });
 
   it('Should return error github release and rollback with tags', () => {
+    const appliedSha = faker.git.commitSha();
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
       data: [
@@ -506,6 +527,7 @@ describe('Given a changelog service', () => {
 
     GitServiceMock.apply.mockReturnValueOnce({
       ok: true,
+      data: appliedSha,
     });
 
     const error = new Error(faker.lorem.sentence());
@@ -532,6 +554,7 @@ describe('Given a changelog service', () => {
   });
 
   it('Should return error github release and rollback without tags', () => {
+    const appliedSha = faker.git.commitSha();
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true,
       data: [
@@ -550,6 +573,7 @@ describe('Given a changelog service', () => {
 
     GitServiceMock.apply.mockReturnValueOnce({
       ok: true,
+      data: appliedSha,
     });
 
     const error = new Error(faker.lorem.sentence());
@@ -576,6 +600,7 @@ describe('Given a changelog service', () => {
   });
 
   it('Should write breaking entry with scope in parentheses', () => {
+    const appliedSha = faker.git.commitSha();
     const commitHash = faker.string.alpha(40);
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true as const,
@@ -591,7 +616,7 @@ describe('Given a changelog service', () => {
     });
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
-    GitServiceMock.apply.mockReturnValueOnce({ok: true});
+    GitServiceMock.apply.mockReturnValueOnce({ok: true, data: appliedSha});
     ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
@@ -614,6 +639,7 @@ describe('Given a changelog service', () => {
   });
 
   it('Should write breaking entry without scope and no parentheses', () => {
+    const appliedSha = faker.git.commitSha();
     const commitHash = faker.string.alpha(40);
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true as const,
@@ -629,7 +655,7 @@ describe('Given a changelog service', () => {
     });
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
-    GitServiceMock.apply.mockReturnValueOnce({ok: true});
+    GitServiceMock.apply.mockReturnValueOnce({ok: true, data: appliedSha});
     ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
@@ -652,6 +678,7 @@ describe('Given a changelog service', () => {
   });
 
   it('Should not contain Stryker artifacts in release notes', () => {
+    const appliedSha = faker.git.commitSha();
     const commitHash = faker.string.alpha(40);
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true as const,
@@ -667,7 +694,7 @@ describe('Given a changelog service', () => {
     });
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
-    GitServiceMock.apply.mockReturnValueOnce({ok: true});
+    GitServiceMock.apply.mockReturnValueOnce({ok: true, data: appliedSha});
     ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
@@ -690,13 +717,14 @@ describe('Given a changelog service', () => {
   });
 
   it('Should write empty release notes when no commits exist', () => {
+    const appliedSha = faker.git.commitSha();
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true as const,
       data: [],
     });
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
-    GitServiceMock.apply.mockReturnValueOnce({ok: true});
+    GitServiceMock.apply.mockReturnValueOnce({ok: true, data: appliedSha});
     ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
@@ -719,6 +747,7 @@ describe('Given a changelog service', () => {
   });
 
   it('Should separate multiple entries in same section with newline', () => {
+    const appliedSha = faker.git.commitSha();
     const firstHash = faker.string.alpha(40);
     const secondHash = faker.string.alpha(40);
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
@@ -742,7 +771,7 @@ describe('Given a changelog service', () => {
     });
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
-    GitServiceMock.apply.mockReturnValueOnce({ok: true});
+    GitServiceMock.apply.mockReturnValueOnce({ok: true, data: appliedSha});
     ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
@@ -767,6 +796,7 @@ describe('Given a changelog service', () => {
   });
 
   it('Should include breaking change marker in features section', () => {
+    const appliedSha = faker.git.commitSha();
     const commitHash = faker.string.alpha(40);
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true as const,
@@ -782,7 +812,7 @@ describe('Given a changelog service', () => {
     });
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
-    GitServiceMock.apply.mockReturnValueOnce({ok: true});
+    GitServiceMock.apply.mockReturnValueOnce({ok: true, data: appliedSha});
     ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
@@ -805,6 +835,7 @@ describe('Given a changelog service', () => {
   });
 
   it('Should include changelog header with date in written content', () => {
+    const appliedSha = faker.git.commitSha();
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true as const,
       data: [
@@ -819,7 +850,7 @@ describe('Given a changelog service', () => {
     });
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
-    GitServiceMock.apply.mockReturnValueOnce({ok: true});
+    GitServiceMock.apply.mockReturnValueOnce({ok: true, data: appliedSha});
     ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
@@ -842,6 +873,7 @@ describe('Given a changelog service', () => {
   });
 
   it('Should not include breaking changes section for non-breaking commits', () => {
+    const appliedSha = faker.git.commitSha();
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true as const,
       data: [
@@ -856,7 +888,7 @@ describe('Given a changelog service', () => {
     });
     vi.mocked(existsSync).mockReturnValueOnce(false);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
-    GitServiceMock.apply.mockReturnValueOnce({ok: true});
+    GitServiceMock.apply.mockReturnValueOnce({ok: true, data: appliedSha});
     ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
@@ -879,6 +911,7 @@ describe('Given a changelog service', () => {
   });
 
   it('Should prepend new entry before existing changelog content', () => {
+    const appliedSha = faker.git.commitSha();
     const existingContent = '# Old Changelog';
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
       ok: true as const,
@@ -895,7 +928,7 @@ describe('Given a changelog service', () => {
     vi.mocked(existsSync).mockReturnValueOnce(true);
     vi.mocked(readFileSync).mockReturnValueOnce(existingContent);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
-    GitServiceMock.apply.mockReturnValueOnce({ok: true});
+    GitServiceMock.apply.mockReturnValueOnce({ok: true, data: appliedSha});
     ReleaseNotesServiceMock.createRelease.mockReturnValueOnce({
       ok: true,
       data: '',
