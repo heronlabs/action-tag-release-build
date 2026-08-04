@@ -1,3 +1,9 @@
+## v7.3.3 (2026-08-04)
+
+### Bug Fixes
+
+* fix: exclude merge commits from release notes (#58) (b4dcb1297bb35bba593f8f0174a93baca9ef6fcc)
+
 ## v7.3.2 (2026-08-04)
 
 ### Bug Fixes
