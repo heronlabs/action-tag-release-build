@@ -19,7 +19,7 @@ export class GitService {
     return this.childProcessService.exec('git', [
       'log',
       '--no-merges',
-      '--pretty=format:%H %s',
+      '--pretty=format:%H %s%n%b%x1e',
       ...range,
     ]);
   }
