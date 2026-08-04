@@ -1,3 +1,9 @@
+## v7.4.0 (2026-08-04)
+
+### Features
+
+* feat: enhance commit parsing for breaking changes (#59) (f968bbe412c5a2485862dcf22be37c612bb64895)
+
 ## v7.3.3 (2026-08-04)
 
 ### Bug Fixes
