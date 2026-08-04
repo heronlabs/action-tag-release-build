@@ -19476,7 +19476,7 @@ var GitService = class {
       "--tags",
       "--abbrev=0",
       "--match",
-      `${tagPrefix}*`,
+      `${tagPrefix}[0-9]*`,
       "HEAD"
     ]);
     const range = previousTag.ok ? [`${previousTag.data}..HEAD`] : [];
