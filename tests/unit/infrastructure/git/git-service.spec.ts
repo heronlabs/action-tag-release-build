@@ -53,9 +53,11 @@ describe('Given a git service', () => {
 
       service.getLastCommit();
 
-      expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith(
-        'git log -1 --pretty=%B',
-      );
+      expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith('git', [
+        'log',
+        '-1',
+        '--pretty=%B',
+      ]);
     });
   });
 
@@ -107,10 +109,14 @@ describe('Given a git service', () => {
 
       service.getDescriptionSince('v');
 
-      expect(ChildProcessServiceMock.exec).toHaveBeenNthCalledWith(
-        1,
-        'git describe --tags --abbrev=0 --match "v*" HEAD',
-      );
+      expect(ChildProcessServiceMock.exec).toHaveBeenNthCalledWith(1, 'git', [
+        'describe',
+        '--tags',
+        '--abbrev=0',
+        '--match',
+        'v*',
+        'HEAD',
+      ]);
     });
 
     it('Should call git log with range when previous tag found', () => {
@@ -120,10 +126,11 @@ describe('Given a git service', () => {
 
       service.getDescriptionSince('v');
 
-      expect(ChildProcessServiceMock.exec).toHaveBeenNthCalledWith(
-        2,
-        'git log --pretty=format:"%H %s" v5..HEAD',
-      );
+      expect(ChildProcessServiceMock.exec).toHaveBeenNthCalledWith(2, 'git', [
+        'log',
+        '--pretty=format:%H %s',
+        'v5..HEAD',
+      ]);
     });
 
     it('Should call git log with empty range when no previous tag found', () => {
@@ -136,10 +143,10 @@ describe('Given a git service', () => {
 
       service.getDescriptionSince('v');
 
-      expect(ChildProcessServiceMock.exec).toHaveBeenNthCalledWith(
-        2,
-        'git log --pretty=format:"%H %s" ',
-      );
+      expect(ChildProcessServiceMock.exec).toHaveBeenNthCalledWith(2, 'git', [
+        'log',
+        '--pretty=format:%H %s',
+      ]);
     });
   });
 
@@ -147,8 +154,8 @@ describe('Given a git service', () => {
     const success = {
       ok: true as const,
       data: 'OK',
-      execChain: (nextCommand: string) =>
-        ChildProcessServiceMock.execChain(nextCommand),
+      execChain: (command: string, args: string[] = []) =>
+        ChildProcessServiceMock.execChain(command, args),
     };
     it('Should add, commit and push the new tag', () => {
       const execChainMock = ChildProcessServiceMock.execChain
@@ -228,8 +235,8 @@ describe('Given a git service', () => {
       const success = {
         ok: true as const,
         data: 'OK',
-        execChain: (nextCommand: string) =>
-          ChildProcessServiceMock.execChain(nextCommand),
+        execChain: (command: string, args: string[] = []) =>
+          ChildProcessServiceMock.execChain(command, args),
       };
       const error = new Error(faker.lorem.sentence());
       const result = {
@@ -267,8 +274,8 @@ describe('Given a git service', () => {
       const success = {
         ok: true as const,
         data: 'OK',
-        execChain: (nextCommand: string) =>
-          ChildProcessServiceMock.execChain(nextCommand),
+        execChain: (command: string, args: string[] = []) =>
+          ChildProcessServiceMock.execChain(command, args),
       };
       const error = new Error(faker.lorem.sentence());
       const result = {
@@ -320,7 +327,8 @@ describe('Given a git service', () => {
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         1,
-        'git config user.name  "github-actions[bot]"',
+        'git',
+        ['config', 'user.name', 'github-actions[bot]'],
       );
     });
 
@@ -338,7 +346,12 @@ describe('Given a git service', () => {
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         2,
-        'git config user.email "github-actions[bot]@users.noreply.github.com"',
+        'git',
+        [
+          'config',
+          'user.email',
+          'github-actions[bot]@users.noreply.github.com',
+        ],
       );
     });
 
@@ -356,7 +369,8 @@ describe('Given a git service', () => {
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         3,
-        'git add -A',
+        'git',
+        ['add', '-A'],
       );
     });
 
@@ -374,7 +388,8 @@ describe('Given a git service', () => {
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         4,
-        'git commit -m "[skip ci] bump v1.2.3"',
+        'git',
+        ['commit', '-m', '[skip ci] bump v1.2.3'],
       );
     });
 
@@ -392,7 +407,8 @@ describe('Given a git service', () => {
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         5,
-        'git pull --rebase origin "main"',
+        'git',
+        ['pull', '--rebase', 'origin', 'main'],
       );
     });
 
@@ -410,7 +426,8 @@ describe('Given a git service', () => {
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         6,
-        'git tag -a "v1.2.3" -m "Release 1.2.3"',
+        'git',
+        ['tag', '-a', 'v1.2.3', '-m', 'Release 1.2.3'],
       );
     });
 
@@ -428,7 +445,8 @@ describe('Given a git service', () => {
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         7,
-        'git push --follow-tags',
+        'git',
+        ['push', '--follow-tags'],
       );
     });
 
@@ -455,7 +473,8 @@ describe('Given a git service', () => {
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         7,
-        'git tag -fa "v1" -m "Latest v1.x.x release"',
+        'git',
+        ['tag', '-fa', 'v1', '-m', 'Latest v1.x.x release'],
       );
     });
 
@@ -482,7 +501,8 @@ describe('Given a git service', () => {
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         9,
-        'git push --follow-tags',
+        'git',
+        ['push', '--follow-tags'],
       );
     });
 
@@ -509,7 +529,8 @@ describe('Given a git service', () => {
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         10,
-        'git push origin "v1" --force',
+        'git',
+        ['push', 'origin', 'v1', '--force'],
       );
     });
 
@@ -536,7 +557,8 @@ describe('Given a git service', () => {
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         11,
-        'git push origin "v2" --force',
+        'git',
+        ['push', 'origin', 'v2', '--force'],
       );
     });
 
@@ -546,38 +568,38 @@ describe('Given a git service', () => {
         .mockReturnValueOnce({
           ok: true as const,
           data: 'OK',
-          execChain: (nextCommand: string) =>
-            ChildProcessServiceMock.execChain(nextCommand),
+          execChain: (command: string, args: string[] = []) =>
+            ChildProcessServiceMock.execChain(command, args),
         })
         .mockReturnValueOnce({
           ok: true as const,
           data: 'OK',
-          execChain: (nextCommand: string) =>
-            ChildProcessServiceMock.execChain(nextCommand),
+          execChain: (command: string, args: string[] = []) =>
+            ChildProcessServiceMock.execChain(command, args),
         })
         .mockReturnValueOnce({
           ok: true as const,
           data: 'OK',
-          execChain: (nextCommand: string) =>
-            ChildProcessServiceMock.execChain(nextCommand),
+          execChain: (command: string, args: string[] = []) =>
+            ChildProcessServiceMock.execChain(command, args),
         })
         .mockReturnValueOnce({
           ok: true as const,
           data: 'OK',
-          execChain: (nextCommand: string) =>
-            ChildProcessServiceMock.execChain(nextCommand),
+          execChain: (command: string, args: string[] = []) =>
+            ChildProcessServiceMock.execChain(command, args),
         })
         .mockReturnValueOnce({
           ok: true as const,
           data: 'OK',
-          execChain: (nextCommand: string) =>
-            ChildProcessServiceMock.execChain(nextCommand),
+          execChain: (command: string, args: string[] = []) =>
+            ChildProcessServiceMock.execChain(command, args),
         })
         .mockReturnValueOnce({
           ok: false as const,
           error,
-          execChain: (nextCommand: string) =>
-            ChildProcessServiceMock.execChain(nextCommand),
+          execChain: (command: string, args: string[] = []) =>
+            ChildProcessServiceMock.execChain(command, args),
         });
 
       service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
@@ -651,7 +673,8 @@ describe('Given a git service', () => {
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         8,
-        'git tag -fa "v2" -m "Latest v2.x release"',
+        'git',
+        ['tag', '-fa', 'v2', '-m', 'Latest v2.x release'],
       );
     });
   });
@@ -695,9 +718,11 @@ describe('Given a git service', () => {
 
       service.mergeWithoutCommit('main', 'development');
 
-      expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith(
-        'git push origin "refs/heads/main:refs/heads/development"',
-      );
+      expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith('git', [
+        'push',
+        'origin',
+        'refs/heads/main:refs/heads/development',
+      ]);
     });
   });
 });

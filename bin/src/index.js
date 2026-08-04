@@ -19337,9 +19337,16 @@ var MergeService = class {
   mergeWithCommit(ref, environment) {
     try {
       const message = `Merge ${ref} into ${environment}`;
-      return this.childProcessService.exec(
-        `gh api "repos/{owner}/{repo}/merges" -f base="${environment}" -f head="${ref}" -f commit_message="${message}"`
-      );
+      return this.childProcessService.exec("gh", [
+        "api",
+        "repos/{owner}/{repo}/merges",
+        "-f",
+        `base=${environment}`,
+        "-f",
+        `head=${ref}`,
+        "-f",
+        `commit_message=${message}`
+      ]);
     } catch (error2) {
       return { ok: false, error: error2 };
     }
@@ -19354,9 +19361,20 @@ var PullRequestService = class {
   childProcessService;
   hasPullRequest(ref, environment) {
     try {
-      const result = this.childProcessService.exec(
-        `gh pr list --base "${environment}" --head "${ref}" --state open --json number --jq length`
-      );
+      const result = this.childProcessService.exec("gh", [
+        "pr",
+        "list",
+        "--base",
+        environment,
+        "--head",
+        ref,
+        "--state",
+        "open",
+        "--json",
+        "number",
+        "--jq",
+        "length"
+      ]);
       if (!result.ok) return result;
       return { ok: true, data: result.data !== "0" };
     } catch (error2) {
@@ -19369,9 +19387,18 @@ var PullRequestService = class {
       let body = `Automatic sync of ${ref} into ${environment} failed `;
       body += "(diverged branch or merge conflict). Merge this pull request ";
       body += `to sync ${environment} with ${ref}.`;
-      return this.childProcessService.exec(
-        `gh pr create --base "${environment}" --head "${ref}" --title "${title}" --body "${body}"`
-      );
+      return this.childProcessService.exec("gh", [
+        "pr",
+        "create",
+        "--base",
+        environment,
+        "--head",
+        ref,
+        "--title",
+        title,
+        "--body",
+        body
+      ]);
     } catch (error2) {
       return { ok: false, error: error2 };
     }
@@ -19392,9 +19419,15 @@ var ReleaseNotesService = class {
     try {
       const releaseNotesFile = (0, import_node_path.join)(this.cwd, ".release-notes.tmp.md");
       (0, import_node_fs.writeFileSync)(releaseNotesFile, releaseNotes, "utf8");
-      return this.childProcessService.exec(
-        `gh release create "${tag}" --title "${tag}" --notes-file "${releaseNotesFile}"`
-      );
+      return this.childProcessService.exec("gh", [
+        "release",
+        "create",
+        tag,
+        "--title",
+        tag,
+        "--notes-file",
+        releaseNotesFile
+      ]);
     } catch (error2) {
       return { ok: false, error: error2 };
     }
@@ -19435,16 +19468,23 @@ var GitService = class {
   }
   childProcessService;
   getLastCommit() {
-    return this.childProcessService.exec("git log -1 --pretty=%B");
+    return this.childProcessService.exec("git", ["log", "-1", "--pretty=%B"]);
   }
   getDescriptionSince(tagPrefix) {
-    const previousTag = this.childProcessService.exec(
-      `git describe --tags --abbrev=0 --match "${tagPrefix}*" HEAD`
-    );
-    const range = previousTag.ok ? `${previousTag.data}..HEAD` : "";
-    return this.childProcessService.exec(
-      `git log --pretty=format:"%H %s" ${range}`
-    );
+    const previousTag = this.childProcessService.exec("git", [
+      "describe",
+      "--tags",
+      "--abbrev=0",
+      "--match",
+      `${tagPrefix}*`,
+      "HEAD"
+    ]);
+    const range = previousTag.ok ? [`${previousTag.data}..HEAD`] : [];
+    return this.childProcessService.exec("git", [
+      "log",
+      "--pretty=format:%H %s",
+      ...range
+    ]);
   }
   applyTags({
     version,
@@ -19453,29 +19493,41 @@ var GitService = class {
     tags
   }) {
     const commitMessage = `[skip ci] bump ${tag}`;
-    const chain = this.childProcessService.execChain('git config user.name  "github-actions[bot]"').execChain(
-      'git config user.email "github-actions[bot]@users.noreply.github.com"'
-    ).execChain("git add -A").execChain(`git commit -m "${commitMessage}"`).execChain(`git pull --rebase origin "${ref}"`).execChain(`git tag -a "${tag}" -m "Release ${version}"`);
+    const chain = this.childProcessService.execChain("git", ["config", "user.name", "github-actions[bot]"]).execChain("git", [
+      "config",
+      "user.email",
+      "github-actions[bot]@users.noreply.github.com"
+    ]).execChain("git", ["add", "-A"]).execChain("git", ["commit", "-m", commitMessage]).execChain("git", ["pull", "--rebase", "origin", ref]).execChain("git", ["tag", "-a", tag, "-m", `Release ${version}`]);
     if (!chain.ok) {
       return { ok: false, error: chain.error };
     }
     if (!tags) {
-      const push2 = chain.execChain("git push --follow-tags");
+      const push2 = chain.execChain("git", ["push", "--follow-tags"]);
       if (!push2.ok) return { ok: false, error: push2.error };
       return { ok: true };
     }
-    const push = chain.execChain(
-      `git tag -fa "${tags.major}" -m "Latest ${tags.major}.x.x release"`
-    ).execChain(
-      `git tag -fa "${tags.minor}" -m "Latest ${tags.minor}.x release"`
-    ).execChain("git push --follow-tags").execChain(`git push origin "${tags.major}" --force`).execChain(`git push origin "${tags.minor}" --force`);
+    const push = chain.execChain("git", [
+      "tag",
+      "-fa",
+      tags.major,
+      "-m",
+      `Latest ${tags.major}.x.x release`
+    ]).execChain("git", [
+      "tag",
+      "-fa",
+      tags.minor,
+      "-m",
+      `Latest ${tags.minor}.x release`
+    ]).execChain("git", ["push", "--follow-tags"]).execChain("git", ["push", "origin", tags.major, "--force"]).execChain("git", ["push", "origin", tags.minor, "--force"]);
     if (!push.ok) return { ok: false, error: push.error };
     return { ok: true };
   }
   mergeWithoutCommit(ref, environment) {
-    return this.childProcessService.exec(
-      `git push origin "refs/heads/${ref}:refs/heads/${environment}"`
-    );
+    return this.childProcessService.exec("git", [
+      "push",
+      "origin",
+      `refs/heads/${ref}:refs/heads/${environment}`
+    ]);
   }
 };
 
@@ -19504,7 +19556,7 @@ var ChildProcessService = class {
     return {
       ok: true,
       data,
-      execChain: (nextCommand) => this.execChain(nextCommand)
+      execChain: (command, args) => this.execChain(command, args)
     };
   }
   failure(error2) {
@@ -19515,21 +19567,14 @@ var ChildProcessService = class {
     };
     return result;
   }
-  execChain(command) {
-    try {
-      const data = (0, import_node_child_process.execSync)(command, {
-        cwd: this.cwd,
-        encoding: "utf8",
-        stdio: "pipe"
-      }).toString().trim();
-      return this.success(data);
-    } catch (error2) {
-      return this.failure(error2);
-    }
+  execChain(command, args) {
+    const result = this.exec(command, args);
+    if (!result.ok) return this.failure(result.error);
+    return this.success(result.data);
   }
-  exec(command) {
+  exec(command, args) {
     try {
-      const data = (0, import_node_child_process.execSync)(command, {
+      const data = (0, import_node_child_process.execFileSync)(command, args, {
         cwd: this.cwd,
         encoding: "utf8",
         stdio: "pipe"
@@ -19636,9 +19681,11 @@ var NpmService = class {
   }
   childProcessService;
   bump(version) {
-    return this.childProcessService.exec(
-      `npm version "${version}" --no-git-tag-version`
-    );
+    return this.childProcessService.exec("npm", [
+      "version",
+      version,
+      "--no-git-tag-version"
+    ]);
   }
 };
 

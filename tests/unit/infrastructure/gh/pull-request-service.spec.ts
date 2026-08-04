@@ -50,9 +50,20 @@ describe('Given a pull request service', () => {
 
       service.hasPullRequest('main', 'development');
 
-      expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith(
-        'gh pr list --base "development" --head "main" --state open --json number --jq length',
-      );
+      expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith('gh', [
+        'pr',
+        'list',
+        '--base',
+        'development',
+        '--head',
+        'main',
+        '--state',
+        'open',
+        '--json',
+        'number',
+        '--jq',
+        'length',
+      ]);
     });
 
     it('Should return error listing pull requests', () => {
@@ -113,9 +124,18 @@ describe('Given a pull request service', () => {
         'Automatic sync of main into development failed ' +
         '(diverged branch or merge conflict). Merge this pull request ' +
         'to sync development with main.';
-      expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith(
-        `gh pr create --base "development" --head "main" --title "${title}" --body "${body}"`,
-      );
+      expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith('gh', [
+        'pr',
+        'create',
+        '--base',
+        'development',
+        '--head',
+        'main',
+        '--title',
+        title,
+        '--body',
+        body,
+      ]);
     });
 
     it('Should return error when creating pull request throws', () => {

@@ -1,11 +1,12 @@
-import {execSync} from 'node:child_process';
+import {execFileSync} from 'node:child_process';
 
 export class ChildProcessService {
   private success(data: string) {
     return {
       ok: true as const,
       data,
-      execChain: (nextCommand: string) => this.execChain(nextCommand),
+      execChain: (command: string, args: string[]) =>
+        this.execChain(command, args),
     };
   }
 
@@ -18,24 +19,17 @@ export class ChildProcessService {
     return result;
   }
 
-  execChain(command: string) {
-    try {
-      const data = execSync(command, {
-        cwd: this.cwd,
-        encoding: 'utf8',
-        stdio: 'pipe',
-      })
-        .toString()
-        .trim();
-      return this.success(data);
-    } catch (error) {
-      return this.failure(error);
-    }
+  execChain(command: string, args: string[]) {
+    const result = this.exec(command, args);
+
+    if (!result.ok) return this.failure(result.error);
+
+    return this.success(result.data);
   }
 
-  exec(command: string) {
+  exec(command: string, args: string[]) {
     try {
-      const data = execSync(command, {
+      const data = execFileSync(command, args, {
         cwd: this.cwd,
         encoding: 'utf8',
         stdio: 'pipe',

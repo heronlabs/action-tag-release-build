@@ -2004,11 +2004,11 @@ describe('Full tag-release-build pipeline', () => {
       const command = testingCliFactory(workDir, {
         patchServices: ({childProcessService}) => {
           const realExec = childProcessService.exec.bind(childProcessService);
-          childProcessService.exec = (command: string) => {
-            if (command.startsWith('gh api')) {
+          childProcessService.exec = (command: string, args: string[] = []) => {
+            if (command === 'gh' && args[0] === 'api') {
               throw new Error('simulated execSync crash');
             }
-            return realExec(command);
+            return realExec(command, args);
           };
         },
       });
@@ -2254,11 +2254,11 @@ describe('Full tag-release-build pipeline', () => {
       const command = testingCliFactory(workDir, {
         patchServices: ({childProcessService}) => {
           const realExec = childProcessService.exec.bind(childProcessService);
-          childProcessService.exec = (command: string) => {
-            if (command.startsWith('gh pr list')) {
+          childProcessService.exec = (command: string, args: string[] = []) => {
+            if (command === 'gh' && args[0] === 'pr' && args[1] === 'list') {
               throw new Error('simulated execSync crash');
             }
-            return realExec(command);
+            return realExec(command, args);
           };
         },
       });
@@ -2302,11 +2302,11 @@ describe('Full tag-release-build pipeline', () => {
       const command = testingCliFactory(workDir, {
         patchServices: ({childProcessService}) => {
           const realExec = childProcessService.exec.bind(childProcessService);
-          childProcessService.exec = (command: string) => {
-            if (command.startsWith('gh pr create')) {
+          childProcessService.exec = (command: string, args: string[] = []) => {
+            if (command === 'gh' && args[0] === 'pr' && args[1] === 'create') {
               throw new Error('simulated execSync crash');
             }
-            return realExec(command);
+            return realExec(command, args);
           };
         },
       });

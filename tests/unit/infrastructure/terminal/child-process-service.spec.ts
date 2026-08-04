@@ -1,11 +1,11 @@
-import {execSync} from 'node:child_process';
+import {execFileSync} from 'node:child_process';
 
 import {faker} from '@faker-js/faker';
 
 import {ChildProcessService} from '../../../../src/infrastructure/terminal/services/child-process-service';
 
 vi.mock('node:child_process', () => ({
-  execSync: vi.fn(),
+  execFileSync: vi.fn(),
 }));
 
 describe('Given a child process service', () => {
@@ -19,9 +19,9 @@ describe('Given a child process service', () => {
   describe('Given exec method', () => {
     it('Should execute and parse result', () => {
       const data = 'Everything up to date';
-      vi.mocked(execSync).mockImplementationOnce(() => data);
+      vi.mocked(execFileSync).mockImplementationOnce(() => data);
 
-      const output = service.exec('git status');
+      const output = service.exec('git', ['status']);
 
       expect(output).toStrictEqual({
         ok: true,
@@ -31,9 +31,9 @@ describe('Given a child process service', () => {
 
     it('Should trim whitespace from exec output', () => {
       const rawData = '  \nEverything up to date\n  ';
-      vi.mocked(execSync).mockImplementationOnce(() => rawData);
+      vi.mocked(execFileSync).mockImplementationOnce(() => rawData);
 
-      const output = service.exec('git status');
+      const output = service.exec('git', ['status']);
 
       expect(output).toStrictEqual({
         ok: true,
@@ -41,25 +41,41 @@ describe('Given a child process service', () => {
       });
     });
 
-    it('Should pass correct options to execSync in exec', () => {
-      vi.mocked(execSync).mockImplementationOnce(() => 'OK');
+    it('Should pass command, args and options to execFileSync in exec', () => {
+      vi.mocked(execFileSync).mockImplementationOnce(() => 'OK');
 
-      service.exec('git status');
+      service.exec('git', ['status']);
 
-      expect(execSync).toHaveBeenCalledWith('git status', {
+      expect(execFileSync).toHaveBeenCalledWith('git', ['status'], {
         cwd,
         encoding: 'utf8',
         stdio: 'pipe',
       });
     });
 
+    it('Should not interpret shell syntax in arguments', () => {
+      vi.mocked(execFileSync).mockImplementationOnce(() => 'OK');
+
+      service.exec('git', ['tag', '-a', 'v1.0.0; rm -rf /']);
+
+      expect(execFileSync).toHaveBeenCalledWith(
+        'git',
+        ['tag', '-a', 'v1.0.0; rm -rf /'],
+        {
+          cwd,
+          encoding: 'utf8',
+          stdio: 'pipe',
+        },
+      );
+    });
+
     it('Should return error on execution', () => {
       const error = new Error(faker.lorem.sentence());
-      vi.mocked(execSync).mockImplementationOnce(() => {
+      vi.mocked(execFileSync).mockImplementationOnce(() => {
         throw error;
       });
 
-      const output = service.exec('git status');
+      const output = service.exec('git', ['status']);
 
       expect(output).toStrictEqual({
         ok: false,
@@ -71,15 +87,15 @@ describe('Given a child process service', () => {
   describe('Given exec chain method', () => {
     it('Should exec chain with success on start', () => {
       const data = 'Everything up to date';
-      vi.mocked(execSync)
+      vi.mocked(execFileSync)
         .mockImplementationOnce(() => 'Added')
         .mockImplementationOnce(() => 'Commited')
         .mockImplementationOnce(() => data);
 
       const output = service
-        .execChain('git add .')
-        .execChain('git commit -m "dooby"')
-        .execChain('git push');
+        .execChain('git', ['add', '.'])
+        .execChain('git', ['commit', '-m', 'dooby'])
+        .execChain('git', ['push']);
 
       expect(output).toStrictEqual({
         ok: true,
@@ -90,9 +106,9 @@ describe('Given a child process service', () => {
 
     it('Should trim whitespace from execChain output', () => {
       const rawData = '  \nPushed\n  ';
-      vi.mocked(execSync).mockImplementationOnce(() => rawData);
+      vi.mocked(execFileSync).mockImplementationOnce(() => rawData);
 
-      const output = service.execChain('git push');
+      const output = service.execChain('git', ['push']);
 
       expect(output).toStrictEqual({
         ok: true,
@@ -101,12 +117,12 @@ describe('Given a child process service', () => {
       });
     });
 
-    it('Should pass correct options to execSync in execChain', () => {
-      vi.mocked(execSync).mockImplementationOnce(() => 'Added');
+    it('Should pass command, args and options to execFileSync in execChain', () => {
+      vi.mocked(execFileSync).mockImplementationOnce(() => 'Added');
 
-      service.execChain('git add -A');
+      service.execChain('git', ['add', '-A']);
 
-      expect(execSync).toHaveBeenCalledWith('git add -A', {
+      expect(execFileSync).toHaveBeenCalledWith('git', ['add', '-A'], {
         cwd,
         encoding: 'utf8',
         stdio: 'pipe',
@@ -115,7 +131,7 @@ describe('Given a child process service', () => {
 
     it('Should exec chain with failure on start', () => {
       const error = new Error(faker.lorem.sentence());
-      vi.mocked(execSync)
+      vi.mocked(execFileSync)
         .mockImplementationOnce(() => {
           throw error;
         })
@@ -123,9 +139,9 @@ describe('Given a child process service', () => {
         .mockImplementationOnce(() => 'Everything up to date');
 
       const output = service
-        .execChain('git add .')
-        .execChain('git commit -m "dooby"')
-        .execChain('git push');
+        .execChain('git', ['add', '.'])
+        .execChain('git', ['commit', '-m', 'dooby'])
+        .execChain('git', ['push']);
 
       expect(output).toStrictEqual({
         ok: false,
@@ -134,9 +150,25 @@ describe('Given a child process service', () => {
       });
     });
 
+    it('Should stop running commands after a failed chain step', () => {
+      vi.mocked(execFileSync)
+        .mockImplementationOnce(() => {
+          throw new Error(faker.lorem.sentence());
+        })
+        .mockImplementationOnce(() => 'Commited')
+        .mockImplementationOnce(() => 'Everything up to date');
+
+      service
+        .execChain('git', ['add', '.'])
+        .execChain('git', ['commit', '-m', 'dooby'])
+        .execChain('git', ['push']);
+
+      expect(execFileSync).toHaveBeenCalledTimes(1);
+    });
+
     it('Should exec chain with failure on middle', () => {
       const error = new Error(faker.lorem.sentence());
-      vi.mocked(execSync)
+      vi.mocked(execFileSync)
         .mockImplementationOnce(() => 'Added')
         .mockImplementationOnce(() => {
           throw error;
@@ -144,9 +176,9 @@ describe('Given a child process service', () => {
         .mockImplementationOnce(() => 'Everything up to date');
 
       const output = service
-        .execChain('git add .')
-        .execChain('git commit -m "dooby"')
-        .execChain('git push');
+        .execChain('git', ['add', '.'])
+        .execChain('git', ['commit', '-m', 'dooby'])
+        .execChain('git', ['push']);
 
       expect(output).toStrictEqual({
         ok: false,
@@ -157,7 +189,7 @@ describe('Given a child process service', () => {
 
     it('Should exec chain with failure on end', () => {
       const error = new Error(faker.lorem.sentence());
-      vi.mocked(execSync)
+      vi.mocked(execFileSync)
         .mockImplementationOnce(() => 'Added')
         .mockImplementationOnce(() => 'Commited')
         .mockImplementationOnce(() => {
@@ -165,9 +197,9 @@ describe('Given a child process service', () => {
         });
 
       const output = service
-        .execChain('git add .')
-        .execChain('git commit -m "dooby"')
-        .execChain('git push');
+        .execChain('git', ['add', '.'])
+        .execChain('git', ['commit', '-m', 'dooby'])
+        .execChain('git', ['push']);
 
       expect(output).toStrictEqual({
         ok: false,

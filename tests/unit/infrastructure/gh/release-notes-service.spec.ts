@@ -69,9 +69,15 @@ describe('Given a release notes service', () => {
     service.createRelease(tag, releaseNotes);
 
     const expectedPath = join(cwd, '.release-notes.tmp.md');
-    expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith(
-      `gh release create "${tag}" --title "${tag}" --notes-file "${expectedPath}"`,
-    );
+    expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith('gh', [
+      'release',
+      'create',
+      tag,
+      '--title',
+      tag,
+      '--notes-file',
+      expectedPath,
+    ]);
   });
 
   it('Should return error creating release notes tmp file', () => {

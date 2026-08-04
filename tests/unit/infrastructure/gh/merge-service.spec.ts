@@ -36,9 +36,16 @@ describe('Given a merge service', () => {
 
       service.mergeWithCommit('main', 'development');
 
-      expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith(
-        'gh api "repos/{owner}/{repo}/merges" -f base="development" -f head="main" -f commit_message="Merge main into development"',
-      );
+      expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith('gh', [
+        'api',
+        'repos/{owner}/{repo}/merges',
+        '-f',
+        'base=development',
+        '-f',
+        'head=main',
+        '-f',
+        'commit_message=Merge main into development',
+      ]);
     });
 
     it('Should return error merging with commit', () => {

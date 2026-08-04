@@ -2,18 +2,25 @@ import {ChildProcessService} from '../../terminal/services/child-process-service
 
 export class GitService {
   public getLastCommit() {
-    return this.childProcessService.exec('git log -1 --pretty=%B');
+    return this.childProcessService.exec('git', ['log', '-1', '--pretty=%B']);
   }
 
   public getDescriptionSince(tagPrefix: string) {
-    const previousTag = this.childProcessService.exec(
-      `git describe --tags --abbrev=0 --match "${tagPrefix}*" HEAD`,
-    );
-    const range = previousTag.ok ? `${previousTag.data}..HEAD` : '';
+    const previousTag = this.childProcessService.exec('git', [
+      'describe',
+      '--tags',
+      '--abbrev=0',
+      '--match',
+      `${tagPrefix}*`,
+      'HEAD',
+    ]);
+    const range = previousTag.ok ? [`${previousTag.data}..HEAD`] : [];
 
-    return this.childProcessService.exec(
-      `git log --pretty=format:"%H %s" ${range}`,
-    );
+    return this.childProcessService.exec('git', [
+      'log',
+      '--pretty=format:%H %s',
+      ...range,
+    ]);
   }
 
   public applyTags({
@@ -33,35 +40,45 @@ export class GitService {
     const commitMessage = `[skip ci] bump ${tag}`;
 
     const chain = this.childProcessService
-      .execChain('git config user.name  "github-actions[bot]"')
-      .execChain(
-        'git config user.email "github-actions[bot]@users.noreply.github.com"',
-      )
-      .execChain('git add -A')
-      .execChain(`git commit -m "${commitMessage}"`)
-      .execChain(`git pull --rebase origin "${ref}"`)
-      .execChain(`git tag -a "${tag}" -m "Release ${version}"`);
+      .execChain('git', ['config', 'user.name', 'github-actions[bot]'])
+      .execChain('git', [
+        'config',
+        'user.email',
+        'github-actions[bot]@users.noreply.github.com',
+      ])
+      .execChain('git', ['add', '-A'])
+      .execChain('git', ['commit', '-m', commitMessage])
+      .execChain('git', ['pull', '--rebase', 'origin', ref])
+      .execChain('git', ['tag', '-a', tag, '-m', `Release ${version}`]);
 
     if (!chain.ok) {
       return {ok: false as const, error: chain.error};
     }
 
     if (!tags) {
-      const push = chain.execChain('git push --follow-tags');
+      const push = chain.execChain('git', ['push', '--follow-tags']);
       if (!push.ok) return {ok: false as const, error: push.error};
       return {ok: true as const};
     }
 
     const push = chain
-      .execChain(
-        `git tag -fa "${tags.major}" -m "Latest ${tags.major}.x.x release"`,
-      )
-      .execChain(
-        `git tag -fa "${tags.minor}" -m "Latest ${tags.minor}.x release"`,
-      )
-      .execChain('git push --follow-tags')
-      .execChain(`git push origin "${tags.major}" --force`)
-      .execChain(`git push origin "${tags.minor}" --force`);
+      .execChain('git', [
+        'tag',
+        '-fa',
+        tags.major,
+        '-m',
+        `Latest ${tags.major}.x.x release`,
+      ])
+      .execChain('git', [
+        'tag',
+        '-fa',
+        tags.minor,
+        '-m',
+        `Latest ${tags.minor}.x release`,
+      ])
+      .execChain('git', ['push', '--follow-tags'])
+      .execChain('git', ['push', 'origin', tags.major, '--force'])
+      .execChain('git', ['push', 'origin', tags.minor, '--force']);
 
     if (!push.ok) return {ok: false as const, error: push.error};
 
@@ -69,9 +86,11 @@ export class GitService {
   }
 
   public mergeWithoutCommit(ref: string, environment: string) {
-    return this.childProcessService.exec(
-      `git push origin "refs/heads/${ref}:refs/heads/${environment}"`,
-    );
+    return this.childProcessService.exec('git', [
+      'push',
+      'origin',
+      `refs/heads/${ref}:refs/heads/${environment}`,
+    ]);
   }
 
   constructor(private readonly childProcessService: ChildProcessService) {}
