@@ -114,7 +114,24 @@ describe('Given a git service', () => {
         '--tags',
         '--abbrev=0',
         '--match',
-        'v*',
+        'v[0-9]*',
+        'HEAD',
+      ]);
+    });
+
+    it('Should call git describe with a digit anchored match for custom prefix', () => {
+      ChildProcessServiceMock.exec
+        .mockReturnValueOnce({ok: true, data: 'release-5'})
+        .mockReturnValueOnce({ok: true, data: ''});
+
+      service.getDescriptionSince('release-');
+
+      expect(ChildProcessServiceMock.exec).toHaveBeenNthCalledWith(1, 'git', [
+        'describe',
+        '--tags',
+        '--abbrev=0',
+        '--match',
+        'release-[0-9]*',
         'HEAD',
       ]);
     });
