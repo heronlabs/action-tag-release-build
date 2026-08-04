@@ -1,3 +1,9 @@
+## v7.3.0 (2026-08-04)
+
+### Features
+
+* feat: enhance changelog and git services with SHA tracking and atomic push (#54) (22dc4ff3cf0ca475316d3941cd843dc514ec1731)
+
 ## v7.2.2 (2026-08-04)
 
 ### Miscellaneous Chores
