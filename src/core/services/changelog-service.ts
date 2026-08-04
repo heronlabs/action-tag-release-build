@@ -125,7 +125,10 @@ export class ChangelogService {
       return {ok: false as const, error: ghRelease.error};
     }
 
-    return {ok: true as const, data: {tag, tagMajor, tagMinor}};
+    return {
+      ok: true as const,
+      data: {tag, tagMajor, tagMinor, sha: gitApply.data},
+    };
   }
 
   constructor(

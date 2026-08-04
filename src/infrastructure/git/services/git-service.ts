@@ -38,8 +38,12 @@ export class GitService {
     };
   }) {
     const commitMessage = `[skip ci] bump ${tag}`;
+    const refspecs = [
+      `refs/heads/${ref}:refs/heads/${ref}`,
+      `refs/tags/${tag}`,
+    ];
 
-    const chain = this.childProcessService
+    let chain = this.childProcessService
       .execChain('git', ['config', 'user.name', 'github-actions[bot]'])
       .execChain('git', [
         'config',
@@ -51,38 +55,36 @@ export class GitService {
       .execChain('git', ['pull', '--rebase', 'origin', ref])
       .execChain('git', ['tag', '-a', tag, '-m', `Release ${version}`]);
 
-    if (!chain.ok) {
-      return {ok: false as const, error: chain.error};
+    if (tags) {
+      chain = chain
+        .execChain('git', [
+          'tag',
+          '-fa',
+          tags.major,
+          '-m',
+          `Latest ${tags.major}.x.x release`,
+        ])
+        .execChain('git', [
+          'tag',
+          '-fa',
+          tags.minor,
+          '-m',
+          `Latest ${tags.minor}.x release`,
+        ]);
+
+      refspecs.push(`+refs/tags/${tags.major}`, `+refs/tags/${tags.minor}`);
     }
 
-    if (!tags) {
-      const push = chain.execChain('git', ['push', '--follow-tags']);
-      if (!push.ok) return {ok: false as const, error: push.error};
-      return {ok: true as const};
+    const result = chain
+      .execChain('git', ['push', '--atomic', 'origin', ...refspecs])
+      .execChain('git', ['rev-parse', 'HEAD']);
+
+    if (!result.ok) {
+      this.childProcessService.exec('git', ['rebase', '--abort']);
+      return {ok: false as const, error: result.error};
     }
 
-    const push = chain
-      .execChain('git', [
-        'tag',
-        '-fa',
-        tags.major,
-        '-m',
-        `Latest ${tags.major}.x.x release`,
-      ])
-      .execChain('git', [
-        'tag',
-        '-fa',
-        tags.minor,
-        '-m',
-        `Latest ${tags.minor}.x release`,
-      ])
-      .execChain('git', ['push', '--follow-tags'])
-      .execChain('git', ['push', 'origin', tags.major, '--force'])
-      .execChain('git', ['push', 'origin', tags.minor, '--force']);
-
-    if (!push.ok) return {ok: false as const, error: push.error};
-
-    return {ok: true as const};
+    return {ok: true as const, data: result.data};
   }
 
   public mergeWithoutCommit(ref: string, environment: string) {

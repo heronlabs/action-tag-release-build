@@ -19493,34 +19493,37 @@ var GitService = class {
     tags
   }) {
     const commitMessage = `[skip ci] bump ${tag}`;
-    const chain = this.childProcessService.execChain("git", ["config", "user.name", "github-actions[bot]"]).execChain("git", [
+    const refspecs = [
+      `refs/heads/${ref}:refs/heads/${ref}`,
+      `refs/tags/${tag}`
+    ];
+    let chain = this.childProcessService.execChain("git", ["config", "user.name", "github-actions[bot]"]).execChain("git", [
       "config",
       "user.email",
       "github-actions[bot]@users.noreply.github.com"
     ]).execChain("git", ["add", "-A"]).execChain("git", ["commit", "-m", commitMessage]).execChain("git", ["pull", "--rebase", "origin", ref]).execChain("git", ["tag", "-a", tag, "-m", `Release ${version}`]);
-    if (!chain.ok) {
-      return { ok: false, error: chain.error };
+    if (tags) {
+      chain = chain.execChain("git", [
+        "tag",
+        "-fa",
+        tags.major,
+        "-m",
+        `Latest ${tags.major}.x.x release`
+      ]).execChain("git", [
+        "tag",
+        "-fa",
+        tags.minor,
+        "-m",
+        `Latest ${tags.minor}.x release`
+      ]);
+      refspecs.push(`+refs/tags/${tags.major}`, `+refs/tags/${tags.minor}`);
     }
-    if (!tags) {
-      const push2 = chain.execChain("git", ["push", "--follow-tags"]);
-      if (!push2.ok) return { ok: false, error: push2.error };
-      return { ok: true };
+    const result = chain.execChain("git", ["push", "--atomic", "origin", ...refspecs]).execChain("git", ["rev-parse", "HEAD"]);
+    if (!result.ok) {
+      this.childProcessService.exec("git", ["rebase", "--abort"]);
+      return { ok: false, error: result.error };
     }
-    const push = chain.execChain("git", [
-      "tag",
-      "-fa",
-      tags.major,
-      "-m",
-      `Latest ${tags.major}.x.x release`
-    ]).execChain("git", [
-      "tag",
-      "-fa",
-      tags.minor,
-      "-m",
-      `Latest ${tags.minor}.x release`
-    ]).execChain("git", ["push", "--follow-tags"]).execChain("git", ["push", "origin", tags.major, "--force"]).execChain("git", ["push", "origin", tags.minor, "--force"]);
-    if (!push.ok) return { ok: false, error: push.error };
-    return { ok: true };
+    return { ok: true, data: result.data };
   }
   mergeWithoutCommit(ref, environment) {
     return this.childProcessService.exec("git", [
@@ -19812,7 +19815,10 @@ ${releaseNotes}
     if (!ghRelease.ok) {
       return { ok: false, error: ghRelease.error };
     }
-    return { ok: true, data: { tag, tagMajor, tagMinor } };
+    return {
+      ok: true,
+      data: { tag, tagMajor, tagMinor, sha: gitApply.data }
+    };
   }
 };
 
