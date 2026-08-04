@@ -56,6 +56,7 @@ describe('Given a git service', () => {
       expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith('git', [
         'log',
         '-1',
+        '--no-merges',
         '--pretty=%B',
       ]);
     });
@@ -146,7 +147,7 @@ describe('Given a git service', () => {
       expect(ChildProcessServiceMock.exec).toHaveBeenNthCalledWith(2, 'git', [
         'log',
         '--no-merges',
-        '--pretty=format:%H %s',
+        '--pretty=format:%H %s%n%b%x1e',
         'v5..HEAD',
       ]);
     });
@@ -164,7 +165,7 @@ describe('Given a git service', () => {
       expect(ChildProcessServiceMock.exec).toHaveBeenNthCalledWith(2, 'git', [
         'log',
         '--no-merges',
-        '--pretty=format:%H %s',
+        '--pretty=format:%H %s%n%b%x1e',
       ]);
     });
 

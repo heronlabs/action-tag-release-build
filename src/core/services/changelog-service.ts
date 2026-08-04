@@ -28,7 +28,8 @@ export class ChangelogService {
       if (breaking.length > 0) {
         const lines = breaking.map(c => {
           const scope = c.scope ? `(${c.scope})` : '';
-          return `* ${c.type}${scope}!: ${c.description} (${c.hash})`;
+          const description = c.breakingDescription || c.description;
+          return `* ${c.type}${scope}!: ${description} (${c.hash})`;
         });
         sections.push(`### ⚠ BREAKING CHANGES\n\n${lines.join('\n')}`);
       }

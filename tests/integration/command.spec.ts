@@ -353,6 +353,146 @@ describe('Full tag-release-build pipeline', () => {
         .split('\n');
       expect(tags).toContain('v2.0.0');
     });
+
+    it('Should bump 1.2.3 to 2.0.0 from a BREAKING CHANGE body footer', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: [
+          'feat: drop node 18\n\nBREAKING CHANGE: node 18 is no longer supported',
+        ],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
+      const inputs: Inputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      };
+      command.run(inputs);
+
+      const version = readFileSync(join(workDir, 'version.txt'), 'utf8').trim();
+
+      expect(version).toBe('2.0.0');
+    });
+
+    it('Should write CHANGELOG.md with the breaking changes section from a body footer', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: [
+          'feat: drop node 18\n\nBREAKING CHANGE: node 18 is no longer supported',
+        ],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
+      const inputs: Inputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      };
+      command.run(inputs);
+
+      const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
+
+      expect(changelog).toContain('### ⚠ BREAKING CHANGES');
+    });
+
+    it('Should write CHANGELOG.md with the breaking entry from a body footer', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: [
+          'feat: drop node 18\n\nBREAKING CHANGE: node 18 is no longer supported',
+        ],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
+      const inputs: Inputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      };
+      command.run(inputs);
+
+      const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
+
+      expect(changelog).toContain('feat!: node 18 is no longer supported');
+    });
+
+    it('Should stay on 1.2.4 when the breaking phrase only appears mid sentence', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: [
+          'fix: tighten validation\n\nThe reviewer asked whether this is a BREAKING CHANGE: for\nold clients, but it is not.',
+        ],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
+      const inputs: Inputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      };
+      command.run(inputs);
+
+      const version = readFileSync(join(workDir, 'version.txt'), 'utf8').trim();
+
+      expect(version).toBe('1.2.4');
+    });
+
+    it('Should omit the breaking changes section when the phrase only appears mid sentence', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: [
+          'fix: tighten validation\n\nThe reviewer asked whether this is a BREAKING CHANGE: for\nold clients, but it is not.',
+        ],
+      });
+      const workDir = testRepo.workDir;
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
+      const inputs: Inputs = {
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      };
+      command.run(inputs);
+
+      const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
+
+      expect(changelog).not.toContain('### ⚠ BREAKING CHANGES');
+    });
   });
 
   describe('Explicit semantic overrides inference', () => {
@@ -767,6 +907,38 @@ describe('Full tag-release-build pipeline', () => {
 
       const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
       expect(changelog).not.toContain('Merge pull request');
+    });
+
+    it('Should ignore a breaking phrase carried in the merge commit body', () => {
+      testRepo = createTestRepo({version: '1.2.3', commits: []});
+      const workDir = testRepo.workDir;
+      execSync('git checkout -b fix-thing', {cwd: workDir, stdio: 'pipe'});
+      execSync("git commit --allow-empty -m 'fix: small tweak'", {
+        cwd: workDir,
+        stdio: 'pipe',
+      });
+      execSync('git checkout main', {cwd: workDir, stdio: 'pipe'});
+      execSync(
+        "git merge --no-ff fix-thing -m 'Merge pull request #4 from heronlabs/fix-thing' -m 'BREAKING CHANGE: none'",
+        {cwd: workDir, stdio: 'pipe'},
+      );
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      });
+
+      const version = readFileSync(join(workDir, 'version.txt'), 'utf8').trim();
+
+      expect(version).toBe('1.2.4');
     });
 
     it('Should include the merged branch commit in CHANGELOG', () => {

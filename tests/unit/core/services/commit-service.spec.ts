@@ -1,6 +1,7 @@
 import {faker} from '@faker-js/faker';
 
 import {CommitService} from '../../../../src/core/services/commit-service';
+import {COMMIT_RECORD_SEPARATOR} from '../../../../src/infrastructure/git/types/commit-record-separator';
 import {
   GitServiceMock,
   GitServiceMoq,
@@ -18,7 +19,7 @@ describe('Given a commit service', () => {
       const hash = faker.string.alpha(40);
       GitServiceMock.getDescriptionSince.mockReturnValueOnce({
         ok: true,
-        data: `${hash} feat(scope)!: add some feature\n${faker.string.alpha(40)} feat(scope)!: add some other feature`,
+        data: `${hash} feat(scope)!: add some feature${COMMIT_RECORD_SEPARATOR}${faker.string.alpha(40)} feat(scope)!: add some other feature`,
       });
 
       const tagPrefix = faker.string.alpha();
@@ -32,6 +33,7 @@ describe('Given a commit service', () => {
             type: 'feat',
             scope: 'scope',
             breaking: true,
+            breakingDescription: undefined,
             description: 'add some feature',
           },
         ]),
@@ -56,6 +58,7 @@ describe('Given a commit service', () => {
             type: 'feat',
             scope: undefined,
             breaking: true,
+            breakingDescription: undefined,
             description: 'add some feature',
           },
         ],
@@ -80,6 +83,7 @@ describe('Given a commit service', () => {
             type: 'feat',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'add some feature',
           },
         ],
@@ -104,6 +108,7 @@ describe('Given a commit service', () => {
             type: 'other',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'add some feature',
           },
         ],
@@ -126,12 +131,17 @@ describe('Given a commit service', () => {
       });
     });
 
-    it('Should filter empty and whitespace-only lines from commit data', () => {
+    it('Should filter empty and whitespace-only records from commit data', () => {
       const hash = faker.string.alpha(40);
       const hash2 = faker.string.alpha(40);
       GitServiceMock.getDescriptionSince.mockReturnValueOnce({
         ok: true,
-        data: `${hash} feat: add feature\n\n  \n${hash2} fix: fix bug`,
+        data: [
+          `${hash} feat: add feature`,
+          '',
+          '  ',
+          `${hash2} fix: fix bug`,
+        ].join(COMMIT_RECORD_SEPARATOR),
       });
 
       const tagPrefix = faker.string.alpha();
@@ -145,6 +155,7 @@ describe('Given a commit service', () => {
             type: 'feat',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'add feature',
           },
           {
@@ -152,6 +163,7 @@ describe('Given a commit service', () => {
             type: 'fix',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'fix bug',
           },
         ],
@@ -176,6 +188,7 @@ describe('Given a commit service', () => {
             type: 'other',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'prefix text feat: add feature',
           },
         ],
@@ -200,6 +213,7 @@ describe('Given a commit service', () => {
             type: 'feat',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'message',
           },
         ],
@@ -224,6 +238,7 @@ describe('Given a commit service', () => {
             type: 'feat',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'message',
           },
         ],
@@ -248,6 +263,7 @@ describe('Given a commit service', () => {
             type: 'feat',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'add feature more text here',
           },
         ],
@@ -272,7 +288,169 @@ describe('Given a commit service', () => {
             type: 'other',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'update dependencies',
+          },
+        ],
+      });
+    });
+
+    it('Should flag a breaking change declared in the commit body footer', () => {
+      const hash = faker.string.alpha(40);
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: `${hash} feat: drop node 18\n\nBREAKING CHANGE: node 18 is no longer supported\n${COMMIT_RECORD_SEPARATOR}`,
+      });
+
+      const tagPrefix = faker.string.alpha();
+      const output = service.parseDescriptionSince(tagPrefix);
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: [
+          {
+            hash,
+            type: 'feat',
+            scope: undefined,
+            breaking: true,
+            breakingDescription: 'node 18 is no longer supported',
+            description: 'drop node 18',
+          },
+        ],
+      });
+    });
+
+    it('Should flag a breaking change declared with the hyphenated footer', () => {
+      const hash = faker.string.alpha(40);
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: `${hash} fix: rename output\n\nBREAKING-CHANGE: the output is now called version\n${COMMIT_RECORD_SEPARATOR}`,
+      });
+
+      const tagPrefix = faker.string.alpha();
+      const output = service.parseDescriptionSince(tagPrefix);
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: [
+          {
+            hash,
+            type: 'fix',
+            scope: undefined,
+            breaking: true,
+            breakingDescription: 'the output is now called version',
+            description: 'rename output',
+          },
+        ],
+      });
+    });
+
+    it('Should flag a breaking change declared without a space after the footer colon', () => {
+      const hash = faker.string.alpha(40);
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: `${hash} feat: drop node 18\n\nBREAKING CHANGE:node 18 is no longer supported\n${COMMIT_RECORD_SEPARATOR}`,
+      });
+
+      const tagPrefix = faker.string.alpha();
+      const output = service.parseDescriptionSince(tagPrefix);
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: [
+          {
+            hash,
+            type: 'feat',
+            scope: undefined,
+            breaking: true,
+            breakingDescription: 'node 18 is no longer supported',
+            description: 'drop node 18',
+          },
+        ],
+      });
+    });
+
+    it('Should not flag a breaking change mentioned mid sentence in the body', () => {
+      const hash = faker.string.alpha(40);
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: `${hash} fix: tighten validation\n\nThe reviewer asked whether this is a BREAKING CHANGE: for old\nclients, but it is not.\n${COMMIT_RECORD_SEPARATOR}`,
+      });
+
+      const tagPrefix = faker.string.alpha();
+      const output = service.parseDescriptionSince(tagPrefix);
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: [
+          {
+            hash,
+            type: 'fix',
+            scope: undefined,
+            breaking: false,
+            breakingDescription: undefined,
+            description: 'tighten validation',
+          },
+        ],
+      });
+    });
+
+    it('Should keep the description limited to the subject when a body is present', () => {
+      const hash = faker.string.alpha(40);
+      const hash2 = faker.string.alpha(40);
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data:
+          `${hash} feat: add feature\n\n* first bullet\n* second bullet\n${COMMIT_RECORD_SEPARATOR}` +
+          `\n${hash2} fix: fix bug\n\n${COMMIT_RECORD_SEPARATOR}`,
+      });
+
+      const tagPrefix = faker.string.alpha();
+      const output = service.parseDescriptionSince(tagPrefix);
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: [
+          {
+            hash,
+            type: 'feat',
+            scope: undefined,
+            breaking: false,
+            breakingDescription: undefined,
+            description: 'add feature',
+          },
+          {
+            hash: hash2,
+            type: 'fix',
+            scope: undefined,
+            breaking: false,
+            breakingDescription: undefined,
+            description: 'fix bug',
+          },
+        ],
+      });
+    });
+
+    it('Should keep the description limited to the subject for a non conventional commit with a body', () => {
+      const hash = faker.string.alpha(40);
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: `${hash} add some feature\n\nsome body text\n${COMMIT_RECORD_SEPARATOR}`,
+      });
+
+      const tagPrefix = faker.string.alpha();
+      const output = service.parseDescriptionSince(tagPrefix);
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: [
+          {
+            hash,
+            type: 'other',
+            scope: undefined,
+            breaking: false,
+            breakingDescription: undefined,
+            description: 'add some feature',
           },
         ],
       });
@@ -306,6 +484,62 @@ describe('Given a commit service', () => {
       expect(output).toStrictEqual({
         ok: true,
         data: 'major',
+      });
+    });
+
+    it('Should get major from a BREAKING CHANGE footer in the body', () => {
+      GitServiceMock.getLastCommit.mockReturnValueOnce({
+        ok: true,
+        data: 'feat: drop node 18\n\nBREAKING CHANGE: node 18 is no longer supported\n',
+      });
+
+      const output = service.classifyLastCommit();
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: 'major',
+      });
+    });
+
+    it('Should get major from a hyphenated BREAKING-CHANGE footer', () => {
+      GitServiceMock.getLastCommit.mockReturnValueOnce({
+        ok: true,
+        data: 'fix: rename output\n\nBREAKING-CHANGE: the output is now called version\n',
+      });
+
+      const output = service.classifyLastCommit();
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: 'major',
+      });
+    });
+
+    it('Should get major from an indented BREAKING CHANGE footer', () => {
+      GitServiceMock.getLastCommit.mockReturnValueOnce({
+        ok: true,
+        data: 'feat: drop node 18\n\n  BREAKING CHANGE : node 18 is no longer supported\n',
+      });
+
+      const output = service.classifyLastCommit();
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: 'major',
+      });
+    });
+
+    it('Should get patch when the breaking phrase appears mid sentence', () => {
+      GitServiceMock.getLastCommit.mockReturnValueOnce({
+        ok: true,
+        data: 'fix: tighten validation\n\nThe reviewer asked whether this is a BREAKING CHANGE: for old\nclients, but it is not.\n',
+      });
+
+      const output = service.classifyLastCommit();
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: 'patch',
       });
     });
 

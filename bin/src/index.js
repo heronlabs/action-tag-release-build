@@ -19468,7 +19468,12 @@ var GitService = class {
   }
   childProcessService;
   getLastCommit() {
-    return this.childProcessService.exec("git", ["log", "-1", "--pretty=%B"]);
+    return this.childProcessService.exec("git", [
+      "log",
+      "-1",
+      "--no-merges",
+      "--pretty=%B"
+    ]);
   }
   getDescriptionSince(tagPrefix) {
     const previousTag = this.childProcessService.exec("git", [
@@ -19483,7 +19488,7 @@ var GitService = class {
     return this.childProcessService.exec("git", [
       "log",
       "--no-merges",
-      "--pretty=format:%H %s",
+      "--pretty=format:%H %s%n%b%x1e",
       ...range
     ]);
   }
@@ -19737,7 +19742,8 @@ var ChangelogService = class {
       if (breaking.length > 0) {
         const lines = breaking.map((c) => {
           const scope = c.scope ? `(${c.scope})` : "";
-          return `* ${c.type}${scope}!: ${c.description} (${c.hash})`;
+          const description = c.breakingDescription || c.description;
+          return `* ${c.type}${scope}!: ${description} (${c.hash})`;
         });
         sections.push(`### \u26A0 BREAKING CHANGES
 
@@ -19823,21 +19829,29 @@ ${releaseNotes}
   }
 };
 
+// src/infrastructure/git/types/commit-record-separator.ts
+var COMMIT_RECORD_SEPARATOR = "";
+
 // src/core/services/commit-service.ts
 var CommitService = class {
   constructor(gitService) {
     this.gitService = gitService;
   }
   gitService;
-  parseCommit(subject) {
-    const match = subject.match(/^(\w+)(?:\(([^)]+)\))?(!)?\s*:\s*(.*)/);
-    const rawType = match?.[1];
-    const type = rawType && rawType in CommitTypeLabels ? rawType : "other";
+  parseCommit(message) {
+    const lines = message.split("\n");
+    const subject = lines.find((line) => line.trim().length > 0) ?? "";
+    const [, rawType, rawScope, breakingMarker, rawDescription] = subject.match(/^(\w+)(?:\(([^)]+)\))?(!)?\s*:\s*(.*)/) ?? [];
+    const breakingFooters = lines.map((line) => /^BREAKING[ -]CHANGE\s*:\s*(.*)/.exec(line.trim())).filter((footer) => footer !== null);
+    const isKnownType = rawType !== void 0 && rawType in CommitTypeLabels;
+    const hasBreakingMarker = breakingMarker !== void 0;
+    const breakingDescription = breakingFooters[0]?.[1];
     return {
-      type,
-      scope: match?.[2],
-      breaking: match ? !!match[3] : false,
-      description: match ? `${match[4]}` : subject
+      type: isKnownType ? rawType : "other",
+      scope: rawScope,
+      breaking: hasBreakingMarker || breakingDescription !== void 0,
+      breakingDescription,
+      description: rawDescription ?? subject
     };
   }
   parseDescriptionSince(tagPrefix) {
@@ -19845,9 +19859,9 @@ var CommitService = class {
       const lastCommits = this.gitService.getDescriptionSince(tagPrefix);
       if (!lastCommits.ok)
         return { ok: false, error: lastCommits.error };
-      const parsedCommits = lastCommits.data.split("\n").filter((line) => line.trim().length > 0).map((line) => {
-        const hash = line.slice(0, 40);
-        const commit = line.slice(41);
+      const parsedCommits = lastCommits.data.split(COMMIT_RECORD_SEPARATOR).map((record) => record.trim()).filter((record) => record.length > 0).map((record) => {
+        const hash = record.slice(0, 40);
+        const commit = record.slice(41);
         return {
           hash,
           ...this.parseCommit(commit)
@@ -19862,13 +19876,10 @@ var CommitService = class {
     try {
       const lastCommit = this.gitService.getLastCommit();
       if (!lastCommit.ok) return { ok: false, error: lastCommit.error };
-      const parsedCommits = lastCommit.data.split("\n").filter((line) => line.trim().length > 0).map((line) => this.parseCommit(line));
+      const commit = this.parseCommit(lastCommit.data);
       let data = "patch";
-      const commit = parsedCommits[0];
-      if (commit) {
-        if (commit.breaking) data = "major";
-        else if (commit.type === "feat") data = "minor";
-      }
+      if (commit.breaking) data = "major";
+      else if (commit.type === "feat") data = "minor";
       return { ok: true, data };
     } catch (error2) {
       return { ok: false, error: error2 };

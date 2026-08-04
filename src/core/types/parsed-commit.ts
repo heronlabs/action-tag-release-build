@@ -4,6 +4,7 @@ export type ParsedCommit = {
   type: CommitType;
   scope?: string;
   breaking: boolean;
+  breakingDescription?: string;
   description: string;
 };
 
