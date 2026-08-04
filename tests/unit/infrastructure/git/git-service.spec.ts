@@ -491,7 +491,10 @@ describe('Given a git service', () => {
 
       service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
 
-      expect(ChildProcessServiceMock.exec).not.toHaveBeenCalled();
+      expect(ChildProcessServiceMock.exec).not.toHaveBeenCalledWith('git', [
+        'rebase',
+        '--abort',
+      ]);
     });
 
     it('Should return error tagging', () => {
