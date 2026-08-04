@@ -145,6 +145,7 @@ describe('Given a git service', () => {
 
       expect(ChildProcessServiceMock.exec).toHaveBeenNthCalledWith(2, 'git', [
         'log',
+        '--no-merges',
         '--pretty=format:%H %s',
         'v5..HEAD',
       ]);
@@ -162,8 +163,24 @@ describe('Given a git service', () => {
 
       expect(ChildProcessServiceMock.exec).toHaveBeenNthCalledWith(2, 'git', [
         'log',
+        '--no-merges',
         '--pretty=format:%H %s',
       ]);
+    });
+
+    it('Should exclude merge commits from the descriptions', () => {
+      const feature = `${faker.string.alpha(40)} feat(scope): add some feature`;
+      const merge = `${faker.string.alpha(40)} Merge pull request #4 from heronlabs/feat-scope`;
+      ChildProcessServiceMock.exec
+        .mockReturnValueOnce({ok: true, data: 'v5'})
+        .mockImplementationOnce((command: string, args: string[]) => ({
+          ok: true,
+          data: args.includes('--no-merges') ? feature : `${merge}\n${feature}`,
+        }));
+
+      const output = service.getDescriptionSince('v');
+
+      expect(output).toStrictEqual({ok: true, data: feature});
     });
   });
 

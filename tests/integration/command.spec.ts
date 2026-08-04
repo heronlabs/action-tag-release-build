@@ -737,6 +737,70 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
+  describe('Merge commit excluded from CHANGELOG', () => {
+    it('Should not include the merge commit subject in CHANGELOG', () => {
+      testRepo = createTestRepo({version: '1.2.3', commits: []});
+      const workDir = testRepo.workDir;
+      execSync('git checkout -b feat-thing', {cwd: workDir, stdio: 'pipe'});
+      execSync("git commit --allow-empty -m 'feat: add thing'", {
+        cwd: workDir,
+        stdio: 'pipe',
+      });
+      execSync('git checkout main', {cwd: workDir, stdio: 'pipe'});
+      execSync(
+        "git merge --no-ff feat-thing -m 'Merge pull request #4 from heronlabs/feat-thing'",
+        {cwd: workDir, stdio: 'pipe'},
+      );
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      });
+
+      const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
+      expect(changelog).not.toContain('Merge pull request');
+    });
+
+    it('Should include the merged branch commit in CHANGELOG', () => {
+      testRepo = createTestRepo({version: '1.2.3', commits: []});
+      const workDir = testRepo.workDir;
+      execSync('git checkout -b feat-thing', {cwd: workDir, stdio: 'pipe'});
+      execSync("git commit --allow-empty -m 'feat: add thing'", {
+        cwd: workDir,
+        stdio: 'pipe',
+      });
+      execSync('git checkout main', {cwd: workDir, stdio: 'pipe'});
+      execSync(
+        "git merge --no-ff feat-thing -m 'Merge pull request #4 from heronlabs/feat-thing'",
+        {cwd: workDir, stdio: 'pipe'},
+      );
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      });
+
+      const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
+      expect(changelog).toContain('add thing');
+    });
+  });
+
   describe('Commit with scope rendered in CHANGELOG', () => {
     it('Should include scope in CHANGELOG entry', () => {
       testRepo = createTestRepo({
