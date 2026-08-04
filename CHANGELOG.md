@@ -1,3 +1,9 @@
+## v7.3.2 (2026-08-04)
+
+### Bug Fixes
+
+* fix: update tag matching pattern to anchor digits for better accuracy (#57) (4bcfd3671f2dbbb4ecd28a563c8f5f4699039863)
+
 ## v7.3.1 (2026-08-04)
 
 ### Miscellaneous Chores
