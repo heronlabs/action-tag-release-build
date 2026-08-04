@@ -6,22 +6,25 @@ import {Semantic} from '../types/semantic';
 
 export class CommitService {
   private parseCommit(message: string) {
-    const bodyStart = message.indexOf('\n');
-    const subject = bodyStart === -1 ? message : message.slice(0, bodyStart);
+    const lines = message.split('\n');
+    const subject = lines.find(line => line.trim().length > 0) ?? '';
 
     const [, rawType, rawScope, breakingMarker, rawDescription] =
       subject.match(/^(\w+)(?:\(([^)]+)\))?(!)?\s*:\s*(.*)/) ?? [];
 
+    const breakingFooters = lines
+      .map(line => /^BREAKING[ -]CHANGE\s*:\s*(.*)/.exec(line.trim()))
+      .filter(footer => footer !== null);
+
     const isKnownType = rawType !== undefined && rawType in CommitTypeLabels;
     const hasBreakingMarker = breakingMarker !== undefined;
-    const hasBreakingFooter = message
-      .split('\n')
-      .some(line => /^BREAKING[ -]CHANGE\s*:/.test(line.trim()));
+    const breakingDescription = breakingFooters[0]?.[1];
 
     return {
       type: (isKnownType ? rawType : 'other') as CommitType,
       scope: rawScope,
-      breaking: hasBreakingMarker || hasBreakingFooter,
+      breaking: hasBreakingMarker || breakingDescription !== undefined,
+      breakingDescription,
       description: rawDescription ?? subject,
     };
   }
@@ -57,18 +60,11 @@ export class CommitService {
       const lastCommit = this.gitService.getLastCommit();
       if (!lastCommit.ok) return {ok: false as const, error: lastCommit.error};
 
-      const message = lastCommit.data
-        .split('\n')
-        .filter(line => line.trim().length > 0)
-        .join('\n');
+      const commit = this.parseCommit(lastCommit.data);
 
       let data: Semantic = 'patch';
-
-      if (message.length > 0) {
-        const commit = this.parseCommit(message);
-        if (commit.breaking) data = 'major';
-        else if (commit.type === 'feat') data = 'minor';
-      }
+      if (commit.breaking) data = 'major';
+      else if (commit.type === 'feat') data = 'minor';
 
       return {ok: true as const, data};
     } catch (error) {

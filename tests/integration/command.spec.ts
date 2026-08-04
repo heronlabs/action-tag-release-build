@@ -435,7 +435,7 @@ describe('Full tag-release-build pipeline', () => {
 
       const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
 
-      expect(changelog).toContain('feat!: drop node 18');
+      expect(changelog).toContain('feat!: node 18 is no longer supported');
     });
 
     it('Should stay on 1.2.4 when the breaking phrase only appears mid sentence', () => {
@@ -907,6 +907,38 @@ describe('Full tag-release-build pipeline', () => {
 
       const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
       expect(changelog).not.toContain('Merge pull request');
+    });
+
+    it('Should ignore a breaking phrase carried in the merge commit body', () => {
+      testRepo = createTestRepo({version: '1.2.3', commits: []});
+      const workDir = testRepo.workDir;
+      execSync('git checkout -b fix-thing', {cwd: workDir, stdio: 'pipe'});
+      execSync("git commit --allow-empty -m 'fix: small tweak'", {
+        cwd: workDir,
+        stdio: 'pipe',
+      });
+      execSync('git checkout main', {cwd: workDir, stdio: 'pipe'});
+      execSync(
+        "git merge --no-ff fix-thing -m 'Merge pull request #4 from heronlabs/fix-thing' -m 'BREAKING CHANGE: none'",
+        {cwd: workDir, stdio: 'pipe'},
+      );
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      });
+
+      const version = readFileSync(join(workDir, 'version.txt'), 'utf8').trim();
+
+      expect(version).toBe('1.2.4');
     });
 
     it('Should include the merged branch commit in CHANGELOG', () => {

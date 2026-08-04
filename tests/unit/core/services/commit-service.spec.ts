@@ -33,6 +33,7 @@ describe('Given a commit service', () => {
             type: 'feat',
             scope: 'scope',
             breaking: true,
+            breakingDescription: undefined,
             description: 'add some feature',
           },
         ]),
@@ -57,6 +58,7 @@ describe('Given a commit service', () => {
             type: 'feat',
             scope: undefined,
             breaking: true,
+            breakingDescription: undefined,
             description: 'add some feature',
           },
         ],
@@ -81,6 +83,7 @@ describe('Given a commit service', () => {
             type: 'feat',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'add some feature',
           },
         ],
@@ -105,6 +108,7 @@ describe('Given a commit service', () => {
             type: 'other',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'add some feature',
           },
         ],
@@ -151,6 +155,7 @@ describe('Given a commit service', () => {
             type: 'feat',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'add feature',
           },
           {
@@ -158,6 +163,7 @@ describe('Given a commit service', () => {
             type: 'fix',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'fix bug',
           },
         ],
@@ -182,6 +188,7 @@ describe('Given a commit service', () => {
             type: 'other',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'prefix text feat: add feature',
           },
         ],
@@ -206,6 +213,7 @@ describe('Given a commit service', () => {
             type: 'feat',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'message',
           },
         ],
@@ -230,6 +238,7 @@ describe('Given a commit service', () => {
             type: 'feat',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'message',
           },
         ],
@@ -254,6 +263,7 @@ describe('Given a commit service', () => {
             type: 'feat',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'add feature more text here',
           },
         ],
@@ -278,6 +288,7 @@ describe('Given a commit service', () => {
             type: 'other',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'update dependencies',
           },
         ],
@@ -302,6 +313,7 @@ describe('Given a commit service', () => {
             type: 'feat',
             scope: undefined,
             breaking: true,
+            breakingDescription: 'node 18 is no longer supported',
             description: 'drop node 18',
           },
         ],
@@ -326,7 +338,33 @@ describe('Given a commit service', () => {
             type: 'fix',
             scope: undefined,
             breaking: true,
+            breakingDescription: 'the output is now called version',
             description: 'rename output',
+          },
+        ],
+      });
+    });
+
+    it('Should flag a breaking change declared without a space after the footer colon', () => {
+      const hash = faker.string.alpha(40);
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: `${hash} feat: drop node 18\n\nBREAKING CHANGE:node 18 is no longer supported\n${COMMIT_RECORD_SEPARATOR}`,
+      });
+
+      const tagPrefix = faker.string.alpha();
+      const output = service.parseDescriptionSince(tagPrefix);
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: [
+          {
+            hash,
+            type: 'feat',
+            scope: undefined,
+            breaking: true,
+            breakingDescription: 'node 18 is no longer supported',
+            description: 'drop node 18',
           },
         ],
       });
@@ -350,6 +388,7 @@ describe('Given a commit service', () => {
             type: 'fix',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'tighten validation',
           },
         ],
@@ -377,6 +416,7 @@ describe('Given a commit service', () => {
             type: 'feat',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'add feature',
           },
           {
@@ -384,7 +424,33 @@ describe('Given a commit service', () => {
             type: 'fix',
             scope: undefined,
             breaking: false,
+            breakingDescription: undefined,
             description: 'fix bug',
+          },
+        ],
+      });
+    });
+
+    it('Should keep the description limited to the subject for a non conventional commit with a body', () => {
+      const hash = faker.string.alpha(40);
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: `${hash} add some feature\n\nsome body text\n${COMMIT_RECORD_SEPARATOR}`,
+      });
+
+      const tagPrefix = faker.string.alpha();
+      const output = service.parseDescriptionSince(tagPrefix);
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: [
+          {
+            hash,
+            type: 'other',
+            scope: undefined,
+            breaking: false,
+            breakingDescription: undefined,
+            description: 'add some feature',
           },
         ],
       });

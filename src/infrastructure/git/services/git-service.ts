@@ -2,7 +2,12 @@ import {ChildProcessService} from '../../terminal/services/child-process-service
 
 export class GitService {
   public getLastCommit() {
-    return this.childProcessService.exec('git', ['log', '-1', '--pretty=%B']);
+    return this.childProcessService.exec('git', [
+      'log',
+      '-1',
+      '--no-merges',
+      '--pretty=%B',
+    ]);
   }
 
   public getDescriptionSince(tagPrefix: string) {

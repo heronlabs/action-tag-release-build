@@ -56,6 +56,7 @@ describe('Given a git service', () => {
       expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith('git', [
         'log',
         '-1',
+        '--no-merges',
         '--pretty=%B',
       ]);
     });

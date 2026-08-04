@@ -19468,7 +19468,12 @@ var GitService = class {
   }
   childProcessService;
   getLastCommit() {
-    return this.childProcessService.exec("git", ["log", "-1", "--pretty=%B"]);
+    return this.childProcessService.exec("git", [
+      "log",
+      "-1",
+      "--no-merges",
+      "--pretty=%B"
+    ]);
   }
   getDescriptionSince(tagPrefix) {
     const previousTag = this.childProcessService.exec("git", [
@@ -19737,7 +19742,8 @@ var ChangelogService = class {
       if (breaking.length > 0) {
         const lines = breaking.map((c) => {
           const scope = c.scope ? `(${c.scope})` : "";
-          return `* ${c.type}${scope}!: ${c.description} (${c.hash})`;
+          const description = c.breakingDescription || c.description;
+          return `* ${c.type}${scope}!: ${description} (${c.hash})`;
         });
         sections.push(`### \u26A0 BREAKING CHANGES
 
@@ -19833,16 +19839,18 @@ var CommitService = class {
   }
   gitService;
   parseCommit(message) {
-    const bodyStart = message.indexOf("\n");
-    const subject = bodyStart === -1 ? message : message.slice(0, bodyStart);
+    const lines = message.split("\n");
+    const subject = lines.find((line) => line.trim().length > 0) ?? "";
     const [, rawType, rawScope, breakingMarker, rawDescription] = subject.match(/^(\w+)(?:\(([^)]+)\))?(!)?\s*:\s*(.*)/) ?? [];
+    const breakingFooters = lines.map((line) => /^BREAKING[ -]CHANGE\s*:\s*(.*)/.exec(line.trim())).filter((footer) => footer !== null);
     const isKnownType = rawType !== void 0 && rawType in CommitTypeLabels;
     const hasBreakingMarker = breakingMarker !== void 0;
-    const hasBreakingFooter = message.split("\n").some((line) => /^BREAKING[ -]CHANGE\s*:/.test(line.trim()));
+    const breakingDescription = breakingFooters[0]?.[1];
     return {
       type: isKnownType ? rawType : "other",
       scope: rawScope,
-      breaking: hasBreakingMarker || hasBreakingFooter,
+      breaking: hasBreakingMarker || breakingDescription !== void 0,
+      breakingDescription,
       description: rawDescription ?? subject
     };
   }
@@ -19868,13 +19876,10 @@ var CommitService = class {
     try {
       const lastCommit = this.gitService.getLastCommit();
       if (!lastCommit.ok) return { ok: false, error: lastCommit.error };
-      const message = lastCommit.data.split("\n").filter((line) => line.trim().length > 0).join("\n");
+      const commit = this.parseCommit(lastCommit.data);
       let data = "patch";
-      if (message.length > 0) {
-        const commit = this.parseCommit(message);
-        if (commit.breaking) data = "major";
-        else if (commit.type === "feat") data = "minor";
-      }
+      if (commit.breaking) data = "major";
+      else if (commit.type === "feat") data = "minor";
       return { ok: true, data };
     } catch (error2) {
       return { ok: false, error: error2 };
