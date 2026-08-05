@@ -1,3 +1,9 @@
+## v7.4.1 (2026-08-05)
+
+### Bug Fixes
+
+* fix(semver-service): validate numeric parts of version and handle non-numeric cases (#60) (728388a42b7275c29993c445318da1593948d513)
+
 ## v7.4.0 (2026-08-04)
 
 ### Features
