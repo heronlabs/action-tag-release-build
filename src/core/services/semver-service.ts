@@ -13,7 +13,15 @@ export class SemverService {
           error: new Error(`version '${version}' has no numeric part`),
         };
       }
-      const [major = '0', minor = '0', patch = '0'] = numeric.split('.');
+      const core = numeric.replace(/[-+].*/, '');
+      const [major = '0', minor = '0', patch = '0'] = core.split('.');
+
+      if (![major, minor, patch].every(part => /^\d+$/.test(part))) {
+        return {
+          ok: false as const,
+          error: new Error(`version '${version}' is not a valid semver`),
+        };
+      }
 
       const m = parseInt(major, 10);
       const n = parseInt(minor, 10);

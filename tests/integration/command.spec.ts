@@ -1179,6 +1179,30 @@ describe('Full tag-release-build pipeline', () => {
 
       expect(() => command.run(inputs)).toThrow();
     });
+
+    it('Should throw error when version file is not a valid semver', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['fix: typo'],
+      });
+      const workDir = testRepo.workDir;
+      writeFileSync(join(workDir, 'version.txt'), '1.x.0');
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(workDir);
+
+      const inputs: Inputs = {
+        semantic: 'major',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      };
+
+      expect(() => command.run(inputs)).toThrow();
+    });
   });
 
   describe('Non-matching tag prefix falls back to full log', () => {
