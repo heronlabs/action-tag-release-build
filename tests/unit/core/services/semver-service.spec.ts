@@ -172,6 +172,48 @@ describe('Given a semver service', () => {
     });
   });
 
+  it('Should return error for version with trailing characters in a part', () => {
+    const versionFileContent = '1.2.3foo';
+    vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
+
+    const output = service.calculateNextVersion('version.txt', 'patch');
+
+    expect(output).toStrictEqual({
+      ok: false,
+      error: new Error("version '1.2.3foo' is not a valid semver"),
+    });
+  });
+
+  it('Should return error for version with leading characters in a part', () => {
+    const versionFileContent = '1.a2.3';
+    vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
+
+    const output = service.calculateNextVersion('version.txt', 'patch');
+
+    expect(output).toStrictEqual({
+      ok: false,
+      error: new Error("version '1.a2.3' is not a valid semver"),
+    });
+  });
+
+  it('Should bump a version with multi digit parts', () => {
+    const versionFileContent = '1.10.9';
+    vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+    const output = service.calculateNextVersion('version.txt', 'patch');
+
+    expect(output).toStrictEqual({
+      ok: true,
+      data: {
+        nextVersion: '1.10.10',
+        major: '1',
+        minor: '10',
+        patch: '10',
+      },
+    });
+  });
+
   it('Should not write the version file when the version is not a valid semver', () => {
     const versionFileContent = '1.x.0';
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
