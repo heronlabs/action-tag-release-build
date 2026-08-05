@@ -13,11 +13,19 @@ export class SemverService {
           error: new Error(`version '${version}' has no numeric part`),
         };
       }
-      const [major = '0', minor = '0', patch = '0'] = numeric.split('.');
+      const core = numeric.replace(/[-+].*$/, '');
+      const [major = '0', minor = '0', patch = '0'] = core.split('.');
 
       const m = parseInt(major, 10);
       const n = parseInt(minor, 10);
       const p = parseInt(patch, 10);
+
+      if (Number.isNaN(m) || Number.isNaN(n) || Number.isNaN(p)) {
+        return {
+          ok: false as const,
+          error: new Error(`version '${version}' is not a valid semver`),
+        };
+      }
 
       let nextMajor = m;
       let nextMinor = n;
