@@ -19334,10 +19334,12 @@ var MergeService = class {
     this.childProcessService = childProcessService;
   }
   childProcessService;
+  encodeBranch(branch) {
+    return branch.split("/").map(encodeURIComponent).join("/");
+  }
   mergeWithCommit(ref, environment) {
     try {
-      const message = `Merge ${ref} into ${environment}`;
-      return this.childProcessService.exec("gh", [
+      const merge = this.childProcessService.exec("gh", [
         "api",
         "repos/{owner}/{repo}/merges",
         "-f",
@@ -19345,8 +19347,41 @@ var MergeService = class {
         "-f",
         `head=${ref}`,
         "-f",
-        `commit_message=${message}`
+        `commit_message=Merge ${ref} into ${environment}`,
+        "--jq",
+        ".sha"
       ]);
+      if (!merge.ok) return merge;
+      if (merge.data) return { ok: true, data: merge.data };
+      return this.childProcessService.exec("gh", [
+        "api",
+        `repos/{owner}/{repo}/branches/${this.encodeBranch(environment)}`,
+        "--jq",
+        ".commit.sha"
+      ]);
+    } catch (error2) {
+      return { ok: false, error: error2 };
+    }
+  }
+  mergeWithoutCommit(ref, environment) {
+    try {
+      const sha = this.childProcessService.exec("gh", [
+        "api",
+        `repos/{owner}/{repo}/git/ref/heads/${this.encodeBranch(ref)}`,
+        "--jq",
+        ".object.sha"
+      ]);
+      if (!sha.ok) return sha;
+      const fastForward = this.childProcessService.exec("gh", [
+        "api",
+        `repos/{owner}/{repo}/git/refs/heads/${this.encodeBranch(environment)}`,
+        "-X",
+        "PATCH",
+        "-f",
+        `sha=${sha.data}`
+      ]);
+      if (!fastForward.ok) return fastForward;
+      return { ok: true, data: sha.data };
     } catch (error2) {
       return { ok: false, error: error2 };
     }
@@ -19371,12 +19406,17 @@ var PullRequestService = class {
         "--state",
         "open",
         "--json",
-        "number",
+        "isCrossRepository",
         "--jq",
-        "length"
+        "[.[] | select(.isCrossRepository | not)] | length"
       ]);
       if (!result.ok) return result;
-      return { ok: true, data: result.data !== "0" };
+      if (!/^\d+$/.test(result.data))
+        return {
+          ok: false,
+          error: new Error(`Unexpected gh pr list output: ${result.data}`)
+        };
+      return { ok: true, data: Number(result.data) > 0 };
     } catch (error2) {
       return { ok: false, error: error2 };
     }
@@ -19384,9 +19424,10 @@ var PullRequestService = class {
   createPullRequest(ref, environment) {
     try {
       const title = `\u{1F517} Sync ${ref} into ${environment}`;
-      let body = `Automatic sync of ${ref} into ${environment} failed `;
-      body += "(diverged branch or merge conflict). Merge this pull request ";
-      body += `to sync ${environment} with ${ref}.`;
+      let body = `Automatic sync of ${ref} into ${environment} failed.
+
+`;
+      body += `Merge this pull request to sync ${environment} with ${ref}.`;
       return this.childProcessService.exec("gh", [
         "pr",
         "create",
@@ -19530,13 +19571,6 @@ var GitService = class {
       return { ok: false, error: result.error };
     }
     return { ok: true, data: result.data };
-  }
-  mergeWithoutCommit(ref, environment) {
-    return this.childProcessService.exec("git", [
-      "push",
-      "origin",
-      `refs/heads/${ref}:refs/heads/${environment}`
-    ]);
   }
 };
 
@@ -20004,37 +20038,49 @@ var SemverService = class {
 
 // src/core/services/sync-service.ts
 var SyncService = class {
-  constructor(gitService, pullRequestService, mergeService) {
-    this.gitService = gitService;
+  constructor(pullRequestService, mergeService) {
     this.pullRequestService = pullRequestService;
     this.mergeService = mergeService;
   }
-  gitService;
   pullRequestService;
   mergeService;
-  cascadeEnvironments(ref, target, mergeCommit) {
+  cascadeEnvironments(ref, targets, mergeCommit) {
     try {
-      const environments = target.replace(/\s/g, "").split(",").filter(Boolean).map((environment) => {
-        const syncEnvironment = mergeCommit ? this.mergeService.mergeWithCommit(ref, environment) : this.gitService.mergeWithoutCommit(ref, environment);
-        if (!syncEnvironment.ok) {
-          const existingPullRequest = this.pullRequestService.hasPullRequest(
+      const results = targets.replace(/\s/g, "").split(",").filter(Boolean).map((target) => {
+        const syncEnvironment = mergeCommit ? this.mergeService.mergeWithCommit(ref, target) : this.mergeService.mergeWithoutCommit(ref, target);
+        if (syncEnvironment.ok)
+          return { ok: true, ref, target, sha: syncEnvironment.data };
+        const existingPullRequest = this.pullRequestService.hasPullRequest(
+          ref,
+          target
+        );
+        const failed = `Merging ${ref} into ${target} failed`;
+        if (!existingPullRequest.ok)
+          return {
+            ok: false,
+            error: `${failed}, then checking for open PR failed too;`
+          };
+        if (!existingPullRequest.data) {
+          const prCreated = this.pullRequestService.createPullRequest(
             ref,
-            environment
+            target
           );
-          if (existingPullRequest.ok && !existingPullRequest.data) {
-            const prCreated = this.pullRequestService.createPullRequest(
-              ref,
-              environment
-            );
-            if (!prCreated.ok)
-              return `${environment} xx ${ref} (PR creation failed)`;
-            return `${environment} xx ${ref} (PR created)`;
-          }
-          return `${environment} xx ${ref}`;
+          if (!prCreated.ok)
+            return {
+              ok: false,
+              error: `${failed}, no PR found. Then PR creation failed;`
+            };
+          return {
+            ok: false,
+            error: `${failed}, no PR found. PR created;`
+          };
         }
-        return `${environment} => ${ref}`;
+        return {
+          ok: false,
+          error: `${failed}, open PR already exists;`
+        };
       });
-      return { ok: true, data: environments };
+      return { ok: true, data: results };
     } catch (error2) {
       return { ok: false, error: error2 };
     }
@@ -20061,7 +20107,6 @@ var CoreFactory = class _CoreFactory {
   }
   getSyncService() {
     return new SyncService(
-      this.gitFactory.getGitService(),
       this.ghFactory.getPullRequestService(),
       this.ghFactory.getMergeService()
     );
@@ -20147,16 +20192,25 @@ var Command2 = class {
         target,
         mergeCommit
       );
-      let syncMessage = "\u{1F517} Sync: ";
-      if (!envsSynced.ok)
-        syncMessage += "Error during environments syncronization";
-      else {
-        const results = envsSynced.data.join(", ");
-        const allSynced = envsSynced.data.every((e) => !e.includes(" xx "));
-        syncMessage += allSynced ? `Environments ${results} synced` : `Environments ${results}`;
+      if (!envsSynced.ok) {
+        process.stderr.write(
+          "\u{1F517} Sync: Error during environments syncronization\n"
+        );
+      } else {
+        const synced = envsSynced.data.filter((result) => result.ok);
+        const failed = envsSynced.data.filter((result) => !result.ok);
+        if (synced.length) {
+          const syncedTargets = synced.map((env) => env.target).join(",");
+          process.stderr.write(
+            `\u{1F517} Sync: Environments ${syncedTargets} synced
+`
+          );
+        }
+        failed.forEach(
+          (failure) => process.stderr.write(`\u{1F517} Sync: ${failure.error}
+`)
+        );
       }
-      process.stderr.write(`${syncMessage}
-`);
     }
     return {
       version: nextVersion,

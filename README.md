@@ -120,10 +120,10 @@ After tagging, the released ref can be cascaded into downstream environment bran
 
 Each target is synced in order:
 
-- `mergeCommit: 'false'` (default) — fast-forward push of `ref` onto the target branch.
+- `mergeCommit: 'false'` (default) — fast-forwards the target ref to the head of `ref` through the GitHub git refs API, so the target branch never has to exist in the runner checkout.
 - `mergeCommit: 'true'` — a real merge commit (`Merge <ref> into <target>`) via the GitHub merges API, so the target keeps its own history.
 
-When a target cannot be synced (diverged branch or merge conflict), the action opens a pull request from `ref` into that target instead of failing the run. The sync summary is written to the step log — `target => ref` on success, `target xx ref` when it fell back.
+When a target cannot be synced, the action opens a pull request from `ref` into that target instead of failing the run. The sync summary is written to the step log — `Environments <targets> synced` for the targets that moved, and one line per failure stating what happened (whether a pull request was already open, was created, or could not be created).
 
 ## Inputs
 
@@ -220,7 +220,7 @@ src/
    - **Update changelog** — prepends the new entry (with date header) to `CHANGELOG.md`.
    - **Tag and push** — `GitService.apply()` commits all changes (`[skip ci]`), creates the annotated tag (`vX.Y.Z`), optionally force-moves floating major/minor tags, and pushes with `--follow-tags`.
    - **Create GitHub release** — `ReleaseNotesService.createRelease()` publishes the release with the generated notes.
-4. **Sync environments** — skipped when `target` is empty. `SyncService.cascadeEnvironments()` splits `target` on commas and, for each branch, either merges via `MergeService.mergeWithCommit()` (`mergeCommit: true`) or fast-forward pushes via `GitService.mergeWithoutCommit()`. If the sync is rejected, `PullRequestService` opens a pull request from `ref` into that target (unless one is already open) and the run continues.
+4. **Sync environments** — skipped when `target` is empty. `SyncService.cascadeEnvironments()` splits `target` on commas and, for each branch, either merges via `MergeService.mergeWithCommit()` (`mergeCommit: true`) or fast-forwards the target ref via `MergeService.mergeWithoutCommit()`. If the sync is rejected, `PullRequestService` opens a pull request from `ref` into that target (unless one is already open) and the run continues.
 
 Outputs `version`, `tag`, `tagMajor`, and `tagMinor` are published with `core.setOutput`.
 

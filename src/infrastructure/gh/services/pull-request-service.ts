@@ -13,14 +13,20 @@ export class PullRequestService {
         '--state',
         'open',
         '--json',
-        'number',
+        'isCrossRepository',
         '--jq',
-        'length',
+        '[.[] | select(.isCrossRepository | not)] | length',
       ]);
 
       if (!result.ok) return result;
 
-      return {ok: true as const, data: result.data !== '0'};
+      if (!/^\d+$/.test(result.data))
+        return {
+          ok: false as const,
+          error: new Error(`Unexpected gh pr list output: ${result.data}`),
+        };
+
+      return {ok: true as const, data: Number(result.data) > 0};
     } catch (error) {
       return {ok: false as const, error};
     }
@@ -30,9 +36,8 @@ export class PullRequestService {
     try {
       const title = `🔗 Sync ${ref} into ${environment}`;
 
-      let body = `Automatic sync of ${ref} into ${environment} failed `;
-      body += '(diverged branch or merge conflict). Merge this pull request ';
-      body += `to sync ${environment} with ${ref}.`;
+      let body = `Automatic sync of ${ref} into ${environment} failed.\n\n`;
+      body += `Merge this pull request to sync ${environment} with ${ref}.`;
 
       return this.childProcessService.exec('gh', [
         'pr',

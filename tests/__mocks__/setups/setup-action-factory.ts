@@ -45,11 +45,7 @@ export const testingCliFactory = (
   const commitService = new CommitService(gitService);
   const semverService = new SemverService(workDir, commitService);
 
-  const syncService = new SyncService(
-    gitService,
-    pullRequestService,
-    mergeService,
-  );
+  const syncService = new SyncService(pullRequestService, mergeService);
   const changelogService = new ChangelogService(
     workDir,
     gitService,

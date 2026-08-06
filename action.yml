@@ -53,7 +53,7 @@ inputs:
     required: false
     default: ''
   mergeCommit:
-    description: Create a merge commit when syncing ref into targets ("Merge <ref> into <target>"; plain fast-forward push when false)
+    description: Create a merge commit when syncing ref into targets ("Merge <ref> into <target>"; fast-forwards the target ref through the GitHub API when false)
     required: false
     default: 'false'
 
