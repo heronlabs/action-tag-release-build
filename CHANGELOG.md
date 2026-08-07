@@ -1,3 +1,13 @@
+## v7.5.0 (2026-08-07)
+
+### Features
+
+* feat: sync path (#62) (acb0c58cf565a26593c8ad1ca871a00aa8ed79bd)
+
+### Miscellaneous Chores
+
+* other(deps-dev): bump dependency-cruiser from 18.1.0 to 18.1.1 (#61) (5872b591f399613176d0499f63225fc57a02a014)
+
 ## v7.4.1 (2026-08-05)
 
 ### Bug Fixes
