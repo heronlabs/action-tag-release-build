@@ -49,7 +49,7 @@ inputs:
     required: false
     default: '.claude-plugin'
   target:
-    description: Target branches to sync the released ref into, comma-separated (empty disables sync)
+    description: Target branches to sync the released ref into, comma-separated (empty disables sync). Each branch must already exist on the remote — the action never creates it
     required: false
     default: ''
   mergeCommit:

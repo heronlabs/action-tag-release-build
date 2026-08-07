@@ -118,9 +118,11 @@ After tagging, the released ref can be cascaded into downstream environment bran
     mergeCommit: 'true'
 ```
 
+**Every target branch must already exist on the remote.** Both sync modes go through the GitHub API and neither creates a missing branch — the action never has to have the target checked out in the runner, but the branch itself has to be there. A target that does not exist cannot be synced and cannot receive the fallback pull request either (`gh pr create` rejects a missing base), so it is reported as a sync failure and the run continues. Create the branch once (`git branch staging main && git push origin staging`) before enabling it as a target.
+
 Each target is synced in order:
 
-- `mergeCommit: 'false'` (default) — fast-forwards the target ref to the head of `ref` through the GitHub git refs API, so the target branch never has to exist in the runner checkout.
+- `mergeCommit: 'false'` (default) — fast-forwards the target ref to the head of `ref` through the GitHub git refs API. Rejected when the target has diverged from `ref`.
 - `mergeCommit: 'true'` — a real merge commit (`Merge <ref> into <target>`) via the GitHub merges API, so the target keeps its own history.
 
 When a target cannot be synced, the action opens a pull request from `ref` into that target instead of failing the run. The sync summary is written to the step log — `Environments <targets> synced` for the targets that moved, and one line per failure stating what happened (whether a pull request was already open, was created, or could not be created).
@@ -139,8 +141,8 @@ When a target cannot be synced, the action opens a pull request from `ref` into 
 | `bumpClaude` | Sync the version into Claude Code plugin files (`plugin.json` + `marketplace.json`). Requires `jq`. | No | `false` |
 | `pluginDir` | Directory containing the Claude plugin files. | No | `.claude-plugin` |
 | `overrideTag` | Move the floating major/minor tags (`v1`, `v1.0`) to the new release. | No | `true` |
-| `target` | Branches to sync the released ref into, comma-separated (e.g. `staging,production`). Empty disables sync. | No | `` |
-| `mergeCommit` | Sync with a real merge commit (`Merge <ref> into <target>`, via the GitHub merges API) instead of a fast-forward push. | No | `false` |
+| `target` | Branches to sync the released ref into, comma-separated (e.g. `staging,production`). Each branch must already exist on the remote — the action never creates it. Empty disables sync. | No | `` |
+| `mergeCommit` | Sync with a real merge commit (`Merge <ref> into <target>`, via the GitHub merges API) instead of a fast-forward of the target ref. | No | `false` |
 
 ## Outputs
 
@@ -180,7 +182,7 @@ src/
       semver-service.ts               # Read version file, calculate next semver, write version file
       commit-service.ts               # Parse Conventional Commits, classify last commit type
       changelog-service.ts            # Generate release notes, update changelog, tag + push + release
-      sync-service.ts                 # Cascade the released ref into target environment branches
+      sync-service.ts                 # Cascade the released ref into existing target environment branches
       bumpers/
         npm-bumper-service.ts         # Sync version into package.json
         claude-bumper-service.ts      # Sync version into Claude Code plugin files
@@ -192,12 +194,12 @@ src/
     git/
       git-factory.ts                  # Wires the git service
       services/
-        git-service.ts                # Git commands: log, describe, tag, push, fast-forward sync push
+        git-service.ts                # Git commands: log, describe, tag, push
     gh/
       gh-factory.ts                   # Wires the gh services
       services/
         release-notes-service.ts      # GitHub CLI: release create
-        merge-service.ts              # GitHub merges API: merge ref into a target branch
+        merge-service.ts              # GitHub merges API (merge commit) + git refs API (fast-forward) into an existing target branch
         pull-request-service.ts       # GitHub CLI: list / create the sync fallback pull request
     terminal/
       terminal-factory.ts             # Wires the child process service
@@ -220,7 +222,7 @@ src/
    - **Update changelog** — prepends the new entry (with date header) to `CHANGELOG.md`.
    - **Tag and push** — `GitService.apply()` commits all changes (`[skip ci]`), creates the annotated tag (`vX.Y.Z`), optionally force-moves floating major/minor tags, and pushes with `--follow-tags`.
    - **Create GitHub release** — `ReleaseNotesService.createRelease()` publishes the release with the generated notes.
-4. **Sync environments** — skipped when `target` is empty. `SyncService.cascadeEnvironments()` splits `target` on commas and, for each branch, either merges via `MergeService.mergeWithCommit()` (`mergeCommit: true`) or fast-forwards the target ref via `MergeService.mergeWithoutCommit()`. If the sync is rejected, `PullRequestService` opens a pull request from `ref` into that target (unless one is already open) and the run continues.
+4. **Sync environments** — skipped when `target` is empty. `SyncService.cascadeEnvironments()` splits `target` on commas and, for each branch, either merges via `MergeService.mergeWithCommit()` (`mergeCommit: true`) or fast-forwards the target ref via `MergeService.mergeWithoutCommit()`. Both go through the GitHub API against a branch that must already exist; a missing target is reported as a failure, never created. If the sync is rejected, `PullRequestService` opens a pull request from `ref` into that target (unless one is already open) and the run continues.
 
 Outputs `version`, `tag`, `tagMajor`, and `tagMinor` are published with `core.setOutput`.
 
