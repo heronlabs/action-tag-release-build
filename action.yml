@@ -49,11 +49,11 @@ inputs:
     required: false
     default: '.claude-plugin'
   target:
-    description: Target branches to sync the released ref into, comma-separated (empty disables sync)
+    description: Target branches to sync the released ref into, comma-separated (empty disables sync). Each branch must already exist on the remote — the action never creates it
     required: false
     default: ''
   mergeCommit:
-    description: Create a merge commit when syncing ref into targets ("Merge <ref> into <target>"; plain fast-forward push when false)
+    description: Create a merge commit when syncing ref into targets ("Merge <ref> into <target>"; fast-forwards the target ref through the GitHub API when false)
     required: false
     default: 'false'
 

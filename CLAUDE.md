@@ -35,10 +35,10 @@
 | `src/core/services/changelog-service.ts` | Generate release notes, update changelog, tag + push + release |
 | `src/core/services/bumpers/npm-bumper-service.ts` | Sync version into package.json |
 | `src/core/services/bumpers/claude-bumper-service.ts` | Sync version into Claude Code plugin files |
-| `src/core/services/sync-service.ts` | Cascade released ref into target environment branches (merge or fast-forward, PR fallback) |
-| `src/infrastructure/git/services/git-service.ts` | Git commands: log, describe, tag, push, fast-forward sync push |
+| `src/core/services/sync-service.ts` | Cascade released ref into target environment branches (merge or fast-forward, PR fallback) — targets must already exist on the remote |
+| `src/infrastructure/git/services/git-service.ts` | Git commands: log, describe, tag, push |
 | `src/infrastructure/gh/services/release-notes-service.ts` | GitHub CLI: release create |
-| `src/infrastructure/gh/services/merge-service.ts` | GitHub merges API: merge ref into a target branch |
+| `src/infrastructure/gh/services/merge-service.ts` | GitHub merges API (merge commit) + git refs API (fast-forward) — sync ref into an existing target branch |
 | `src/infrastructure/gh/services/pull-request-service.ts` | GitHub CLI: list / create the sync fallback pull request |
 | `src/infrastructure/terminal/services/child-process-service.ts` | Shell command execution |
 | `vitest.unit.config.ts` / `vitest.integration.config.ts` | Vitest configuration (unit / integration) |

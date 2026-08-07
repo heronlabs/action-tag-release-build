@@ -458,7 +458,14 @@ describe('Given a bump command', () => {
 
     SyncServiceMock.cascadeEnvironments.mockReturnValueOnce({
       ok: true,
-      data: ['development => main'],
+      data: [
+        {
+          ok: true,
+          ref: 'main',
+          target: 'development',
+          sha: faker.git.commitSha(),
+        },
+      ],
     });
 
     const inputs: Inputs = {
@@ -506,9 +513,13 @@ describe('Given a bump command', () => {
       data: {tag, tagMajor, tagMinor},
     });
 
+    const syncedSha = faker.git.commitSha();
     SyncServiceMock.cascadeEnvironments.mockReturnValueOnce({
       ok: true,
-      data: ['development => main', 'sandbox => main'],
+      data: [
+        {ok: true, ref: 'main', target: 'development', sha: syncedSha},
+        {ok: true, ref: 'main', target: 'sandbox', sha: syncedSha},
+      ],
     });
 
     const inputs: Inputs = {
@@ -525,11 +536,11 @@ describe('Given a bump command', () => {
 
     expect(vi.mocked(process.stderr.write)).toHaveBeenNthCalledWith(
       3,
-      '🔗 Sync: Environments development => main, sandbox => main synced\n',
+      '🔗 Sync: Environments development,sandbox synced\n',
     );
   });
 
-  it('Should log sync without synced suffix when some environments fail', () => {
+  it('Should log the failure cause when some environments fail', () => {
     const nextVersion = faker.system.semver();
     const major = `${nextVersion.split('.')[0]}`;
     const minor = `${nextVersion.split('.')[1]}`;
@@ -555,9 +566,14 @@ describe('Given a bump command', () => {
       data: {tag, tagMajor, tagMinor},
     });
 
+    const syncedSha = faker.git.commitSha();
+    const syncFailure = faker.lorem.sentence();
     SyncServiceMock.cascadeEnvironments.mockReturnValueOnce({
       ok: true,
-      data: ['development => main', 'sandbox xx main'],
+      data: [
+        {ok: true, ref: 'main', target: 'development', sha: syncedSha},
+        {ok: false, error: syncFailure},
+      ],
     });
 
     const inputs: Inputs = {
@@ -573,8 +589,61 @@ describe('Given a bump command', () => {
     command.run(inputs);
 
     expect(vi.mocked(process.stderr.write)).toHaveBeenNthCalledWith(
+      4,
+      `🔗 Sync: ${syncFailure}\n`,
+    );
+  });
+
+  it('Should not log synced environments when every environment fails', () => {
+    const nextVersion = faker.system.semver();
+    const major = `${nextVersion.split('.')[0]}`;
+    const minor = `${nextVersion.split('.')[1]}`;
+    const patch = `${nextVersion.split('.')[2]}`;
+
+    SemverServiceMock.calculateNextVersion.mockReturnValueOnce({
+      ok: true,
+      data: {nextVersion, major: major, minor: minor, patch: patch},
+    });
+
+    BumperMock.bump.mockReturnValueOnce({
+      ok: true,
+      data: 'OK',
+    });
+
+    const tag = `v${nextVersion}`;
+    const tagMajor = `v${major}`;
+    const tagMinor = `v${major}.${minor}`;
+
+    ChangelogServiceMock.applyReleaseChangelog.mockReturnValueOnce({
+      ok: true,
+      data: {tag, tagMajor, tagMinor},
+    });
+
+    const syncFailure = faker.lorem.sentence();
+    SyncServiceMock.cascadeEnvironments.mockReturnValueOnce({
+      ok: true,
+      data: [{ok: false, error: syncFailure}],
+    });
+
+    const tagPrefix = faker.string.alpha();
+    const inputs: Inputs = {
+      semantic: 'major',
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref: faker.string.alpha(4),
+      overrideTag: false,
+      tagPrefix,
+      target: 'development',
+    };
+
+    command.run(inputs);
+
+    expect(vi.mocked(process.stderr.write)).toHaveBeenNthCalledWith(
       3,
-      '🔗 Sync: Environments development => main, sandbox xx main\n',
+      `🔗 Sync: ${syncFailure}\n`,
+    );
+    expect(vi.mocked(process.stderr.write)).not.toHaveBeenCalledWith(
+      expect.stringContaining('synced'),
     );
   });
 

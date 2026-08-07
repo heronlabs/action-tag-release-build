@@ -2,10 +2,6 @@ import {faker} from '@faker-js/faker';
 
 import {SyncService} from '../../../../src/core/services/sync-service';
 import {
-  GitServiceMock,
-  GitServiceMoq,
-} from '../../../__mocks__/infrastructure/git-service-mock';
-import {
   MergeServiceMock,
   MergeServiceMoq,
 } from '../../../__mocks__/infrastructure/merge-service-mock';
@@ -18,89 +14,102 @@ describe('Given a sync service', () => {
   let service: SyncService;
 
   beforeEach(() => {
-    service = new SyncService(
-      GitServiceMoq,
-      PullRequestServiceMoq,
-      MergeServiceMoq,
-    );
+    service = new SyncService(PullRequestServiceMoq, MergeServiceMoq);
   });
 
   describe('Given cascade environments', () => {
     it('Should sync single environment', () => {
-      GitServiceMock.mergeWithoutCommit.mockReturnValueOnce({
+      const ref = faker.git.branch();
+      const environment = faker.git.branch();
+      const sha = faker.git.commitSha();
+      MergeServiceMock.mergeWithoutCommit.mockReturnValueOnce({
         ok: true,
-        data: '',
+        data: sha,
       });
 
-      const output = service.cascadeEnvironments('main', 'development');
+      const output = service.cascadeEnvironments(ref, environment);
 
       expect(output).toStrictEqual({
         ok: true,
-        data: ['development => main'],
+        data: [{ok: true, ref, target: environment, sha}],
       });
     });
 
     it('Should sync multiple environments trimming whitespace', () => {
-      GitServiceMock.mergeWithoutCommit
+      const ref = faker.git.branch();
+      const environment = faker.git.branch();
+      const otherEnvironment = `${environment}-${faker.git.branch()}`;
+      const sha = faker.git.commitSha();
+      MergeServiceMock.mergeWithoutCommit
         .mockReturnValueOnce({
           ok: true,
-          data: '',
+          data: sha,
         })
         .mockReturnValueOnce({
           ok: true,
-          data: '',
+          data: sha,
         });
 
       const output = service.cascadeEnvironments(
-        'main',
-        ' development, sandbox ',
+        ref,
+        ` ${environment}, ${otherEnvironment} `,
       );
 
       expect(output).toStrictEqual({
         ok: true,
-        data: ['development => main', 'sandbox => main'],
+        data: [
+          {ok: true, ref, target: environment, sha},
+          {ok: true, ref, target: otherEnvironment, sha},
+        ],
       });
     });
 
     it('Should call merge without commit with ref and environment', () => {
-      GitServiceMock.mergeWithoutCommit.mockReturnValueOnce({
+      const ref = faker.git.branch();
+      const environment = faker.git.branch();
+      MergeServiceMock.mergeWithoutCommit.mockReturnValueOnce({
         ok: true,
         data: '',
       });
 
-      service.cascadeEnvironments('main', 'development');
+      service.cascadeEnvironments(ref, environment);
 
-      expect(GitServiceMock.mergeWithoutCommit).toHaveBeenCalledWith(
-        'main',
-        'development',
+      expect(MergeServiceMock.mergeWithoutCommit).toHaveBeenCalledWith(
+        ref,
+        environment,
       );
     });
 
     it('Should sync environment when merge commit enabled', () => {
+      const ref = faker.git.branch();
+      const environment = faker.git.branch();
+      const sha = faker.git.commitSha();
       MergeServiceMock.mergeWithCommit.mockReturnValueOnce({
         ok: true,
-        data: 'OK',
+        data: sha,
       });
 
-      const output = service.cascadeEnvironments('main', 'development', true);
+      const output = service.cascadeEnvironments(ref, environment, true);
 
       expect(output).toStrictEqual({
         ok: true,
-        data: ['development => main'],
+        data: [{ok: true, ref, target: environment, sha}],
       });
     });
 
     it('Should call merge with commit with ref and environment', () => {
+      const ref = faker.git.branch();
+      const environment = faker.git.branch();
       MergeServiceMock.mergeWithCommit.mockReturnValueOnce({
         ok: true,
         data: 'OK',
       });
 
-      service.cascadeEnvironments('main', 'development', true);
+      service.cascadeEnvironments(ref, environment, true);
 
       expect(MergeServiceMock.mergeWithCommit).toHaveBeenCalledWith(
-        'main',
-        'development',
+        ref,
+        environment,
       );
     });
 
@@ -110,13 +119,15 @@ describe('Given a sync service', () => {
         data: 'OK',
       });
 
-      service.cascadeEnvironments('main', 'development', true);
+      service.cascadeEnvironments(faker.git.branch(), faker.git.branch(), true);
 
-      expect(GitServiceMock.mergeWithoutCommit).not.toHaveBeenCalled();
+      expect(MergeServiceMock.mergeWithoutCommit).not.toHaveBeenCalled();
     });
 
     it('Should mark environment as not synced when merge fails', () => {
-      GitServiceMock.mergeWithoutCommit.mockReturnValueOnce({
+      const ref = faker.git.branch();
+      const environment = faker.git.branch();
+      MergeServiceMock.mergeWithoutCommit.mockReturnValueOnce({
         ok: false,
         error: new Error(faker.lorem.sentence()),
       });
@@ -125,16 +136,23 @@ describe('Given a sync service', () => {
         data: true,
       });
 
-      const output = service.cascadeEnvironments('main', 'development');
+      const output = service.cascadeEnvironments(ref, environment);
 
       expect(output).toStrictEqual({
         ok: true,
-        data: ['development xx main'],
+        data: [
+          {
+            ok: false,
+            error: `Merging ${ref} into ${environment} failed, open PR already exists;`,
+          },
+        ],
       });
     });
 
     it('Should create pull request when merge fails and none open', () => {
-      GitServiceMock.mergeWithoutCommit.mockReturnValueOnce({
+      const ref = faker.git.branch();
+      const environment = faker.git.branch();
+      MergeServiceMock.mergeWithoutCommit.mockReturnValueOnce({
         ok: false,
         error: new Error(faker.lorem.sentence()),
       });
@@ -147,16 +165,18 @@ describe('Given a sync service', () => {
         data: 'OK',
       });
 
-      service.cascadeEnvironments('main', 'development');
+      service.cascadeEnvironments(ref, environment);
 
       expect(PullRequestServiceMock.createPullRequest).toHaveBeenCalledWith(
-        'main',
-        'development',
+        ref,
+        environment,
       );
     });
 
     it('Should mark PR created when pull request creation succeeds', () => {
-      GitServiceMock.mergeWithoutCommit.mockReturnValueOnce({
+      const ref = faker.git.branch();
+      const environment = faker.git.branch();
+      MergeServiceMock.mergeWithoutCommit.mockReturnValueOnce({
         ok: false,
         error: new Error(faker.lorem.sentence()),
       });
@@ -169,16 +189,23 @@ describe('Given a sync service', () => {
         data: 'OK',
       });
 
-      const output = service.cascadeEnvironments('main', 'development');
+      const output = service.cascadeEnvironments(ref, environment);
 
       expect(output).toStrictEqual({
         ok: true,
-        data: ['development xx main (PR created)'],
+        data: [
+          {
+            ok: false,
+            error: `Merging ${ref} into ${environment} failed, no PR found. PR created;`,
+          },
+        ],
       });
     });
 
     it('Should mark PR creation failure when pull request creation fails', () => {
-      GitServiceMock.mergeWithoutCommit.mockReturnValueOnce({
+      const ref = faker.git.branch();
+      const environment = faker.git.branch();
+      MergeServiceMock.mergeWithoutCommit.mockReturnValueOnce({
         ok: false,
         error: new Error(faker.lorem.sentence()),
       });
@@ -191,16 +218,21 @@ describe('Given a sync service', () => {
         error: new Error(faker.lorem.sentence()),
       });
 
-      const output = service.cascadeEnvironments('main', 'development');
+      const output = service.cascadeEnvironments(ref, environment);
 
       expect(output).toStrictEqual({
         ok: true,
-        data: ['development xx main (PR creation failed)'],
+        data: [
+          {
+            ok: false,
+            error: `Merging ${ref} into ${environment} failed, no PR found. Then PR creation failed;`,
+          },
+        ],
       });
     });
 
     it('Should not create pull request when one already open', () => {
-      GitServiceMock.mergeWithoutCommit.mockReturnValueOnce({
+      MergeServiceMock.mergeWithoutCommit.mockReturnValueOnce({
         ok: false,
         error: new Error(faker.lorem.sentence()),
       });
@@ -209,13 +241,13 @@ describe('Given a sync service', () => {
         data: true,
       });
 
-      service.cascadeEnvironments('main', 'development');
+      service.cascadeEnvironments(faker.git.branch(), faker.git.branch());
 
       expect(PullRequestServiceMock.createPullRequest).not.toHaveBeenCalled();
     });
 
     it('Should not create pull request when listing pull requests fails', () => {
-      GitServiceMock.mergeWithoutCommit.mockReturnValueOnce({
+      MergeServiceMock.mergeWithoutCommit.mockReturnValueOnce({
         ok: false,
         error: new Error(faker.lorem.sentence()),
       });
@@ -224,37 +256,75 @@ describe('Given a sync service', () => {
         error: new Error(faker.lorem.sentence()),
       });
 
-      service.cascadeEnvironments('main', 'development');
+      service.cascadeEnvironments(faker.git.branch(), faker.git.branch());
 
       expect(PullRequestServiceMock.createPullRequest).not.toHaveBeenCalled();
     });
 
-    it('Should filter empty environment names from consecutive commas', () => {
-      GitServiceMock.mergeWithoutCommit
-        .mockReturnValueOnce({
-          ok: true,
-          data: '',
-        })
-        .mockReturnValueOnce({
-          ok: true,
-          data: '',
-        });
+    it('Should report the lookup failure when listing pull requests fails', () => {
+      const ref = faker.git.branch();
+      const environment = faker.git.branch();
+      MergeServiceMock.mergeWithoutCommit.mockReturnValueOnce({
+        ok: false,
+        error: new Error(faker.lorem.sentence()),
+      });
+      PullRequestServiceMock.hasPullRequest.mockReturnValueOnce({
+        ok: false,
+        error: new Error(faker.lorem.sentence()),
+      });
 
-      const output = service.cascadeEnvironments('main', 'sandbox,,staging');
+      const output = service.cascadeEnvironments(ref, environment);
 
       expect(output).toStrictEqual({
         ok: true,
-        data: ['sandbox => main', 'staging => main'],
+        data: [
+          {
+            ok: false,
+            error: `Merging ${ref} into ${environment} failed, then checking for open PR failed too;`,
+          },
+        ],
+      });
+    });
+
+    it('Should filter empty environment names from consecutive commas', () => {
+      const ref = faker.git.branch();
+      const environment = faker.git.branch();
+      const otherEnvironment = `${environment}-${faker.git.branch()}`;
+      const sha = faker.git.commitSha();
+      MergeServiceMock.mergeWithoutCommit
+        .mockReturnValueOnce({
+          ok: true,
+          data: sha,
+        })
+        .mockReturnValueOnce({
+          ok: true,
+          data: sha,
+        });
+
+      const output = service.cascadeEnvironments(
+        ref,
+        `${environment},,${otherEnvironment}`,
+      );
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: [
+          {ok: true, ref, target: environment, sha},
+          {ok: true, ref, target: otherEnvironment, sha},
+        ],
       });
     });
 
     it('Should return error when merge throws', () => {
       const error = new Error(faker.lorem.sentence());
-      GitServiceMock.mergeWithoutCommit.mockImplementationOnce(() => {
+      MergeServiceMock.mergeWithoutCommit.mockImplementationOnce(() => {
         throw error;
       });
 
-      const output = service.cascadeEnvironments('main', 'development');
+      const output = service.cascadeEnvironments(
+        faker.git.branch(),
+        faker.git.branch(),
+      );
 
       expect(output).toStrictEqual({
         ok: false,

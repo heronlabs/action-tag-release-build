@@ -93,13 +93,5 @@ export class GitService {
     return {ok: true as const, data: result.data};
   }
 
-  public mergeWithoutCommit(ref: string, environment: string) {
-    return this.childProcessService.exec('git', [
-      'push',
-      'origin',
-      `refs/heads/${ref}:refs/heads/${environment}`,
-    ]);
-  }
-
   constructor(private readonly childProcessService: ChildProcessService) {}
 }

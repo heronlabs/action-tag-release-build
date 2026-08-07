@@ -4,9 +4,12 @@ import {MergeService} from '../../../src/infrastructure/gh/services/merge-servic
 
 export const MergeServiceMock = {
   mergeWithCommit: vi.fn(),
+  mergeWithoutCommit: vi.fn(),
 };
 
 export const MergeServiceMoq = new Mock<MergeService>()
   .setup(x => x.mergeWithCommit)
   .returns(MergeServiceMock.mergeWithCommit)
+  .setup(x => x.mergeWithoutCommit)
+  .returns(MergeServiceMock.mergeWithoutCommit)
   .object();

@@ -2079,19 +2079,22 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Sync target environments after minor bump from feat commit', () => {
-    it('Should sync development with success', () => {
+    it('Should fast-forward every target through the GitHub API', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat: add thing'],
         targets: [{name: 'development'}, {name: 'sandbox'}],
       });
-      const workDir = testRepo.workDir;
-      testRepo.gh.enqueue({
-        stdout: 'https://github.com/test/releases/tag/mock',
-      });
-      const command = testingCliFactory(workDir);
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {stdout: 'abc123'},
+        {stdout: ''},
+        {stdout: 'abc123'},
+        {stdout: ''},
+      ]);
+      const command = testingCliFactory(testRepo.workDir);
 
-      const inputs: Inputs = {
+      command.run({
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
@@ -2099,34 +2102,29 @@ describe('Full tag-release-build pipeline', () => {
         tagPrefix: 'v',
         overrideTag: false,
         target: 'development, sandbox',
-      };
-      command.run(inputs);
+      });
 
-      const mainSha = execSync('git rev-parse main', {
-        cwd: workDir,
-        encoding: 'utf8',
-      }).trim();
-      const developmentSha = execSync('git rev-parse development', {
-        cwd: testRepo.bareDir,
-        encoding: 'utf8',
-      }).trim();
-
-      expect(developmentSha).toBe(mainSha);
+      expect(process.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('Environments development,sandbox synced'),
+      );
     });
 
-    it('Should sync sandbox with success', () => {
+    it('Should consume the queued gh api fast-forward responses', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat: add thing'],
         targets: [{name: 'development'}, {name: 'sandbox'}],
       });
-      const workDir = testRepo.workDir;
-      testRepo.gh.enqueue({
-        stdout: 'https://github.com/test/releases/tag/mock',
-      });
-      const command = testingCliFactory(workDir);
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {stdout: 'abc123'},
+        {stdout: ''},
+        {stdout: 'abc123'},
+        {stdout: ''},
+      ]);
+      const command = testingCliFactory(testRepo.workDir);
 
-      const inputs: Inputs = {
+      command.run({
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
@@ -2134,19 +2132,9 @@ describe('Full tag-release-build pipeline', () => {
         tagPrefix: 'v',
         overrideTag: false,
         target: 'development, sandbox',
-      };
-      command.run(inputs);
+      });
 
-      const mainSha = execSync('git rev-parse main', {
-        cwd: workDir,
-        encoding: 'utf8',
-      }).trim();
-      const sandboxSha = execSync('git rev-parse sandbox', {
-        cwd: testRepo.bareDir,
-        encoding: 'utf8',
-      }).trim();
-
-      expect(sandboxSha).toBe(mainSha);
+      expect(() => testRepo.gh.expectEmpty()).not.toThrow();
     });
   });
 
@@ -2157,14 +2145,13 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
         targets: [{name: 'development'}],
       });
-      const workDir = testRepo.workDir;
-      testRepo.gh.enqueue({
-        stdout: 'https://github.com/test/releases/tag/mock',
-      });
-      testRepo.gh.enqueue({stdout: '{"sha":"abc123"}'});
-      const command = testingCliFactory(workDir);
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {stdout: 'abc123'},
+      ]);
+      const command = testingCliFactory(testRepo.workDir);
 
-      const inputs: Inputs = {
+      command.run({
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
@@ -2173,11 +2160,10 @@ describe('Full tag-release-build pipeline', () => {
         overrideTag: false,
         target: 'development',
         mergeCommit: true,
-      };
-      command.run(inputs);
+      });
 
       expect(process.stderr.write).toHaveBeenCalledWith(
-        expect.stringContaining('Environments development => main synced'),
+        expect.stringContaining('Environments development synced'),
       );
     });
 
@@ -2187,14 +2173,13 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
         targets: [{name: 'development'}],
       });
-      const workDir = testRepo.workDir;
-      testRepo.gh.enqueue({
-        stdout: 'https://github.com/test/releases/tag/mock',
-      });
-      testRepo.gh.enqueue({stdout: '{"sha":"abc123"}'});
-      const command = testingCliFactory(workDir);
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {stdout: 'abc123'},
+      ]);
+      const command = testingCliFactory(testRepo.workDir);
 
-      const inputs: Inputs = {
+      command.run({
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
@@ -2203,8 +2188,63 @@ describe('Full tag-release-build pipeline', () => {
         overrideTag: false,
         target: 'development',
         mergeCommit: true,
-      };
-      command.run(inputs);
+      });
+
+      expect(() => testRepo.gh.expectEmpty()).not.toThrow();
+    });
+
+    it('Should read the branch head when the merge answers no content', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development'}],
+      });
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {stdout: ''},
+        {stdout: 'abc123'},
+      ]);
+      const command = testingCliFactory(testRepo.workDir);
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+        mergeCommit: true,
+      });
+
+      expect(process.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('Environments development synced'),
+      );
+    });
+
+    it('Should consume the queued branch head fallback response', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development'}],
+      });
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {stdout: ''},
+        {stdout: 'abc123'},
+      ]);
+      const command = testingCliFactory(testRepo.workDir);
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+        mergeCommit: true,
+      });
 
       expect(() => testRepo.gh.expectEmpty()).not.toThrow();
     });
@@ -2217,18 +2257,15 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
         targets: [{name: 'development', conflict: true}],
       });
-      const workDir = testRepo.workDir;
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {exitCode: 1, stderr: 'HTTP 409: Merge conflict'},
+        {stdout: '0'},
+        {stdout: 'https://github.com/test/pull/1'},
+      ]);
+      const command = testingCliFactory(testRepo.workDir);
 
-      testRepo.gh.enqueue({
-        stdout: 'https://github.com/test/releases/tag/mock',
-      });
-      testRepo.gh.enqueue({exitCode: 1, stderr: 'HTTP 409: Merge conflict'});
-      testRepo.gh.enqueue({stdout: '0'});
-      testRepo.gh.enqueue({stdout: 'https://github.com/test/pull/1'});
-
-      const command = testingCliFactory(workDir);
-
-      const inputs: Inputs = {
+      command.run({
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
@@ -2237,11 +2274,40 @@ describe('Full tag-release-build pipeline', () => {
         overrideTag: false,
         target: 'development',
         mergeCommit: true,
-      };
-      command.run(inputs);
+      });
 
       expect(process.stderr.write).toHaveBeenCalledWith(
-        expect.stringContaining('development xx main (PR created)'),
+        expect.stringContaining('no PR found. PR created;'),
+      );
+    });
+
+    it('Should report the failed merge for development', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development', conflict: true}],
+      });
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {exitCode: 1, stderr: 'HTTP 409: Merge conflict'},
+        {stdout: '0'},
+        {stdout: 'https://github.com/test/pull/1'},
+      ]);
+      const command = testingCliFactory(testRepo.workDir);
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+        mergeCommit: true,
+      });
+
+      expect(process.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('Merging main into development failed,'),
       );
     });
   });
@@ -2253,15 +2319,13 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
         targets: [{name: 'development'}],
       });
-      const workDir = testRepo.workDir;
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {stdout: '0'},
+        {stdout: 'https://github.com/test/pull/1'},
+      ]);
 
-      testRepo.gh.enqueue({
-        stdout: 'https://github.com/test/releases/tag/mock',
-      });
-      testRepo.gh.enqueue({stdout: '0'});
-      testRepo.gh.enqueue({stdout: 'https://github.com/test/pull/1'});
-
-      const command = testingCliFactory(workDir, {
+      const command = testingCliFactory(testRepo.workDir, {
         patchServices: ({childProcessService}) => {
           const realExec = childProcessService.exec.bind(childProcessService);
           childProcessService.exec = (command: string, args: string[] = []) => {
@@ -2285,120 +2349,35 @@ describe('Full tag-release-build pipeline', () => {
       });
 
       expect(process.stderr.write).toHaveBeenCalledWith(
-        expect.stringContaining('development xx main (PR created)'),
+        expect.stringContaining('failed, no PR found. PR created;'),
       );
     });
-  });
 
-  describe('Open PR to sync target environments with conflict', () => {
-    it('Should open a new PR for development', () => {
+    it('Should catch execSync failure in mergeWithoutCommit', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat: add thing'],
-        targets: [
-          {name: 'development', conflict: true},
-          {name: 'sandbox', conflict: true},
-        ],
+        targets: [{name: 'development'}],
       });
-      const workDir = testRepo.workDir;
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {stdout: '0'},
+        {stdout: 'https://github.com/test/pull/1'},
+      ]);
 
-      testRepo.gh.enqueue({
-        stdout: 'https://github.com/test/releases/tag/mock',
+      const command = testingCliFactory(testRepo.workDir, {
+        patchServices: ({childProcessService}) => {
+          const realExec = childProcessService.exec.bind(childProcessService);
+          childProcessService.exec = (command: string, args: string[] = []) => {
+            if (command === 'gh' && args[0] === 'api') {
+              throw new Error('simulated execSync crash');
+            }
+            return realExec(command, args);
+          };
+        },
       });
-      testRepo.gh.enqueue({stdout: '0'});
-      testRepo.gh.enqueue({stdout: 'https://github.com/test/pull/1'});
-      testRepo.gh.enqueue({stdout: '0'});
-      testRepo.gh.enqueue({stdout: 'https://github.com/test/pull/2'});
 
-      const command = testingCliFactory(workDir);
-
-      const inputs: Inputs = {
-        semantic: '',
-        versionFile: 'version.txt',
-        changelogFile: 'CHANGELOG.md',
-        ref: 'main',
-        tagPrefix: 'v',
-        overrideTag: false,
-        target: 'development, sandbox',
-      };
-      command.run(inputs);
-
-      const mainSha = execSync('git rev-parse main', {
-        cwd: testRepo.bareDir,
-        encoding: 'utf8',
-        stdio: 'pipe',
-      }).trim();
-      const developmentSha = execSync('git rev-parse development', {
-        cwd: testRepo.bareDir,
-        encoding: 'utf8',
-        stdio: 'pipe',
-      }).trim();
-      expect(developmentSha).not.toBe(mainSha);
-    });
-
-    it('Should open a new PR for sandbox', () => {
-      testRepo = createTestRepo({
-        version: '1.2.3',
-        commits: ['feat: add thing'],
-        targets: [
-          {name: 'development', conflict: true},
-          {name: 'sandbox', conflict: true},
-        ],
-      });
-      const workDir = testRepo.workDir;
-
-      testRepo.gh.enqueue({
-        stdout: 'https://github.com/test/releases/tag/mock',
-      });
-      testRepo.gh.enqueue({stdout: '0'});
-      testRepo.gh.enqueue({stdout: 'https://github.com/test/pull/1'});
-      testRepo.gh.enqueue({stdout: '0'});
-      testRepo.gh.enqueue({stdout: 'https://github.com/test/pull/2'});
-
-      const command = testingCliFactory(workDir);
-
-      const inputs: Inputs = {
-        semantic: '',
-        versionFile: 'version.txt',
-        changelogFile: 'CHANGELOG.md',
-        ref: 'main',
-        tagPrefix: 'v',
-        overrideTag: false,
-        target: 'development, sandbox',
-      };
-      command.run(inputs);
-
-      const mainSha = execSync('git rev-parse main', {
-        cwd: testRepo.bareDir,
-        encoding: 'utf8',
-        stdio: 'pipe',
-      }).trim();
-      const sandboxSha = execSync('git rev-parse sandbox', {
-        cwd: testRepo.bareDir,
-        encoding: 'utf8',
-        stdio: 'pipe',
-      }).trim();
-      expect(sandboxSha).not.toBe(mainSha);
-    });
-  });
-
-  describe('Ignore conflict due opened PR to sync target environments', () => {
-    it('Should ignore existing PR for development', () => {
-      testRepo = createTestRepo({
-        version: '1.2.3',
-        commits: ['feat: add thing'],
-        targets: [{name: 'development', conflict: true}],
-      });
-      const workDir = testRepo.workDir;
-
-      testRepo.gh.enqueue({
-        stdout: 'https://github.com/test/releases/tag/mock',
-      });
-      testRepo.gh.enqueue({stdout: '1'});
-
-      const command = testingCliFactory(workDir);
-
-      const inputs: Inputs = {
+      command.run({
         semantic: '',
         versionFile: 'version.txt',
         changelogFile: 'CHANGELOG.md',
@@ -2406,20 +2385,130 @@ describe('Full tag-release-build pipeline', () => {
         tagPrefix: 'v',
         overrideTag: false,
         target: 'development',
-      };
-      command.run(inputs);
+      });
 
-      const mainSha = execSync('git rev-parse main', {
-        cwd: testRepo.bareDir,
-        encoding: 'utf8',
-        stdio: 'pipe',
-      }).trim();
-      const developmentSha = execSync('git rev-parse development', {
-        cwd: testRepo.bareDir,
-        encoding: 'utf8',
-        stdio: 'pipe',
-      }).trim();
-      expect(developmentSha).not.toBe(mainSha);
+      expect(process.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('failed, no PR found. PR created;'),
+      );
+    });
+  });
+
+  describe('Open PR to sync target environments with conflict', () => {
+    it('Should open a new PR when the fast-forward is rejected', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development', conflict: true}],
+      });
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {stdout: 'abc123'},
+        {exitCode: 1, stderr: 'HTTP 422: Update is not a fast forward'},
+        {stdout: '0'},
+        {stdout: 'https://github.com/test/pull/1'},
+      ]);
+      const command = testingCliFactory(testRepo.workDir);
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+      });
+
+      expect(process.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('failed, no PR found. PR created;'),
+      );
+    });
+
+    it('Should open a new PR when the ref lookup fails', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development', conflict: true}],
+      });
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {exitCode: 1, stderr: 'HTTP 404: Not Found'},
+        {stdout: '0'},
+        {stdout: 'https://github.com/test/pull/1'},
+      ]);
+      const command = testingCliFactory(testRepo.workDir);
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+      });
+
+      expect(process.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('failed, no PR found. PR created;'),
+      );
+    });
+  });
+
+  describe('Ignore conflict due opened PR to sync target environments', () => {
+    it('Should report the open PR instead of creating another one', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development', conflict: true}],
+      });
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {stdout: 'abc123'},
+        {exitCode: 1, stderr: 'HTTP 422: Update is not a fast forward'},
+        {stdout: '1'},
+      ]);
+      const command = testingCliFactory(testRepo.workDir);
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+      });
+
+      expect(process.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('open PR already exists;'),
+      );
+    });
+
+    it('Should not call gh pr create when a PR is already open', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development', conflict: true}],
+      });
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {stdout: 'abc123'},
+        {exitCode: 1, stderr: 'HTTP 422: Update is not a fast forward'},
+        {stdout: '1'},
+      ]);
+      const command = testingCliFactory(testRepo.workDir);
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+      });
+
+      expect(() => testRepo.gh.expectEmpty()).not.toThrow();
     });
   });
 
@@ -2430,14 +2519,13 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
         targets: [{name: 'development'}],
       });
-      const workDir = testRepo.workDir;
 
       testRepo.gh.enqueue({
         stdout: 'https://github.com/test/releases/tag/mock',
       });
-      const command = testingCliFactory(workDir, {
-        patchServices: ({gitService}) => {
-          gitService.mergeWithoutCommit = () => {
+      const command = testingCliFactory(testRepo.workDir, {
+        patchServices: ({mergeService}) => {
+          mergeService.mergeWithoutCommit = () => {
             throw new Error('simulated internal error');
           };
         },
@@ -2460,20 +2548,19 @@ describe('Full tag-release-build pipeline', () => {
   });
 
   describe('Pull request listing fails on conflict', () => {
-    it('Should handle gh pr list failure gracefully', () => {
+    it('Should report the lookup failure', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat: add thing'],
         targets: [{name: 'development', conflict: true}],
       });
-      const workDir = testRepo.workDir;
-
-      testRepo.gh.enqueue({
-        stdout: 'https://github.com/test/releases/tag/mock',
-      });
-      testRepo.gh.enqueue({exitCode: 1, stderr: 'gh pr list failed'});
-
-      const command = testingCliFactory(workDir);
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {stdout: 'abc123'},
+        {exitCode: 1, stderr: 'HTTP 422: Update is not a fast forward'},
+        {exitCode: 1, stderr: 'gh pr list failed'},
+      ]);
+      const command = testingCliFactory(testRepo.workDir);
 
       command.run({
         semantic: '',
@@ -2485,17 +2572,38 @@ describe('Full tag-release-build pipeline', () => {
         target: 'development',
       });
 
-      const mainSha = execSync('git rev-parse main', {
-        cwd: testRepo.bareDir,
-        encoding: 'utf8',
-        stdio: 'pipe',
-      }).trim();
-      const developmentSha = execSync('git rev-parse development', {
-        cwd: testRepo.bareDir,
-        encoding: 'utf8',
-        stdio: 'pipe',
-      }).trim();
-      expect(developmentSha).not.toBe(mainSha);
+      expect(process.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('then checking for open PR failed too;'),
+      );
+    });
+
+    it('Should treat unparsable gh pr list output as a lookup failure', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development', conflict: true}],
+      });
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {stdout: 'abc123'},
+        {exitCode: 1, stderr: 'HTTP 422: Update is not a fast forward'},
+        {stdout: 'gh: could not read the pull request list'},
+      ]);
+      const command = testingCliFactory(testRepo.workDir);
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+      });
+
+      expect(process.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('then checking for open PR failed too;'),
+      );
     });
   });
 
@@ -2506,12 +2614,13 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
         targets: [{name: 'development', conflict: true}],
       });
-      const workDir = testRepo.workDir;
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {stdout: 'abc123'},
+        {exitCode: 1, stderr: 'HTTP 422: Update is not a fast forward'},
+      ]);
 
-      testRepo.gh.enqueue({
-        stdout: 'https://github.com/test/releases/tag/mock',
-      });
-      const command = testingCliFactory(workDir, {
+      const command = testingCliFactory(testRepo.workDir, {
         patchServices: ({childProcessService}) => {
           const realExec = childProcessService.exec.bind(childProcessService);
           childProcessService.exec = (command: string, args: string[] = []) => {
@@ -2533,17 +2642,9 @@ describe('Full tag-release-build pipeline', () => {
         target: 'development',
       });
 
-      const mainSha = execSync('git rev-parse main', {
-        cwd: testRepo.bareDir,
-        encoding: 'utf8',
-        stdio: 'pipe',
-      }).trim();
-      const developmentSha = execSync('git rev-parse development', {
-        cwd: testRepo.bareDir,
-        encoding: 'utf8',
-        stdio: 'pipe',
-      }).trim();
-      expect(developmentSha).not.toBe(mainSha);
+      expect(process.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('then checking for open PR failed too;'),
+      );
     });
 
     it('Should catch execSync failure in createPullRequest', () => {
@@ -2552,14 +2653,14 @@ describe('Full tag-release-build pipeline', () => {
         commits: ['feat: add thing'],
         targets: [{name: 'development', conflict: true}],
       });
-      const workDir = testRepo.workDir;
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {stdout: 'abc123'},
+        {exitCode: 1, stderr: 'HTTP 422: Update is not a fast forward'},
+        {stdout: '0'},
+      ]);
 
-      testRepo.gh.enqueue({
-        stdout: 'https://github.com/test/releases/tag/mock',
-      });
-      testRepo.gh.enqueue({stdout: '0'});
-
-      const command = testingCliFactory(workDir, {
+      const command = testingCliFactory(testRepo.workDir, {
         patchServices: ({childProcessService}) => {
           const realExec = childProcessService.exec.bind(childProcessService);
           childProcessService.exec = (command: string, args: string[] = []) => {
@@ -2581,17 +2682,9 @@ describe('Full tag-release-build pipeline', () => {
         target: 'development',
       });
 
-      const mainSha = execSync('git rev-parse main', {
-        cwd: testRepo.bareDir,
-        encoding: 'utf8',
-        stdio: 'pipe',
-      }).trim();
-      const developmentSha = execSync('git rev-parse development', {
-        cwd: testRepo.bareDir,
-        encoding: 'utf8',
-        stdio: 'pipe',
-      }).trim();
-      expect(developmentSha).not.toBe(mainSha);
+      expect(process.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('Then PR creation failed;'),
+      );
     });
   });
 });

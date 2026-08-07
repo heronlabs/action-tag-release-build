@@ -58,19 +58,26 @@ export class Command {
         target,
         mergeCommit,
       );
-      let syncMessage = '🔗 Sync: ';
 
-      if (!envsSynced.ok)
-        syncMessage += 'Error during environments syncronization';
-      else {
-        const results = envsSynced.data.join(', ');
-        const allSynced = envsSynced.data.every(e => !e.includes(' xx '));
-        syncMessage += allSynced
-          ? `Environments ${results} synced`
-          : `Environments ${results}`;
+      if (!envsSynced.ok) {
+        process.stderr.write(
+          '🔗 Sync: Error during environments syncronization\n',
+        );
+      } else {
+        const synced = envsSynced.data.filter(result => result.ok);
+        const failed = envsSynced.data.filter(result => !result.ok);
+
+        if (synced.length) {
+          const syncedTargets = synced.map(env => env.target).join(',');
+          process.stderr.write(
+            `🔗 Sync: Environments ${syncedTargets} synced\n`,
+          );
+        }
+
+        failed.forEach(failure =>
+          process.stderr.write(`🔗 Sync: ${failure.error}\n`),
+        );
       }
-
-      process.stderr.write(`${syncMessage}\n`);
     }
 
     return {

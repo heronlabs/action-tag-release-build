@@ -19,7 +19,6 @@ export class CoreFactory {
 
   public getSyncService(): SyncService {
     return new SyncService(
-      this.gitFactory.getGitService(),
       this.ghFactory.getPullRequestService(),
       this.ghFactory.getMergeService(),
     );
