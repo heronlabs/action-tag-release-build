@@ -3,7 +3,7 @@ import {ChangelogService} from '../../../core/services/changelog-service';
 import {SemverService} from '../../../core/services/semver-service';
 import {SyncService} from '../../../core/services/sync-service';
 import {Inputs} from './types/inputs';
-import {Outputs} from './types/outputs';
+import {Outputs, ReleasedRef} from './types/outputs';
 
 export class Command {
   public run(inputs: Inputs): Outputs {
@@ -45,12 +45,14 @@ export class Command {
     });
     if (!tags.ok) throw tags.error;
 
-    const {tag, tagMajor, tagMinor} = tags.data;
+    const {tag, tagMajor, tagMinor, sha} = tags.data;
 
     let tagMessage = `🏷️ Tagged: ${tag}`;
     if (overrideTag)
       tagMessage += ` with major: ${tagMajor} and minor: ${tagMinor}`;
     process.stderr.write(`${tagMessage}\n`);
+
+    const releasedRefs: ReleasedRef[] = [{target: ref, sha}];
 
     if (target) {
       const envsSynced = this.syncService.cascadeEnvironments(
@@ -61,7 +63,11 @@ export class Command {
 
       if (!envsSynced.ok) {
         process.stderr.write(
-          '🔗 Sync: Error during environments syncronization\n',
+          `🔗 Sync: Error during environments synchronization: ${String(envsSynced.error)}\n`,
+        );
+      } else if (!envsSynced.data.length) {
+        process.stderr.write(
+          `🔗 Sync: No target branch parsed from "${target}"\n`,
         );
       } else {
         const synced = envsSynced.data.filter(result => result.ok);
@@ -77,6 +83,10 @@ export class Command {
         failed.forEach(failure =>
           process.stderr.write(`🔗 Sync: ${failure.error}\n`),
         );
+
+        releasedRefs.push(
+          ...synced.map(env => ({target: env.target, sha: env.sha})),
+        );
       }
     }
 
@@ -85,6 +95,7 @@ export class Command {
       tag: tag,
       tagMajor: tagMajor,
       tagMinor: tagMinor,
+      releasedRefs: releasedRefs,
     };
   }
 

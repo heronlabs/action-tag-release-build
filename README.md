@@ -63,7 +63,7 @@ jobs:
           semantic: ${{ inputs.semantic }}
 ```
 
-The `id: version` step exposes the `version`, `tag`, `tagMajor`, and `tagMinor` outputs for later steps — e.g. to alias a published image with both floating tags:
+The `id: version` step exposes the `version`, `tag`, `tagMajor`, `tagMinor`, and `releasedRefs` outputs for later steps — e.g. to alias a published image with both floating tags:
 
 ```yaml
 - run: |
@@ -127,6 +127,16 @@ Each target is synced in order:
 
 When a target cannot be synced, the action opens a pull request from `ref` into that target instead of failing the run. The sync summary is written to the step log — `Environments <targets> synced` for the targets that moved, and one line per failure stating what happened (whether a pull request was already open, was created, or could not be created).
 
+The `releasedRefs` output reports what actually moved, as a JSON array of `{target, sha}`. It always contains the released ref itself, plus one entry per target synced successfully — a target that failed to sync is absent. Gate downstream jobs on it:
+
+```yaml
+deploy-development:
+  needs: delivery
+  if: contains(fromJSON(needs.delivery.outputs.releasedRefs).*.target, 'development')
+```
+
+A missing target means either the sync failed or that branch was never requested; the output does not distinguish the two. The step log does.
+
 ## Inputs
 
 | Name | Description | Required | Default |
@@ -144,6 +154,8 @@ When a target cannot be synced, the action opens a pull request from `ref` into 
 | `target` | Branches to sync the released ref into, comma-separated (e.g. `staging,production`). Each branch must already exist on the remote — the action never creates it. Empty disables sync. | No | `` |
 | `mergeCommit` | Sync with a real merge commit (`Merge <ref> into <target>`, via the GitHub merges API) instead of a fast-forward of the target ref. | No | `false` |
 
+Defaults are applied by the action itself (`InputDefaults` in `src/application/action/command/types/inputs.ts`), not declared as `default:` in `action.yml`. An input omitted and an input passed as an explicit empty string therefore resolve to the same value — an unresolved expression such as `tagPrefix: ${{ inputs.prefix }}` falls back to `v` rather than tagging without a prefix.
+
 ## Outputs
 
 | Name | Description |
@@ -152,6 +164,7 @@ When a target cannot be synced, the action opens a pull request from `ref` into 
 | `tag` | Created tag (e.g. `v1.0.3`). |
 | `tagMajor` | Floating major tag (e.g. `v1`). |
 | `tagMinor` | Floating minor tag (e.g. `v1.0`). |
+| `releasedRefs` | JSON array of released refs, `[{target, sha}]` — the released ref itself plus one entry per target branch synced successfully. Unset when the action fails before the sync step. |
 
 ## Permissions
 
@@ -172,8 +185,8 @@ src/
     command/
       command.ts                      # Command — orchestrates the full pipeline
       types/
-        inputs.ts                     # Inputs type
-        outputs.ts                    # Outputs type
+        inputs.ts                     # Inputs type + InputDefaults (the action.yml defaults)
+        outputs.ts                    # Outputs + ReleasedRef types
   core/
     core-factory.ts                   # Wires core services and bumpers
     interfaces/
@@ -224,7 +237,7 @@ src/
    - **Create GitHub release** — `ReleaseNotesService.createRelease()` publishes the release with the generated notes.
 4. **Sync environments** — skipped when `target` is empty. `SyncService.cascadeEnvironments()` splits `target` on commas and, for each branch, either merges via `MergeService.mergeWithCommit()` (`mergeCommit: true`) or fast-forwards the target ref via `MergeService.mergeWithoutCommit()`. Both go through the GitHub API against a branch that must already exist; a missing target is reported as a failure, never created. If the sync is rejected, `PullRequestService` opens a pull request from `ref` into that target (unless one is already open) and the run continues.
 
-Outputs `version`, `tag`, `tagMajor`, and `tagMinor` are published with `core.setOutput`.
+Outputs `version`, `tag`, `tagMajor`, `tagMinor`, and `releasedRefs` are published with `core.setOutput`. `releasedRefs` is JSON-encoded at the action boundary; `Command` itself returns the array.
 
 ## Notes
 

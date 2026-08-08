@@ -26,7 +26,8 @@
 | File | Purpose |
 |------|---------|
 | `action.yml` | Node action definition (inputs, outputs, runs.main) |
-| `src/index.ts` | Action entry point — @actions/core inputs/outputs, wires CliFactory |
+| `src/index.ts` | Action entry point — @actions/core inputs/outputs, wires CliFactory. Only file importing @actions/core; excluded from coverage |
+| `src/application/action/command/types/inputs.ts` | `Inputs` type + `InputDefaults` — sole authority for input defaults (`action.yml` declares no `default:`; its descriptions restate the values) |
 | `bin/` | Compiled output; `bin/src/index.js` is `runs.main` with @actions/core inlined — build artifact, do not edit |
 | `src/application/action/action-factory.ts` | CliFactory (wires all services) |
 | `src/application/action/command/command.ts` | Command — orchestrates the full pipeline |

@@ -13,49 +13,38 @@ inputs:
     description: GitHub token for creating tags
     required: true
   semantic:
-    description: Semver bump type (major, minor, patch)
+    description: Semver bump type (major, minor, patch). Inferred from the HEAD commit when empty
     required: false
-    default: ''
   workingDirectory:
-    description: Working directory (for monorepo sub-directories)
+    description: Working directory (for monorepo sub-directories). Defaults to `.`
     required: false
-    default: '.'
   overrideTag:
-    description: Update major and minor version floating tags (e.g., v1, v1.0)
+    description: Update major and minor version floating tags (e.g., v1, v1.0). Defaults to `true`
     required: false
-    default: 'true'
   tagPrefix:
-    description: Tag prefix (e.g., v for v1.2.3)
+    description: Tag prefix (e.g., v for v1.2.3). Defaults to `v`
     required: false
-    default: 'v'
   versionFile:
-    description: File to read/write version
+    description: File to read/write version. Defaults to `version.txt`
     required: false
-    default: 'version.txt'
   changelogFile:
-    description: Changelog file path
+    description: Changelog file path. Defaults to `CHANGELOG.md`
     required: false
-    default: 'CHANGELOG.md'
   bumpNpm:
-    description: Also bump package.json version via npm version
+    description: Also bump package.json version via npm version. Defaults to `false`
     required: false
-    default: 'false'
   bumpClaude:
-    description: Sync version into Claude Code plugin files (plugin.json + marketplace.json)
+    description: Sync version into Claude Code plugin files (plugin.json + marketplace.json). Defaults to `false`
     required: false
-    default: 'false'
   pluginDir:
-    description: Claude plugin directory
+    description: Claude plugin directory. Defaults to `.claude-plugin`
     required: false
-    default: '.claude-plugin'
   target:
     description: Target branches to sync the released ref into, comma-separated (empty disables sync). Each branch must already exist on the remote — the action never creates it
     required: false
-    default: ''
   mergeCommit:
-    description: Create a merge commit when syncing ref into targets ("Merge <ref> into <target>"; fast-forwards the target ref through the GitHub API when false)
+    description: Create a merge commit when syncing ref into targets ("Merge <ref> into <target>"; fast-forwards the target ref through the GitHub API when false). Defaults to `false`
     required: false
-    default: 'false'
 
 outputs:
   version:
@@ -66,6 +55,8 @@ outputs:
     description: The major version tag (e.g., v1)
   tagMinor:
     description: The minor version tag (e.g., v1.0)
+  releasedRefs:
+    description: 'JSON array of released refs: [{target, sha}]. Always contains the released ref itself, plus one entry per target branch synced successfully. Unset when the action fails before the sync step'
 
 runs:
   using: node24

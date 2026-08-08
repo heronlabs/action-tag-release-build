@@ -2109,6 +2109,38 @@ describe('Full tag-release-build pipeline', () => {
       );
     });
 
+    it('Should return the released ref plus every target synced', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development'}, {name: 'sandbox'}],
+      });
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {stdout: 'abc123'},
+        {stdout: ''},
+        {stdout: 'abc123'},
+        {stdout: ''},
+      ]);
+      const command = testingCliFactory(testRepo.workDir);
+
+      const output = command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development, sandbox',
+      });
+
+      expect(output.releasedRefs).toStrictEqual([
+        {target: 'main', sha: expect.any(String)},
+        {target: 'development', sha: 'abc123'},
+        {target: 'sandbox', sha: 'abc123'},
+      ]);
+    });
+
     it('Should consume the queued gh api fast-forward responses', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
@@ -2542,7 +2574,9 @@ describe('Full tag-release-build pipeline', () => {
       });
 
       expect(process.stderr.write).toHaveBeenCalledWith(
-        expect.stringContaining('Error during environments syncronization'),
+        expect.stringContaining(
+          'Error during environments synchronization: Error: simulated internal error',
+        ),
       );
     });
   });
