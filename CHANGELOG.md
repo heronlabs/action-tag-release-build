@@ -1,3 +1,9 @@
+## v7.5.1 (2026-08-09)
+
+### Miscellaneous Chores
+
+* other(deps-dev): bump eslint-plugin-jsonc from 3.3.0 to 3.4.1 (#63) (1112166588aa5dd470891af53cbbd9d80447d9ac)
+
 ## v7.5.0 (2026-08-07)
 
 ### Features
