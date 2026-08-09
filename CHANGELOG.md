@@ -1,3 +1,9 @@
+## v7.5.2 (2026-08-09)
+
+### Miscellaneous Chores
+
+* other(deps-dev): bump eslint-plugin-yml from 3.7.0 to 3.8.0 (#64) (e69066af0a48e1489144cd1022ba69b34b368c63)
+
 ## v7.5.1 (2026-08-09)
 
 ### Miscellaneous Chores
