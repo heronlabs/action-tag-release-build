@@ -2193,6 +2193,31 @@ describe('Full tag-release-build pipeline', () => {
 
       expect(() => testRepo.gh.expectEmpty()).not.toThrow();
     });
+
+    it('Should report no target branch parsed when target contains only whitespace and commas', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(testRepo.workDir);
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: ' , ',
+      });
+
+      expect(process.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('No target branch parsed from " , "'),
+      );
+    });
   });
 
   describe('Sync target environments with merge commit when merge commit enabled', () => {
