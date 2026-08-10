@@ -1,3 +1,9 @@
+## v7.8.0 (2026-08-10)
+
+### Features
+
+* feat: Add sanity check workflow for release verification (d3ad3bb13916073182023c8dd3dcb995ffad6689)
+
 ## v7.7.0 (2026-08-10)
 
 ### Features
