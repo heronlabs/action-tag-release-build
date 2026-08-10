@@ -3,17 +3,26 @@
 import * as core from '@actions/core';
 
 import {CliFactory} from './application/action/action-factory';
-import {InputDefaults, Inputs} from './application/action/command/types/inputs';
+import {Inputs} from './application/action/command/types/inputs';
 import {Bumper} from './core/interfaces/bumper';
+
+export const InputDefaults = {
+  workingDirectory: '.',
+  overrideTag: true,
+  tagPrefix: 'v',
+  versionFile: 'version.txt',
+  changelogFile: 'CHANGELOG.md',
+  bumpNpm: false,
+  bumpClaude: false,
+  pluginDir: '.claude-plugin',
+  mergeCommit: false,
+} as const;
 
 type Defaults = typeof InputDefaults;
 type InputOf<T> = {
   [K in keyof Defaults]: Defaults[K] extends T ? K : never;
 }[keyof Defaults];
 
-// action.yml declares no `default:`, so every optional input arrives empty when the caller
-// omits it or passes an explicit empty string. Both cases fall back to InputDefaults instead
-// of reaching the command empty (or throwing, for boolean inputs).
 const input = (name: InputOf<string>) =>
   core.getInput(name) || InputDefaults[name];
 

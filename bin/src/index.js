@@ -13,6 +13,10 @@ var __commonJS = (cb, mod) => function __require() {
     throw mod = 0, e;
   }
 };
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
 var __copyProps = (to, from, except, desc) => {
   if (from && typeof from === "object" || typeof from === "function") {
     for (let key of __getOwnPropNames(from))
@@ -29,6 +33,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
   mod
 ));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // node_modules/.pnpm/tunnel@0.0.6/node_modules/tunnel/lib/tunnel.js
 var require_tunnel = __commonJS({
@@ -18828,6 +18833,13 @@ var require_undici = __commonJS({
   }
 });
 
+// src/index.ts
+var index_exports = {};
+__export(index_exports, {
+  InputDefaults: () => InputDefaults
+});
+module.exports = __toCommonJS(index_exports);
+
 // node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/command.js
 var os = __toESM(require("os"), 1);
 
@@ -20252,7 +20264,7 @@ var CliFactory = class _CliFactory {
   }
 };
 
-// src/application/action/command/types/inputs.ts
+// src/index.ts
 var InputDefaults = {
   workingDirectory: ".",
   overrideTag: true,
@@ -20264,8 +20276,6 @@ var InputDefaults = {
   pluginDir: ".claude-plugin",
   mergeCommit: false
 };
-
-// src/index.ts
 var input = (name) => getInput(name) || InputDefaults[name];
 var booleanInput = (name) => getInput(name) ? getBooleanInput(name) : InputDefaults[name];
 try {
@@ -20300,6 +20310,10 @@ try {
 } catch (error2) {
   setFailed(error2 instanceof Error ? error2 : String(error2));
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  InputDefaults
+});
 /*! Bundled license information:
 
 undici/lib/web/fetch/body.js:
