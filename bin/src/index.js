@@ -13,6 +13,10 @@ var __commonJS = (cb, mod) => function __require() {
     throw mod = 0, e;
   }
 };
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
 var __copyProps = (to, from, except, desc) => {
   if (from && typeof from === "object" || typeof from === "function") {
     for (let key of __getOwnPropNames(from))
@@ -29,6 +33,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
   mod
 ));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // node_modules/.pnpm/tunnel@0.0.6/node_modules/tunnel/lib/tunnel.js
 var require_tunnel = __commonJS({
@@ -3244,21 +3249,21 @@ var require_data_url = __commonJS({
     var HTTP_QUOTED_STRING_TOKENS = /^[\u0009\u0020-\u007E\u0080-\u00FF]+$/;
     function dataURLProcessor(dataURL) {
       assert(dataURL.protocol === "data:");
-      let input = URLSerializer(dataURL, true);
-      input = input.slice(5);
+      let input2 = URLSerializer(dataURL, true);
+      input2 = input2.slice(5);
       const position = { position: 0 };
       let mimeType = collectASequenceOfCodePointsFast(
         ",",
-        input,
+        input2,
         position
       );
       const mimeTypeLength = mimeType.length;
       mimeType = removeASCIIWhitespace(mimeType, true, true);
-      if (position.position >= input.length) {
+      if (position.position >= input2.length) {
         return "failure";
       }
       position.position++;
-      const encodedBody = input.slice(mimeTypeLength + 1);
+      const encodedBody = input2.slice(mimeTypeLength + 1);
       let body = stringPercentDecode(encodedBody);
       if (/;(\u0020){0,}base64$/i.test(mimeType)) {
         const stringBody = isomorphicDecode(body);
@@ -3291,26 +3296,26 @@ var require_data_url = __commonJS({
       }
       return serialized;
     }
-    function collectASequenceOfCodePoints(condition, input, position) {
+    function collectASequenceOfCodePoints(condition, input2, position) {
       let result = "";
-      while (position.position < input.length && condition(input[position.position])) {
-        result += input[position.position];
+      while (position.position < input2.length && condition(input2[position.position])) {
+        result += input2[position.position];
         position.position++;
       }
       return result;
     }
-    function collectASequenceOfCodePointsFast(char, input, position) {
-      const idx = input.indexOf(char, position.position);
+    function collectASequenceOfCodePointsFast(char, input2, position) {
+      const idx = input2.indexOf(char, position.position);
       const start = position.position;
       if (idx === -1) {
-        position.position = input.length;
-        return input.slice(start);
+        position.position = input2.length;
+        return input2.slice(start);
       }
       position.position = idx;
-      return input.slice(start, position.position);
+      return input2.slice(start, position.position);
     }
-    function stringPercentDecode(input) {
-      const bytes = encoder.encode(input);
+    function stringPercentDecode(input2) {
+      const bytes = encoder.encode(input2);
       return percentDecode(bytes);
     }
     function isHexCharByte(byte) {
@@ -3322,41 +3327,41 @@ var require_data_url = __commonJS({
         byte >= 48 && byte <= 57 ? byte - 48 : (byte & 223) - 55
       );
     }
-    function percentDecode(input) {
-      const length = input.length;
+    function percentDecode(input2) {
+      const length = input2.length;
       const output = new Uint8Array(length);
       let j = 0;
       for (let i = 0; i < length; ++i) {
-        const byte = input[i];
+        const byte = input2[i];
         if (byte !== 37) {
           output[j++] = byte;
-        } else if (byte === 37 && !(isHexCharByte(input[i + 1]) && isHexCharByte(input[i + 2]))) {
+        } else if (byte === 37 && !(isHexCharByte(input2[i + 1]) && isHexCharByte(input2[i + 2]))) {
           output[j++] = 37;
         } else {
-          output[j++] = hexByteToNumber(input[i + 1]) << 4 | hexByteToNumber(input[i + 2]);
+          output[j++] = hexByteToNumber(input2[i + 1]) << 4 | hexByteToNumber(input2[i + 2]);
           i += 2;
         }
       }
       return length === j ? output : output.subarray(0, j);
     }
-    function parseMIMEType(input) {
-      input = removeHTTPWhitespace(input, true, true);
+    function parseMIMEType(input2) {
+      input2 = removeHTTPWhitespace(input2, true, true);
       const position = { position: 0 };
       const type = collectASequenceOfCodePointsFast(
         "/",
-        input,
+        input2,
         position
       );
       if (type.length === 0 || !HTTP_TOKEN_CODEPOINTS.test(type)) {
         return "failure";
       }
-      if (position.position > input.length) {
+      if (position.position > input2.length) {
         return "failure";
       }
       position.position++;
       let subtype = collectASequenceOfCodePointsFast(
         ";",
-        input,
+        input2,
         position
       );
       subtype = removeHTTPWhitespace(subtype, false, true);
@@ -3373,41 +3378,41 @@ var require_data_url = __commonJS({
         // https://mimesniff.spec.whatwg.org/#mime-type-essence
         essence: `${typeLowercase}/${subtypeLowercase}`
       };
-      while (position.position < input.length) {
+      while (position.position < input2.length) {
         position.position++;
         collectASequenceOfCodePoints(
           // https://fetch.spec.whatwg.org/#http-whitespace
           (char) => HTTP_WHITESPACE_REGEX.test(char),
-          input,
+          input2,
           position
         );
         let parameterName = collectASequenceOfCodePoints(
           (char) => char !== ";" && char !== "=",
-          input,
+          input2,
           position
         );
         parameterName = parameterName.toLowerCase();
-        if (position.position < input.length) {
-          if (input[position.position] === ";") {
+        if (position.position < input2.length) {
+          if (input2[position.position] === ";") {
             continue;
           }
           position.position++;
         }
-        if (position.position > input.length) {
+        if (position.position > input2.length) {
           break;
         }
         let parameterValue = null;
-        if (input[position.position] === '"') {
-          parameterValue = collectAnHTTPQuotedString(input, position, true);
+        if (input2[position.position] === '"') {
+          parameterValue = collectAnHTTPQuotedString(input2, position, true);
           collectASequenceOfCodePointsFast(
             ";",
-            input,
+            input2,
             position
           );
         } else {
           parameterValue = collectASequenceOfCodePointsFast(
             ";",
-            input,
+            input2,
             position
           );
           parameterValue = removeHTTPWhitespace(parameterValue, false, true);
@@ -3441,28 +3446,28 @@ var require_data_url = __commonJS({
       const buffer = Buffer.from(data, "base64");
       return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
     }
-    function collectAnHTTPQuotedString(input, position, extractValue) {
+    function collectAnHTTPQuotedString(input2, position, extractValue) {
       const positionStart = position.position;
       let value = "";
-      assert(input[position.position] === '"');
+      assert(input2[position.position] === '"');
       position.position++;
       while (true) {
         value += collectASequenceOfCodePoints(
           (char) => char !== '"' && char !== "\\",
-          input,
+          input2,
           position
         );
-        if (position.position >= input.length) {
+        if (position.position >= input2.length) {
           break;
         }
-        const quoteOrBackslash = input[position.position];
+        const quoteOrBackslash = input2[position.position];
         position.position++;
         if (quoteOrBackslash === "\\") {
-          if (position.position >= input.length) {
+          if (position.position >= input2.length) {
             value += "\\";
             break;
           }
-          value += input[position.position];
+          value += input2[position.position];
           position.position++;
         } else {
           assert(quoteOrBackslash === '"');
@@ -3472,7 +3477,7 @@ var require_data_url = __commonJS({
       if (extractValue) {
         return value;
       }
-      return input.slice(positionStart, position.position);
+      return input2.slice(positionStart, position.position);
     }
     function serializeAMimeType(mimeType) {
       assert(mimeType !== "failure");
@@ -3514,10 +3519,10 @@ var require_data_url = __commonJS({
       }
       return lead === 0 && trail === str.length - 1 ? str : str.slice(lead, trail + 1);
     }
-    function isomorphicDecode(input) {
-      const length = input.length;
+    function isomorphicDecode(input2) {
+      const length = input2.length;
       if ((2 << 15) - 1 > length) {
-        return String.fromCharCode.apply(null, input);
+        return String.fromCharCode.apply(null, input2);
       }
       let result = "";
       let i = 0;
@@ -3526,7 +3531,7 @@ var require_data_url = __commonJS({
         if (i + addition > length) {
           addition = length - i;
         }
-        result += String.fromCharCode.apply(null, input.subarray(i, i += addition));
+        result += String.fromCharCode.apply(null, input2.subarray(i, i += addition));
       }
       return result;
     }
@@ -4583,9 +4588,9 @@ var require_util2 = __commonJS({
       }
     }
     var invalidIsomorphicEncodeValueRegex = /[^\x00-\xFF]/;
-    function isomorphicEncode(input) {
-      assert(!invalidIsomorphicEncodeValueRegex.test(input));
-      return input;
+    function isomorphicEncode(input2) {
+      assert(!invalidIsomorphicEncodeValueRegex.test(input2));
+      return input2;
     }
     async function readAllBytes(reader) {
       const bytes = [];
@@ -4756,27 +4761,27 @@ var require_util2 = __commonJS({
       return mimeType;
     }
     function gettingDecodingSplitting(value) {
-      const input = value;
+      const input2 = value;
       const position = { position: 0 };
       const values = [];
       let temporaryValue = "";
-      while (position.position < input.length) {
+      while (position.position < input2.length) {
         temporaryValue += collectASequenceOfCodePoints(
           (char) => char !== '"' && char !== ",",
-          input,
+          input2,
           position
         );
-        if (position.position < input.length) {
-          if (input.charCodeAt(position.position) === 34) {
+        if (position.position < input2.length) {
+          if (input2.charCodeAt(position.position) === 34) {
             temporaryValue += collectAnHTTPQuotedString(
-              input,
+              input2,
               position
             );
-            if (position.position < input.length) {
+            if (position.position < input2.length) {
               continue;
             }
           } else {
-            assert(input.charCodeAt(position.position) === 44);
+            assert(input2.charCodeAt(position.position) === 44);
             position.position++;
           }
         }
@@ -5134,7 +5139,7 @@ var require_formdata_parser = __commonJS({
       }
       return true;
     }
-    function multipartFormDataParser(input, mimeType) {
+    function multipartFormDataParser(input2, mimeType) {
       assert(mimeType !== "failure" && mimeType.essence === "multipart/form-data");
       const boundaryString = mimeType.parameters.get("boundary");
       if (boundaryString === void 0) {
@@ -5143,30 +5148,30 @@ var require_formdata_parser = __commonJS({
       const boundary = Buffer.from(`--${boundaryString}`, "utf8");
       const entryList = [];
       const position = { position: 0 };
-      while (input[position.position] === 13 && input[position.position + 1] === 10) {
+      while (input2[position.position] === 13 && input2[position.position + 1] === 10) {
         position.position += 2;
       }
-      let trailing = input.length;
-      while (input[trailing - 1] === 10 && input[trailing - 2] === 13) {
+      let trailing = input2.length;
+      while (input2[trailing - 1] === 10 && input2[trailing - 2] === 13) {
         trailing -= 2;
       }
-      if (trailing !== input.length) {
-        input = input.subarray(0, trailing);
+      if (trailing !== input2.length) {
+        input2 = input2.subarray(0, trailing);
       }
       while (true) {
-        if (input.subarray(position.position, position.position + boundary.length).equals(boundary)) {
+        if (input2.subarray(position.position, position.position + boundary.length).equals(boundary)) {
           position.position += boundary.length;
         } else {
           return "failure";
         }
-        if (position.position === input.length - 2 && bufferStartsWith(input, dd, position) || position.position === input.length - 4 && bufferStartsWith(input, ddcrlf, position)) {
+        if (position.position === input2.length - 2 && bufferStartsWith(input2, dd, position) || position.position === input2.length - 4 && bufferStartsWith(input2, ddcrlf, position)) {
           return entryList;
         }
-        if (input[position.position] !== 13 || input[position.position + 1] !== 10) {
+        if (input2[position.position] !== 13 || input2[position.position + 1] !== 10) {
           return "failure";
         }
         position.position += 2;
-        const result = parseMultipartFormDataHeaders(input, position);
+        const result = parseMultipartFormDataHeaders(input2, position);
         if (result === "failure") {
           return "failure";
         }
@@ -5174,17 +5179,17 @@ var require_formdata_parser = __commonJS({
         position.position += 2;
         let body;
         {
-          const boundaryIndex = input.indexOf(boundary.subarray(2), position.position);
+          const boundaryIndex = input2.indexOf(boundary.subarray(2), position.position);
           if (boundaryIndex === -1) {
             return "failure";
           }
-          body = input.subarray(position.position, boundaryIndex - 4);
+          body = input2.subarray(position.position, boundaryIndex - 4);
           position.position += body.length;
           if (encoding === "base64") {
             body = Buffer.from(body.toString(), "base64");
           }
         }
-        if (input[position.position] !== 13 || input[position.position + 1] !== 10) {
+        if (input2[position.position] !== 13 || input2[position.position + 1] !== 10) {
           return "failure";
         } else {
           position.position += 2;
@@ -5204,13 +5209,13 @@ var require_formdata_parser = __commonJS({
         entryList.push(makeEntry(name, value, filename));
       }
     }
-    function parseMultipartFormDataHeaders(input, position) {
+    function parseMultipartFormDataHeaders(input2, position) {
       let name = null;
       let filename = null;
       let contentType = null;
       let encoding = null;
       while (true) {
-        if (input[position.position] === 13 && input[position.position + 1] === 10) {
+        if (input2[position.position] === 13 && input2[position.position + 1] === 10) {
           if (name === null) {
             return "failure";
           }
@@ -5218,44 +5223,44 @@ var require_formdata_parser = __commonJS({
         }
         let headerName = collectASequenceOfBytes(
           (char) => char !== 10 && char !== 13 && char !== 58,
-          input,
+          input2,
           position
         );
         headerName = removeChars(headerName, true, true, (char) => char === 9 || char === 32);
         if (!HTTP_TOKEN_CODEPOINTS.test(headerName.toString())) {
           return "failure";
         }
-        if (input[position.position] !== 58) {
+        if (input2[position.position] !== 58) {
           return "failure";
         }
         position.position++;
         collectASequenceOfBytes(
           (char) => char === 32 || char === 9,
-          input,
+          input2,
           position
         );
         switch (bufferToLowerCasedHeaderName(headerName)) {
           case "content-disposition": {
             name = filename = null;
-            if (!bufferStartsWith(input, formDataNameBuffer, position)) {
+            if (!bufferStartsWith(input2, formDataNameBuffer, position)) {
               return "failure";
             }
             position.position += 17;
-            name = parseMultipartFormDataName(input, position);
+            name = parseMultipartFormDataName(input2, position);
             if (name === null) {
               return "failure";
             }
-            if (bufferStartsWith(input, filenameBuffer, position)) {
+            if (bufferStartsWith(input2, filenameBuffer, position)) {
               let check = position.position + filenameBuffer.length;
-              if (input[check] === 42) {
+              if (input2[check] === 42) {
                 position.position += 1;
                 check += 1;
               }
-              if (input[check] !== 61 || input[check + 1] !== 34) {
+              if (input2[check] !== 61 || input2[check + 1] !== 34) {
                 return "failure";
               }
               position.position += 12;
-              filename = parseMultipartFormDataName(input, position);
+              filename = parseMultipartFormDataName(input2, position);
               if (filename === null) {
                 return "failure";
               }
@@ -5265,7 +5270,7 @@ var require_formdata_parser = __commonJS({
           case "content-type": {
             let headerValue = collectASequenceOfBytes(
               (char) => char !== 10 && char !== 13,
-              input,
+              input2,
               position
             );
             headerValue = removeChars(headerValue, false, true, (char) => char === 9 || char === 32);
@@ -5275,7 +5280,7 @@ var require_formdata_parser = __commonJS({
           case "content-transfer-encoding": {
             let headerValue = collectASequenceOfBytes(
               (char) => char !== 10 && char !== 13,
-              input,
+              input2,
               position
             );
             headerValue = removeChars(headerValue, false, true, (char) => char === 9 || char === 32);
@@ -5285,26 +5290,26 @@ var require_formdata_parser = __commonJS({
           default: {
             collectASequenceOfBytes(
               (char) => char !== 10 && char !== 13,
-              input,
+              input2,
               position
             );
           }
         }
-        if (input[position.position] !== 13 && input[position.position + 1] !== 10) {
+        if (input2[position.position] !== 13 && input2[position.position + 1] !== 10) {
           return "failure";
         } else {
           position.position += 2;
         }
       }
     }
-    function parseMultipartFormDataName(input, position) {
-      assert(input[position.position - 1] === 34);
+    function parseMultipartFormDataName(input2, position) {
+      assert(input2[position.position - 1] === 34);
       let name = collectASequenceOfBytes(
         (char) => char !== 10 && char !== 13 && char !== 34,
-        input,
+        input2,
         position
       );
-      if (input[position.position] !== 34) {
+      if (input2[position.position] !== 34) {
         return null;
       } else {
         position.position++;
@@ -5312,12 +5317,12 @@ var require_formdata_parser = __commonJS({
       name = new TextDecoder().decode(name).replace(/%0A/ig, "\n").replace(/%0D/ig, "\r").replace(/%22/g, '"');
       return name;
     }
-    function collectASequenceOfBytes(condition, input, position) {
+    function collectASequenceOfBytes(condition, input2, position) {
       let start = position.position;
-      while (start < input.length && condition(input[start])) {
+      while (start < input2.length && condition(input2[start])) {
         ++start;
       }
-      return input.subarray(position.position, position.position = start);
+      return input2.subarray(position.position, position.position = start);
     }
     function removeChars(buf, leading, trailing, predicate) {
       let lead = 0;
@@ -12739,39 +12744,39 @@ var require_request2 = __commonJS({
     var patchMethodWarning = false;
     var Request = class _Request {
       // https://fetch.spec.whatwg.org/#dom-request
-      constructor(input, init = {}) {
+      constructor(input2, init = {}) {
         webidl.util.markAsUncloneable(this);
-        if (input === kConstruct) {
+        if (input2 === kConstruct) {
           return;
         }
         const prefix = "Request constructor";
         webidl.argumentLengthCheck(arguments, 1, prefix);
-        input = webidl.converters.RequestInfo(input, prefix, "input");
+        input2 = webidl.converters.RequestInfo(input2, prefix, "input");
         init = webidl.converters.RequestInit(init, prefix, "init");
         let request = null;
         let fallbackMode = null;
         const baseUrl = environmentSettingsObject.settingsObject.baseUrl;
         let signal = null;
-        if (typeof input === "string") {
+        if (typeof input2 === "string") {
           this[kDispatcher] = init.dispatcher;
           let parsedURL;
           try {
-            parsedURL = new URL(input, baseUrl);
+            parsedURL = new URL(input2, baseUrl);
           } catch (err) {
-            throw new TypeError("Failed to parse URL from " + input, { cause: err });
+            throw new TypeError("Failed to parse URL from " + input2, { cause: err });
           }
           if (parsedURL.username || parsedURL.password) {
             throw new TypeError(
-              "Request cannot be constructed from a URL that includes credentials: " + input
+              "Request cannot be constructed from a URL that includes credentials: " + input2
             );
           }
           request = makeRequest({ urlList: [parsedURL] });
           fallbackMode = "cors";
         } else {
-          this[kDispatcher] = init.dispatcher || input[kDispatcher];
-          assert(input instanceof _Request);
-          request = input[kState];
-          signal = input[kSignal];
+          this[kDispatcher] = init.dispatcher || input2[kDispatcher];
+          assert(input2 instanceof _Request);
+          request = input2[kState];
+          signal = input2[kSignal];
         }
         const origin = environmentSettingsObject.settingsObject.origin;
         let window = "client";
@@ -12973,7 +12978,7 @@ var require_request2 = __commonJS({
             fillHeaders(this[kHeaders], headers);
           }
         }
-        const inputBody = input instanceof _Request ? input[kState].body : null;
+        const inputBody = input2 instanceof _Request ? input2[kState].body : null;
         if ((init.body != null || inputBody != null) && (request.method === "GET" || request.method === "HEAD")) {
           throw new TypeError("Request with GET/HEAD method cannot have body.");
         }
@@ -13002,7 +13007,7 @@ var require_request2 = __commonJS({
         }
         let finalBody = inputOrInitBody;
         if (initBody == null && inputBody != null) {
-          if (bodyUnusable(input)) {
+          if (bodyUnusable(input2)) {
             throw new TypeError(
               "Cannot construct a Request with a Request object that has already been used."
             );
@@ -13473,12 +13478,12 @@ var require_fetch = __commonJS({
     function handleFetchDone(response) {
       finalizeAndReportTiming(response, "fetch");
     }
-    function fetch(input, init = void 0) {
+    function fetch(input2, init = void 0) {
       webidl.argumentLengthCheck(arguments, 1, "globalThis.fetch");
       let p = createDeferredPromise();
       let requestObject;
       try {
-        requestObject = new Request(input, init);
+        requestObject = new Request(input2, init);
       } catch (e) {
         p.reject(e);
         return p.promise;
@@ -18828,17 +18833,24 @@ var require_undici = __commonJS({
   }
 });
 
+// src/index.ts
+var index_exports = {};
+__export(index_exports, {
+  InputDefaults: () => InputDefaults
+});
+module.exports = __toCommonJS(index_exports);
+
 // node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/command.js
 var os = __toESM(require("os"), 1);
 
 // node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/utils.js
-function toCommandValue(input) {
-  if (input === null || input === void 0) {
+function toCommandValue(input2) {
+  if (input2 === null || input2 === void 0) {
     return "";
-  } else if (typeof input === "string" || input instanceof String) {
-    return input;
+  } else if (typeof input2 === "string" || input2 instanceof String) {
+    return input2;
   }
-  return JSON.stringify(input);
+  return JSON.stringify(input2);
 }
 function toCommandProperties(annotationProperties) {
   if (!Object.keys(annotationProperties).length) {
@@ -20180,12 +20192,13 @@ var Command2 = class {
       overrideTag
     });
     if (!tags.ok) throw tags.error;
-    const { tag, tagMajor, tagMinor } = tags.data;
+    const { tag, tagMajor, tagMinor, sha } = tags.data;
     let tagMessage = `\u{1F3F7}\uFE0F Tagged: ${tag}`;
     if (overrideTag)
       tagMessage += ` with major: ${tagMajor} and minor: ${tagMinor}`;
     process.stderr.write(`${tagMessage}
 `);
+    const releasedRefs = [{ target: ref, sha }];
     if (target) {
       const envsSynced = this.syncService.cascadeEnvironments(
         ref,
@@ -20194,7 +20207,13 @@ var Command2 = class {
       );
       if (!envsSynced.ok) {
         process.stderr.write(
-          "\u{1F517} Sync: Error during environments syncronization\n"
+          `\u{1F517} Sync: Error during environments synchronization: ${String(envsSynced.error)}
+`
+        );
+      } else if (!envsSynced.data.length) {
+        process.stderr.write(
+          `\u{1F517} Sync: No target branch parsed from "${target}"
+`
         );
       } else {
         const synced = envsSynced.data.filter((result) => result.ok);
@@ -20210,13 +20229,17 @@ var Command2 = class {
           (failure) => process.stderr.write(`\u{1F517} Sync: ${failure.error}
 `)
         );
+        releasedRefs.push(
+          ...synced.map((env) => ({ target: env.target, sha: env.sha }))
+        );
       }
     }
     return {
       version: nextVersion,
       tag,
       tagMajor,
-      tagMinor
+      tagMinor,
+      releasedRefs
     };
   }
 };
@@ -20242,37 +20265,55 @@ var CliFactory = class _CliFactory {
 };
 
 // src/index.ts
+var InputDefaults = {
+  workingDirectory: ".",
+  overrideTag: true,
+  tagPrefix: "v",
+  versionFile: "version.txt",
+  changelogFile: "CHANGELOG.md",
+  bumpNpm: false,
+  bumpClaude: false,
+  pluginDir: ".claude-plugin",
+  mergeCommit: false
+};
+var input = (name) => getInput(name) || InputDefaults[name];
+var booleanInput = (name) => getInput(name) ? getBooleanInput(name) : InputDefaults[name];
 try {
-  process.chdir(getInput("workingDirectory", { required: true }));
+  process.chdir(input("workingDirectory"));
   process.env.GH_TOKEN = getInput("ghToken", { required: true });
   const cliFactory = CliFactory.make(process.cwd());
   const bumpers = [];
-  const bumpNpm = getBooleanInput("bumpNpm", { required: true });
+  const bumpNpm = booleanInput("bumpNpm");
   if (bumpNpm) bumpers.push(cliFactory.coreFactory.getNpmService());
-  const bumpClaude = getBooleanInput("bumpClaude", { required: true });
+  const bumpClaude = booleanInput("bumpClaude");
   if (bumpClaude) {
-    const pluginDir = getInput("pluginDir", { required: true });
+    const pluginDir = input("pluginDir");
     bumpers.push(cliFactory.coreFactory.getClaudeService(pluginDir));
   }
   const command = cliFactory.getBumpCommand(bumpers);
   const inputs = {
     semantic: getInput("semantic") || void 0,
-    versionFile: getInput("versionFile", { required: true }),
-    changelogFile: getInput("changelogFile", { required: true }),
+    versionFile: input("versionFile"),
+    changelogFile: input("changelogFile"),
     ref: process.env.GITHUB_REF_NAME || "main",
-    overrideTag: getBooleanInput("overrideTag", { required: true }),
-    tagPrefix: getInput("tagPrefix", { required: true }),
+    overrideTag: booleanInput("overrideTag"),
+    tagPrefix: input("tagPrefix"),
     target: getInput("target") || void 0,
-    mergeCommit: getBooleanInput("mergeCommit", { required: true })
+    mergeCommit: booleanInput("mergeCommit")
   };
-  const { version, tag, tagMajor, tagMinor } = command.run(inputs);
+  const { version, tag, tagMajor, tagMinor, releasedRefs } = command.run(inputs);
   setOutput("version", version);
   setOutput("tag", tag);
   setOutput("tagMajor", tagMajor);
   setOutput("tagMinor", tagMinor);
+  setOutput("releasedRefs", JSON.stringify(releasedRefs));
 } catch (error2) {
   setFailed(error2 instanceof Error ? error2 : String(error2));
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  InputDefaults
+});
 /*! Bundled license information:
 
 undici/lib/web/fetch/body.js:

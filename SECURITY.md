@@ -19,6 +19,7 @@ Key concerns: token exposure in logs, supply chain integrity of bundled dependen
 
 | Version | Supported |
 |---------|-----------|
+| v7.x    | ✅ |
 | v6.x    | ✅ |
 | v5.x    | ❌ |
 | < v5    | ❌ |

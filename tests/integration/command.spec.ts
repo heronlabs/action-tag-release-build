@@ -162,6 +162,31 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
+  it('Should return released ref with the release ref itself', () => {
+    testRepo = createTestRepo({
+      version: '1.2.3',
+      commits: ['feat: add thing'],
+    });
+    const workDir = testRepo.workDir;
+    testRepo.gh.enqueue({
+      stdout: 'https://github.com/test/releases/tag/mock',
+    });
+    const command = testingCliFactory(workDir);
+
+    const output = command.run({
+      semantic: '',
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref: 'main',
+      tagPrefix: 'v',
+      overrideTag: false,
+    });
+
+    expect(output.releasedRefs).toStrictEqual([
+      {target: 'main', sha: expect.any(String)},
+    ]);
+  });
+
   describe('Patch bump from fix commit', () => {
     it('Should bump version.txt from 1.2.3 to 1.2.4', () => {
       testRepo = createTestRepo({
@@ -2109,6 +2134,38 @@ describe('Full tag-release-build pipeline', () => {
       );
     });
 
+    it('Should return the released ref plus every target synced', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development'}, {name: 'sandbox'}],
+      });
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {stdout: 'abc123'},
+        {stdout: ''},
+        {stdout: 'abc123'},
+        {stdout: ''},
+      ]);
+      const command = testingCliFactory(testRepo.workDir);
+
+      const output = command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development, sandbox',
+      });
+
+      expect(output.releasedRefs).toStrictEqual([
+        {target: 'main', sha: expect.any(String)},
+        {target: 'development', sha: 'abc123'},
+        {target: 'sandbox', sha: 'abc123'},
+      ]);
+    });
+
     it('Should consume the queued gh api fast-forward responses', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
@@ -2136,9 +2193,65 @@ describe('Full tag-release-build pipeline', () => {
 
       expect(() => testRepo.gh.expectEmpty()).not.toThrow();
     });
+
+    it('Should report no target branch parsed when target contains only whitespace and commas', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      const command = testingCliFactory(testRepo.workDir);
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: ' , ',
+      });
+
+      expect(process.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('No target branch parsed from " , "'),
+      );
+    });
   });
 
   describe('Sync target environments with merge commit when merge commit enabled', () => {
+    it('Should return the released ref plus every target synced with merge commit', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development'}, {name: 'sandbox'}],
+      });
+      testRepo.gh.enqueueAll([
+        {stdout: 'https://github.com/test/releases/tag/mock'},
+        {stdout: 'abc123'},
+        {stdout: 'def456'},
+      ]);
+      const command = testingCliFactory(testRepo.workDir);
+
+      const output = command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development, sandbox',
+        mergeCommit: true,
+      });
+
+      expect(output.releasedRefs).toStrictEqual([
+        {target: 'main', sha: expect.any(String)},
+        {target: 'development', sha: 'abc123'},
+        {target: 'sandbox', sha: 'def456'},
+      ]);
+    });
+
     it('Should sync development with success', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
@@ -2542,7 +2655,9 @@ describe('Full tag-release-build pipeline', () => {
       });
 
       expect(process.stderr.write).toHaveBeenCalledWith(
-        expect.stringContaining('Error during environments syncronization'),
+        expect.stringContaining(
+          'Error during environments synchronization: Error: simulated internal error',
+        ),
       );
     });
   });
