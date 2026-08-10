@@ -154,7 +154,7 @@ A missing target means either the sync failed or that branch was never requested
 | `target` | Branches to sync the released ref into, comma-separated (e.g. `staging,production`). Each branch must already exist on the remote — the action never creates it. Empty disables sync. | No | `` |
 | `mergeCommit` | Sync with a real merge commit (`Merge <ref> into <target>`, via the GitHub merges API) instead of a fast-forward of the target ref. | No | `false` |
 
-Defaults are applied by the action itself (`InputDefaults` in `src/application/action/command/types/inputs.ts`), not declared as `default:` in `action.yml`. An input omitted and an input passed as an explicit empty string therefore resolve to the same value — an unresolved expression such as `tagPrefix: ${{ inputs.prefix }}` falls back to `v` rather than tagging without a prefix.
+Defaults are applied by the action itself (`InputDefaults` in `src/index.ts`), not declared as `default:` in `action.yml`. An input omitted and an input passed as an explicit empty string therefore resolve to the same value — an unresolved expression such as `tagPrefix: ${{ inputs.prefix }}` falls back to `v` rather than tagging without a prefix.
 
 ## Outputs
 
@@ -185,7 +185,8 @@ src/
     command/
       command.ts                      # Command — orchestrates the full pipeline
       types/
-        inputs.ts                     # Inputs type + InputDefaults (the action.yml defaults)
+        inputs.ts                     # Inputs type
+        outputs.ts                    # Outputs + ReleasedRef types
         outputs.ts                    # Outputs + ReleasedRef types
   core/
     core-factory.ts                   # Wires core services and bumpers
