@@ -4,7 +4,7 @@ import {join} from 'node:path';
 
 import {createTestRepo, TestRepo} from '../__mocks__/setups/setup-github';
 
-const scriptPath = join(__dirname, 'tag-release-checks.sh');
+const scriptPath = join(__dirname, '..', 'sanity', 'tag-release-checks.sh');
 
 function runScript(
   cwd: string,
@@ -17,7 +17,16 @@ function runScript(
   return {status: result.status, stdout: result.stdout, stderr: result.stderr};
 }
 
-describe('tests/sanity/tag-release-checks.sh', () => {
+function mainSha(cwd: string): string {
+  const output = execSync('git ls-remote origin main', {
+    cwd,
+    encoding: 'utf8',
+    stdio: 'pipe',
+  });
+  return output.split(/\s+/)[0] ?? '';
+}
+
+describe('Given tests/sanity/tag-release-checks.sh', () => {
   let testRepo: TestRepo;
 
   beforeEach(() => {
@@ -32,18 +41,9 @@ describe('tests/sanity/tag-release-checks.sh', () => {
     testRepo?.cleanup();
   });
 
-  function mainSha(): string {
-    const output = execSync('git ls-remote origin main', {
-      cwd: testRepo.workDir,
-      encoding: 'utf8',
-      stdio: 'pipe',
-    });
-    return output.split(/\s+/)[0] ?? '';
-  }
-
-  describe('passing release', () => {
+  describe('When all checks pass', () => {
     it('Should exit 0 and print a summary when all checks pass', () => {
-      const sha = mainSha();
+      const sha = mainSha(testRepo.workDir);
       writeFileSync(
         join(testRepo.workDir, 'CHANGELOG.md'),
         '# Changelog\n\n## v1.2.3\n',
@@ -62,15 +62,20 @@ describe('tests/sanity/tag-release-checks.sh', () => {
         ]),
       ]);
 
-      expect(result.status).toBe(0);
-      expect(result.stdout).toContain('All checks passed for v1.2.3');
-      expect(result.stdout).toContain('sync target staging at ' + sha);
-      expect(result.stderr).toBe('');
+      expect(result).toMatchObject({
+        status: 0,
+        stdout: expect.stringMatching(
+          new RegExp(
+            `sync target staging at ${sha}[\\s\\S]*All checks passed for v1\\.2\\.3`,
+          ),
+        ),
+        stderr: '',
+      });
       testRepo.gh.expectEmpty();
     });
 
     it('Should honor custom --version-file and --changelog-file paths', () => {
-      const sha = mainSha();
+      const sha = mainSha(testRepo.workDir);
       execSync('mkdir -p custom', {cwd: testRepo.workDir, stdio: 'pipe'});
       writeFileSync(
         join(testRepo.workDir, 'custom/CHANGELOG.md'),
@@ -92,17 +97,18 @@ describe('tests/sanity/tag-release-checks.sh', () => {
         'custom/CHANGELOG.md',
       ]);
 
-      expect(result.status).toBe(0);
-      expect(result.stdout).toContain('custom/CHANGELOG.md');
-      expect(result.stdout).toContain('custom/version.txt contains 1.2.3');
-      expect(result.stdout).toContain(
-        'no sync targets to verify (1 released ref(s))',
-      );
+      expect(result).toMatchObject({
+        status: 0,
+        stdout: expect.stringMatching(
+          /custom\/CHANGELOG\.md[\s\S]*custom\/version\.txt contains 1\.2\.3[\s\S]*no sync targets to verify \(1 released ref\(s\)\)/,
+        ),
+        stderr: '',
+      });
       testRepo.gh.expectEmpty();
     });
   });
 
-  describe('failing checks', () => {
+  describe('When checks fail', () => {
     it('Should fail fast when the tag is missing on the remote', () => {
       const result = runScript(testRepo.workDir, [
         '--tag',
@@ -113,11 +119,12 @@ describe('tests/sanity/tag-release-checks.sh', () => {
         JSON.stringify([{target: 'main', sha: 'x'.repeat(40)}]),
       ]);
 
-      expect(result.status).toBe(1);
-      expect(result.stderr).toContain('tag on remote');
-      expect(result.stderr).toContain('refs/tags/v9.9.9');
-      expect(result.stderr).toContain('suggestion');
-      // Fail-fast: later checks never ran (no gh mock response was enqueued)
+      expect(result).toMatchObject({
+        status: 1,
+        stderr: expect.stringMatching(
+          /tag on remote[\s\S]*refs\/tags\/v9\.9\.9[\s\S]*suggestion/,
+        ),
+      });
       expect(result.stderr).not.toContain('GitHub release');
       testRepo.gh.expectEmpty();
     });
@@ -134,14 +141,15 @@ describe('tests/sanity/tag-release-checks.sh', () => {
         '--version',
         '1.2.3',
         '--released-refs',
-        JSON.stringify([{target: 'main', sha: mainSha()}]),
+        JSON.stringify([{target: 'main', sha: mainSha(testRepo.workDir)}]),
       ]);
 
-      expect(result.status).toBe(1);
-      expect(result.stderr).toContain('GitHub release');
-      expect(result.stderr).toContain('exited 1');
-      expect(result.stderr).toContain('release not found');
-      expect(result.stderr).toContain('suggestion');
+      expect(result).toMatchObject({
+        status: 1,
+        stderr: expect.stringMatching(
+          /GitHub release[\s\S]*exited 1[\s\S]*release not found[\s\S]*suggestion/,
+        ),
+      });
       testRepo.gh.expectEmpty();
     });
 
@@ -158,13 +166,15 @@ describe('tests/sanity/tag-release-checks.sh', () => {
         '--version',
         '1.2.3',
         '--released-refs',
-        JSON.stringify([{target: 'main', sha: mainSha()}]),
+        JSON.stringify([{target: 'main', sha: mainSha(testRepo.workDir)}]),
       ]);
 
-      expect(result.status).toBe(1);
-      expect(result.stderr).toContain('changelog');
-      expect(result.stderr).toContain('## v1.2.3');
-      expect(result.stderr).toContain('suggestion');
+      expect(result).toMatchObject({
+        status: 1,
+        stderr: expect.stringMatching(
+          /changelog[\s\S]*## v1\.2\.3[\s\S]*suggestion/,
+        ),
+      });
       testRepo.gh.expectEmpty();
     });
 
@@ -181,19 +191,20 @@ describe('tests/sanity/tag-release-checks.sh', () => {
         '--version',
         '9.9.9',
         '--released-refs',
-        JSON.stringify([{target: 'main', sha: mainSha()}]),
+        JSON.stringify([{target: 'main', sha: mainSha(testRepo.workDir)}]),
       ]);
 
-      expect(result.status).toBe(1);
-      expect(result.stderr).toContain('version file');
-      expect(result.stderr).toContain("exactly '9.9.9'");
-      expect(result.stderr).toContain('found');
-      expect(result.stderr).toContain('suggestion');
+      expect(result).toMatchObject({
+        status: 1,
+        stderr: expect.stringMatching(
+          /version file[\s\S]*exactly '9\.9\.9'[\s\S]*found[\s\S]*suggestion/,
+        ),
+      });
       testRepo.gh.expectEmpty();
     });
 
     it('Should fail when a sync target is at the wrong SHA', () => {
-      const sha = mainSha();
+      const sha = mainSha(testRepo.workDir);
       writeFileSync(
         join(testRepo.workDir, 'CHANGELOG.md'),
         '# Changelog\n\n## v1.2.3\n',
@@ -212,22 +223,29 @@ describe('tests/sanity/tag-release-checks.sh', () => {
         ]),
       ]);
 
-      expect(result.status).toBe(1);
-      expect(result.stderr).toContain('sync target staging');
-      expect(result.stderr).toContain('deadbeef');
-      expect(result.stderr).toContain(sha);
-      expect(result.stderr).toContain('suggestion');
+      expect(result).toMatchObject({
+        status: 1,
+        stderr: expect.stringMatching(
+          new RegExp(
+            `sync target staging[\\s\\S]*deadbeef[\\s\\S]*${sha}[\\s\\S]*suggestion`,
+          ),
+        ),
+      });
       testRepo.gh.expectEmpty();
     });
   });
 
-  describe('usage', () => {
+  describe('When usage is incorrect', () => {
     it('Should print usage and exit 0 for --help', () => {
       const result = runScript(testRepo.workDir, ['--help']);
 
-      expect(result.status).toBe(0);
-      expect(result.stdout).toContain('Usage: verify-release.sh');
-      expect(result.stdout).toContain('--released-refs');
+      expect(result).toMatchObject({
+        status: 0,
+        stdout: expect.stringMatching(
+          /Usage: verify-release\.sh[\s\S]*--released-refs/,
+        ),
+        stderr: '',
+      });
     });
 
     it('Should exit 1 with a diagnostic when required args are missing', () => {
@@ -238,16 +256,19 @@ describe('tests/sanity/tag-release-checks.sh', () => {
         '1.2.3',
       ]);
 
-      expect(result.status).toBe(1);
-      expect(result.stderr).toContain('required');
-      expect(result.stderr).toContain('Usage:');
+      expect(result).toMatchObject({
+        status: 1,
+        stderr: expect.stringMatching(/required[\s\S]*Usage:/),
+      });
     });
 
     it('Should exit 1 for an unknown argument', () => {
       const result = runScript(testRepo.workDir, ['--bogus']);
 
-      expect(result.status).toBe(1);
-      expect(result.stderr).toContain('unknown argument: --bogus');
+      expect(result).toMatchObject({
+        status: 1,
+        stderr: expect.stringContaining('unknown argument: --bogus'),
+      });
     });
   });
 });
