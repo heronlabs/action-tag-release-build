@@ -799,6 +799,63 @@ describe('Given a bump command', () => {
     ]);
   });
 
+  it('Should extend released refs with all synced targets when every environment succeeds', () => {
+    const nextVersion = faker.system.semver();
+    const major = `${nextVersion.split('.')[0]}`;
+    const minor = `${nextVersion.split('.')[1]}`;
+    const patch = `${nextVersion.split('.')[2]}`;
+
+    SemverServiceMock.calculateNextVersion.mockReturnValueOnce({
+      ok: true,
+      data: {nextVersion, major: major, minor: minor, patch: patch},
+    });
+
+    BumperMock.bump.mockReturnValueOnce({
+      ok: true,
+      data: 'OK',
+    });
+
+    const tag = `v${nextVersion}`;
+    const tagMajor = `v${major}`;
+    const tagMinor = `v${major}.${minor}`;
+    const tagPrefix = faker.string.alpha();
+    const sha = faker.git.commitSha();
+    const ref = faker.string.alpha(4);
+
+    ChangelogServiceMock.applyReleaseChangelog.mockReturnValueOnce({
+      ok: true,
+      data: {tag, tagMajor, tagMinor, sha},
+    });
+
+    const devSha = faker.git.commitSha();
+    const sandboxSha = faker.git.commitSha();
+    SyncServiceMock.cascadeEnvironments.mockReturnValueOnce({
+      ok: true,
+      data: [
+        {ok: true, ref, target: 'development', sha: devSha},
+        {ok: true, ref, target: 'sandbox', sha: sandboxSha},
+      ],
+    });
+
+    const inputs: Inputs = {
+      semantic: 'major',
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref,
+      overrideTag: false,
+      tagPrefix,
+      target: 'development,sandbox',
+    };
+
+    const output = command.run(inputs);
+
+    expect(output.releasedRefs).toStrictEqual([
+      {target: ref, sha},
+      {target: 'development', sha: devSha},
+      {target: 'sandbox', sha: sandboxSha},
+    ]);
+  });
+
   it('Should keep only the released ref when environments synchronization fails', () => {
     const nextVersion = faker.system.semver();
     const major = `${nextVersion.split('.')[0]}`;
