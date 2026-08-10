@@ -1,3 +1,9 @@
+## v7.7.0 (2026-08-10)
+
+### Features
+
+* feat: Add script/verify-release.sh sanity check (#66) (a4397e45cfdca3a553e9fad22f788186a0b3db79)
+
 ## v7.6.1 (2026-08-10)
 
 ### Miscellaneous Chores
