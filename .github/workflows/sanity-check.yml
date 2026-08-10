@@ -1,0 +1,49 @@
+name: 'Sanity Check'
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Released tag (e.g. v1.2.3)'
+        required: true
+        type: string
+      version:
+        description: 'Released version (e.g. 1.2.3)'
+        required: true
+        type: string
+      released-refs:
+        description: 'JSON array of released refs'
+        required: true
+        type: string
+      version-file:
+        description: 'Version file to check (default: version.txt)'
+        required: false
+        type: string
+        default: 'version.txt'
+      changelog-file:
+        description: 'Changelog file to check (default: CHANGELOG.md)'
+        required: false
+        type: string
+        default: 'CHANGELOG.md'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Verify release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          bash tests/sanity/tag-release-checks.sh \
+            --tag "${{ inputs.tag }}" \
+            --version "${{ inputs.version }}" \
+            --released-refs '${{ inputs.released-refs }}' \
+            --version-file "${{ inputs.version-file }}" \
+            --changelog-file "${{ inputs.changelog-file }}"

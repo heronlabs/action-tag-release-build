@@ -17,6 +17,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -37,7 +38,12 @@ jobs:
           semantic: ${{ inputs.semantic }}
           bumpNpm: true
 
-      - name: Verify release
+      - name: Trigger sanity check
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash tests/sanity/tag-release-checks.sh --tag "${{ steps.release.outputs.tag }}" --version "${{ steps.release.outputs.version }}" --released-refs '${{ steps.release.outputs.releasedRefs }}'
+        run: |
+          gh workflow run sanity-check.yml \
+            --ref "${{ github.ref_name }}" \
+            -f tag="${{ steps.release.outputs.tag }}" \
+            -f version="${{ steps.release.outputs.version }}" \
+            -f released-refs='${{ steps.release.outputs.releasedRefs }}'
