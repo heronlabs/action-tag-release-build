@@ -1,3 +1,9 @@
+## v7.6.0 (2026-08-10)
+
+### Features
+
+* feat: released refs output and input defaults (#65) (2a5648066dcfa9422faa31abc71facad2f594069)
+
 ## v7.5.2 (2026-08-09)
 
 ### Miscellaneous Chores
