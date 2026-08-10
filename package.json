@@ -9,7 +9,7 @@
   "dependencies": {
     "@actions/core": "^3.0.1"
   },
-  "description": "Semantic version bump, tag, and GitHub release from Conventional Commits",
+  "description": "Semantic version bump, tag, GitHub release, and branch sync from Conventional Commits",
   "devDependencies": {
     "@faker-js/faker": "^10.5.0",
     "@stryker-mutator/core": "^9.6.1",

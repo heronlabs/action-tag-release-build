@@ -31,7 +31,13 @@ jobs:
           fetch-depth: 0
 
       - uses: ./
+        id: release
         with:
           ghToken: ${{ github.token }}
           semantic: ${{ inputs.semantic }}
           bumpNpm: true
+
+      - name: Verify release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash tests/sanity/tag-release-checks.sh --tag "${{ steps.release.outputs.tag }}" --version "${{ steps.release.outputs.version }}" --released-refs '${{ steps.release.outputs.releasedRefs }}'
