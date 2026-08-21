@@ -1,3 +1,9 @@
+## v7.8.2 (2026-08-21)
+
+### Miscellaneous Chores
+
+* other(deps-dev): bump @faker-js/faker from 10.5.0 to 10.6.0 (#71) (cc2ec5c92ea0c0935a52d8b4eb6fae06650dc03f)
+
 ## v7.8.1 (2026-08-21)
 
 ### Miscellaneous Chores
