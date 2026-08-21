@@ -1,3 +1,9 @@
+## v7.8.3 (2026-08-21)
+
+### Miscellaneous Chores
+
+* other(deps-dev): bump esbuild from 0.28.1 to 0.28.2 (#69) (f05e4adf9e8e8a24eba6c309e912ec2a7e081c22)
+
 ## v7.8.2 (2026-08-21)
 
 ### Miscellaneous Chores
