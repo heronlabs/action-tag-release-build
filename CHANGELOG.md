@@ -1,3 +1,9 @@
+## v7.8.1 (2026-08-21)
+
+### Miscellaneous Chores
+
+* other(deps-dev): bump @types/node from 26.1.2 to 26.2.0 (#68) (b0c59998de9d5061254245c6a795a49942e3ebdc)
+
 ## v7.8.0 (2026-08-10)
 
 ### Features
