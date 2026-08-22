@@ -45,18 +45,21 @@ inputs:
   mergeCommit:
     description: Create a merge commit when syncing ref into targets ("Merge <ref> into <target>"; fast-forwards the target ref through the GitHub API when false). Defaults to `false`
     required: false
+  onlySync:
+    description: Skip the version bump, changelog, tag and GitHub release, and only sync ref into the target branches. Requires target. Defaults to `false`
+    required: false
 
 outputs:
   version:
-    description: The released version
+    description: The released version. Empty when `onlySync` is `true`
   tag:
-    description: The created tag (e.g., v1.2.3)
+    description: The created tag (e.g., v1.2.3). Empty when `onlySync` is `true`
   tagMajor:
-    description: The major version tag (e.g., v1)
+    description: The major version tag (e.g., v1). Empty when `onlySync` is `true`
   tagMinor:
-    description: The minor version tag (e.g., v1.0)
+    description: The minor version tag (e.g., v1.0). Empty when `onlySync` is `true`
   releasedRefs:
-    description: 'JSON array of released refs: [{target, sha}]. Always contains the released ref itself, plus one entry per target branch synced successfully. Unset when the action fails before the sync step'
+    description: 'JSON array of released refs: [{target, sha}]. Contains the released ref itself (unless `onlySync` is `true`), plus one entry per target branch synced successfully. Unset when the action fails before the sync step'
 
 runs:
   using: node24
