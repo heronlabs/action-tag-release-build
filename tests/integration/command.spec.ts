@@ -1,6 +1,7 @@
 import {execSync} from 'node:child_process';
 import {
   chmodSync,
+  existsSync,
   mkdirSync,
   readFileSync,
   rmSync,
@@ -2800,6 +2801,161 @@ describe('Full tag-release-build pipeline', () => {
       expect(process.stderr.write).toHaveBeenCalledWith(
         expect.stringContaining('Then PR creation failed;'),
       );
+    });
+  });
+
+  describe('Only sync into target environments', () => {
+    it('Should keep version.txt unchanged', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development'}],
+      });
+      testRepo.gh.enqueueAll([{stdout: 'abc123'}, {stdout: ''}]);
+      const command = testingCliFactory(testRepo.workDir);
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+        onlySync: true,
+      });
+
+      const version = readFileSync(
+        join(testRepo.workDir, 'version.txt'),
+        'utf8',
+      ).trim();
+      expect(version).toBe('1.2.3');
+    });
+
+    it('Should not create any new tag', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development'}],
+      });
+      testRepo.gh.enqueueAll([{stdout: 'abc123'}, {stdout: ''}]);
+      const command = testingCliFactory(testRepo.workDir);
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+        onlySync: true,
+      });
+
+      const tags = execSync('git tag -l', {
+        cwd: testRepo.workDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      })
+        .trim()
+        .split('\n');
+
+      expect(tags).toStrictEqual(['v1.2.3']);
+    });
+
+    it('Should not write CHANGELOG.md', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development'}],
+      });
+      testRepo.gh.enqueueAll([{stdout: 'abc123'}, {stdout: ''}]);
+      const command = testingCliFactory(testRepo.workDir);
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+        onlySync: true,
+      });
+
+      expect(existsSync(join(testRepo.workDir, 'CHANGELOG.md'))).toBe(false);
+    });
+
+    it('Should return empty tag outputs with the synced targets only', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development'}],
+      });
+      testRepo.gh.enqueueAll([{stdout: 'abc123'}, {stdout: ''}]);
+      const command = testingCliFactory(testRepo.workDir);
+
+      const output = command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+        onlySync: true,
+      });
+
+      expect(output).toStrictEqual({
+        version: '',
+        tag: '',
+        tagMajor: '',
+        tagMinor: '',
+        releasedRefs: [{target: 'development', sha: 'abc123'}],
+      });
+    });
+
+    it('Should consume only the queued gh api fast-forward responses', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+        targets: [{name: 'development'}],
+      });
+      testRepo.gh.enqueueAll([{stdout: 'abc123'}, {stdout: ''}]);
+      const command = testingCliFactory(testRepo.workDir);
+
+      command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+        target: 'development',
+        onlySync: true,
+      });
+
+      expect(() => testRepo.gh.expectEmpty()).not.toThrow();
+    });
+
+    it('Should throw when only sync is enabled without target', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      const command = testingCliFactory(testRepo.workDir);
+
+      expect(() =>
+        command.run({
+          semantic: '',
+          versionFile: 'version.txt',
+          changelogFile: 'CHANGELOG.md',
+          ref: 'main',
+          tagPrefix: 'v',
+          overrideTag: false,
+          onlySync: true,
+        }),
+      ).toThrow('onlySync requires at least one target branch');
     });
   });
 });

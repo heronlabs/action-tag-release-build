@@ -127,7 +127,7 @@ Each target is synced in order:
 
 When a target cannot be synced, the action opens a pull request from `ref` into that target instead of failing the run. The sync summary is written to the step log — `Environments <targets> synced` for the targets that moved, and one line per failure stating what happened (whether a pull request was already open, was created, or could not be created).
 
-The `releasedRefs` output reports what actually moved, as a JSON array of `{target, sha}`. It always contains the released ref itself, plus one entry per target synced successfully — a target that failed to sync is absent. Gate downstream jobs on it:
+The `releasedRefs` output reports what actually moved, as a JSON array of `{target, sha}`. It contains the released ref itself (unless `onlySync` is `true`), plus one entry per target synced successfully — a target that failed to sync is absent. Gate downstream jobs on it:
 
 ```yaml
 deploy-development:
@@ -153,6 +153,7 @@ A missing target means either the sync failed or that branch was never requested
 | `overrideTag` | Move the floating major/minor tags (`v1`, `v1.0`) to the new release. | No | `true` |
 | `target` | Branches to sync the released ref into, comma-separated (e.g. `staging,production`). Each branch must already exist on the remote — the action never creates it. Empty disables sync. | No | `` |
 | `mergeCommit` | Sync with a real merge commit (`Merge <ref> into <target>`, via the GitHub merges API) instead of a fast-forward of the target ref. | No | `false` |
+| `onlySync` | Skip the version bump, changelog, tag, and GitHub release — only sync the released ref into the `target` branches. Requires `target`. | No | `false` |
 
 Defaults are applied by the action itself (`InputDefaults` in `src/index.ts`), not declared as `default:` in `action.yml`. An input omitted and an input passed as an explicit empty string therefore resolve to the same value — an unresolved expression such as `tagPrefix: ${{ inputs.prefix }}` falls back to `v` rather than tagging without a prefix.
 
@@ -160,11 +161,11 @@ Defaults are applied by the action itself (`InputDefaults` in `src/index.ts`), n
 
 | Name | Description |
 |------|-------------|
-| `version` | Released version (e.g. `1.0.3`). |
-| `tag` | Created tag (e.g. `v1.0.3`). |
-| `tagMajor` | Floating major tag (e.g. `v1`). |
-| `tagMinor` | Floating minor tag (e.g. `v1.0`). |
-| `releasedRefs` | JSON array of released refs, `[{target, sha}]` — the released ref itself plus one entry per target branch synced successfully. Unset when the action fails before the sync step. |
+| `version` | Released version (e.g. `1.0.3`). Empty when `onlySync` is `true`. |
+| `tag` | Created tag (e.g. `v1.0.3`). Empty when `onlySync` is `true`. |
+| `tagMajor` | Floating major tag (e.g. `v1`). Empty when `onlySync` is `true`. |
+| `tagMinor` | Floating minor tag (e.g. `v1.0`). Empty when `onlySync` is `true`. |
+| `releasedRefs` | JSON array of released refs, `[{target, sha}]` — the released ref itself (unless `onlySync` is `true`) plus one entry per target branch synced successfully. Unset when the action fails before the sync step. |
 
 ## Permissions
 
@@ -237,6 +238,8 @@ src/
    - **Tag and push** — `GitService.apply()` commits all changes (`[skip ci]`), creates the annotated tag (`vX.Y.Z`), optionally force-moves floating major/minor tags, and pushes with `--follow-tags`.
    - **Create GitHub release** — `ReleaseNotesService.createRelease()` publishes the release with the generated notes.
 4. **Sync environments** — skipped when `target` is empty. `SyncService.cascadeEnvironments()` splits `target` on commas and, for each branch, either merges via `MergeService.mergeWithCommit()` (`mergeCommit: true`) or fast-forwards the target ref via `MergeService.mergeWithoutCommit()`. Both go through the GitHub API against a branch that must already exist; a missing target is reported as a failure, never created. If the sync is rejected, `PullRequestService` opens a pull request from `ref` into that target (unless one is already open) and the run continues.
+
+When `onlySync` is `true`, steps 1–3 are short-circuited entirely: the command fails fast when `target` is empty, cascades `ref` into the target branches, and returns empty `version`/`tag`/`tagMajor`/`tagMinor` outputs with `releasedRefs` holding only the targets synced successfully.
 
 Outputs `version`, `tag`, `tagMajor`, `tagMinor`, and `releasedRefs` are published with `core.setOutput`. `releasedRefs` is JSON-encoded at the action boundary; `Command` itself returns the array.
 

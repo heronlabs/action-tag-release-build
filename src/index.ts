@@ -16,6 +16,7 @@ export const InputDefaults = {
   bumpClaude: false,
   pluginDir: '.claude-plugin',
   mergeCommit: false,
+  onlySync: false,
 } as const;
 
 type Defaults = typeof InputDefaults;
@@ -58,6 +59,7 @@ try {
     tagPrefix: input('tagPrefix'),
     target: core.getInput('target') || undefined,
     mergeCommit: booleanInput('mergeCommit'),
+    onlySync: booleanInput('onlySync'),
   };
 
   const {version, tag, tagMajor, tagMinor, releasedRefs} = command.run(inputs);

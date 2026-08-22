@@ -7,4 +7,5 @@ export type Inputs = {
   readonly tagPrefix: string;
   readonly target?: string;
   readonly mergeCommit?: boolean;
+  readonly onlySync?: boolean;
 };
