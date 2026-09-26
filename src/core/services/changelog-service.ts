@@ -78,6 +78,10 @@ export class ChangelogService {
     }
   }
 
+  public resetToRemote(ref: string) {
+    return this.gitService.resetToRemote(ref);
+  }
+
   public applyReleaseChangelog({
     tagPrefix,
     nextVersion,
@@ -116,7 +120,12 @@ export class ChangelogService {
       ref,
       tags: overrideTag ? {major: tagMajor, minor: tagMinor} : undefined,
     });
-    if (!gitApply.ok) return {ok: false as const, error: gitApply.error};
+    if (!gitApply.ok)
+      return {
+        ok: false as const,
+        error: gitApply.error,
+        refMoved: gitApply.refMoved,
+      };
 
     const ghRelease = this.releaseNotesService.createRelease(
       tag,

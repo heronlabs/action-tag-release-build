@@ -5,47 +5,83 @@ import {SyncService} from '../../../core/services/sync-service';
 import {Inputs} from './types/inputs';
 import {Outputs, ReleasedRef} from './types/outputs';
 
+const RELEASE_ATTEMPTS = 3;
+
 export class Command {
   public run(inputs: Inputs): Outputs {
-    const {
-      versionFile,
-      semantic,
-      tagPrefix,
-      changelogFile,
-      ref,
-      overrideTag,
-      target,
-      mergeCommit,
-    } = inputs;
+    const {versionFile, semantic, tagPrefix, changelogFile, ref, overrideTag} =
+      inputs;
 
-    const semver = this.semverService.calculateNextVersion(
-      versionFile,
-      semantic,
-    );
-    if (!semver.ok) throw semver.error;
+    let refMoved: unknown;
 
-    const {nextVersion, major, minor} = semver.data;
+    for (let attempt = 0; attempt < RELEASE_ATTEMPTS; attempt++) {
+      const reset = this.changelogService.resetToRemote(ref);
+      if (!reset.ok) throw reset.error;
 
-    for (const bumper of this.bumpers) {
-      const bump = bumper.bump(nextVersion);
-      if (!bump.ok) throw bump.error;
-      process.stderr.write(
-        `✅ Bumper ${bumper.constructor.name} ${nextVersion}\n`,
+      const semver = this.semverService.calculateNextVersion(
+        versionFile,
+        tagPrefix,
+        semantic,
       );
+      if (!semver.ok) throw semver.error;
+
+      if (!semver.data) {
+        process.stderr.write(
+          '⏭️ Release skipped: no releasable commit since the last tag\n',
+        );
+        return {
+          version: '',
+          tag: '',
+          tagMajor: '',
+          tagMinor: '',
+          releasedRefs: [],
+        };
+      }
+
+      const {nextVersion, major, minor} = semver.data;
+
+      for (const bumper of this.bumpers) {
+        const bump = bumper.bump(nextVersion);
+        if (!bump.ok) throw bump.error;
+        process.stderr.write(
+          `✅ Bumper ${bumper.constructor.name} ${nextVersion}\n`,
+        );
+      }
+
+      const tags = this.changelogService.applyReleaseChangelog({
+        tagPrefix,
+        nextVersion,
+        major,
+        minor,
+        changelogFile,
+        ref,
+        overrideTag,
+      });
+
+      if (tags.ok) return this.publish(inputs, nextVersion, tags.data);
+
+      if (!('refMoved' in tags) || !tags.refMoved) throw tags.error;
+
+      process.stderr.write(
+        `🔁 Push rejected: ${ref} moved, releasing again from its new tip\n`,
+      );
+      refMoved = tags.error;
     }
 
-    const tags = this.changelogService.applyReleaseChangelog({
-      tagPrefix,
-      nextVersion,
-      major,
-      minor,
-      changelogFile,
-      ref,
-      overrideTag,
-    });
-    if (!tags.ok) throw tags.error;
+    throw refMoved;
+  }
 
-    const {tag, tagMajor, tagMinor, sha} = tags.data;
+  private publish(
+    inputs: Inputs,
+    nextVersion: string,
+    {
+      tag,
+      tagMajor,
+      tagMinor,
+      sha,
+    }: {tag: string; tagMajor: string; tagMinor: string; sha: string},
+  ): Outputs {
+    const {ref, overrideTag, target, mergeCommit} = inputs;
 
     let tagMessage = `🏷️ Tagged: ${tag}`;
     if (overrideTag)
@@ -57,6 +93,7 @@ export class Command {
     if (target) {
       const envsSynced = this.syncService.cascadeEnvironments(
         ref,
+        sha,
         target,
         mergeCommit,
       );

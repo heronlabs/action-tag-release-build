@@ -24,6 +24,7 @@ describe('Given a bump command', () => {
 
   beforeEach(() => {
     vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    ChangelogServiceMock.resetToRemote.mockReturnValue({ok: true, data: ''});
 
     command = new Command(
       [BumperMoq],
@@ -373,6 +374,300 @@ describe('Given a bump command', () => {
     expect(() => command.run(inputs)).toThrow(error);
   });
 
+  it('Should calculate next version with the version file, tag prefix and semantic', () => {
+    SemverServiceMock.calculateNextVersion.mockReturnValueOnce({
+      ok: true,
+      data: null,
+    });
+
+    const inputs: Inputs = {
+      semantic: 'minor',
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref: faker.string.alpha(4),
+      overrideTag: true,
+      tagPrefix: faker.string.alpha(),
+    };
+
+    command.run(inputs);
+
+    expect(SemverServiceMock.calculateNextVersion).toHaveBeenCalledWith(
+      'version.txt',
+      inputs.tagPrefix,
+      'minor',
+    );
+  });
+
+  describe('Given no releasable commit since the last tag', () => {
+    const inputs: Inputs = {
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref: 'main',
+      overrideTag: true,
+      tagPrefix: 'v',
+      target: 'development,sandbox',
+    };
+
+    beforeEach(() => {
+      SemverServiceMock.calculateNextVersion.mockReturnValueOnce({
+        ok: true,
+        data: null,
+      });
+    });
+
+    it('Should return empty outputs and no released ref', () => {
+      const output = command.run(inputs);
+
+      expect(output).toStrictEqual({
+        version: '',
+        tag: '',
+        tagMajor: '',
+        tagMinor: '',
+        releasedRefs: [],
+      });
+    });
+
+    it('Should log that the release was skipped', () => {
+      command.run(inputs);
+
+      expect(vi.mocked(process.stderr.write)).toHaveBeenCalledWith(
+        '⏭️ Release skipped: no releasable commit since the last tag\n',
+      );
+    });
+
+    it('Should log a single line', () => {
+      command.run(inputs);
+
+      expect(vi.mocked(process.stderr.write)).toHaveBeenCalledTimes(1);
+    });
+
+    it('Should not run the bumpers', () => {
+      command.run(inputs);
+
+      expect(BumperMock.bump).not.toHaveBeenCalled();
+    });
+
+    it('Should not tag nor push', () => {
+      command.run(inputs);
+
+      expect(ChangelogServiceMock.applyReleaseChangelog).not.toHaveBeenCalled();
+    });
+
+    it('Should not sync the targets', () => {
+      command.run(inputs);
+
+      expect(SyncServiceMock.cascadeEnvironments).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Given each release attempt starts from the remote tip', () => {
+    const inputs: Inputs = {
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref: 'main',
+      overrideTag: true,
+      tagPrefix: 'v',
+      target: 'development',
+    };
+    const semver = (nextVersion: string) => ({
+      ok: true,
+      data: {
+        nextVersion,
+        major: nextVersion.split('.')[0],
+        minor: nextVersion.split('.')[1],
+        patch: nextVersion.split('.')[2],
+      },
+    });
+    const released = (nextVersion: string, sha: string) => ({
+      ok: true,
+      data: {
+        tag: `v${nextVersion}`,
+        tagMajor: 'v1',
+        tagMinor: 'v1.3',
+        sha,
+      },
+    });
+    const refMoved = (error: Error) => ({ok: false, error, refMoved: true});
+
+    it('Should reset to the remote ref before calculating the version', () => {
+      SemverServiceMock.calculateNextVersion.mockReturnValueOnce({
+        ok: true,
+        data: null,
+      });
+
+      command.run(inputs);
+
+      expect(ChangelogServiceMock.resetToRemote).toHaveBeenCalledWith('main');
+    });
+
+    describe('Given the reset fails', () => {
+      const error = new Error(faker.lorem.sentence());
+      let thrown: unknown;
+
+      beforeEach(() => {
+        ChangelogServiceMock.resetToRemote.mockReturnValueOnce({
+          ok: false,
+          error,
+        });
+        thrown = undefined;
+
+        try {
+          command.run(inputs);
+        } catch (failure) {
+          thrown = failure;
+        }
+      });
+
+      it('Should throw the reset error', () => {
+        expect(thrown).toBe(error);
+      });
+
+      it('Should not calculate the version', () => {
+        expect(SemverServiceMock.calculateNextVersion).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('Given the push is rejected once because the ref moved', () => {
+      const releasedSha = faker.git.commitSha();
+      let output: ReturnType<Command['run']>;
+
+      beforeEach(() => {
+        SemverServiceMock.calculateNextVersion
+          .mockReturnValueOnce(semver('1.2.4'))
+          .mockReturnValueOnce(semver('1.3.0'));
+        BumperMock.bump.mockReturnValue({ok: true, data: 'OK'});
+        ChangelogServiceMock.applyReleaseChangelog
+          .mockReturnValueOnce(refMoved(new Error(faker.lorem.sentence())))
+          .mockReturnValueOnce(released('1.3.0', releasedSha));
+        SyncServiceMock.cascadeEnvironments.mockReturnValueOnce({
+          ok: true,
+          data: [],
+        });
+
+        output = command.run(inputs);
+      });
+
+      it('Should release the version computed on the new tip', () => {
+        expect(output.version).toBe('1.3.0');
+      });
+
+      it('Should reset to the remote ref once per attempt', () => {
+        expect(ChangelogServiceMock.resetToRemote).toHaveBeenCalledTimes(2);
+      });
+
+      it('Should calculate the version again', () => {
+        expect(SemverServiceMock.calculateNextVersion).toHaveBeenCalledTimes(2);
+      });
+
+      it('Should run the bumpers again with the new version', () => {
+        expect(BumperMock.bump).toHaveBeenLastCalledWith('1.3.0');
+      });
+
+      it('Should write the changelog again with the new version', () => {
+        expect(
+          ChangelogServiceMock.applyReleaseChangelog,
+        ).toHaveBeenLastCalledWith(
+          expect.objectContaining({nextVersion: '1.3.0'}),
+        );
+      });
+
+      it('Should log that the release starts again', () => {
+        expect(vi.mocked(process.stderr.write)).toHaveBeenCalledWith(
+          '🔁 Push rejected: main moved, releasing again from its new tip\n',
+        );
+      });
+
+      it('Should sync the targets once to the released sha', () => {
+        expect(SyncServiceMock.cascadeEnvironments).toHaveBeenCalledWith(
+          'main',
+          releasedSha,
+          'development',
+          undefined,
+        );
+      });
+    });
+
+    describe('Given the new tip has nothing left to release', () => {
+      it('Should skip the release', () => {
+        SemverServiceMock.calculateNextVersion
+          .mockReturnValueOnce(semver('1.2.4'))
+          .mockReturnValueOnce({ok: true, data: null});
+        BumperMock.bump.mockReturnValue({ok: true, data: 'OK'});
+        ChangelogServiceMock.applyReleaseChangelog.mockReturnValueOnce(
+          refMoved(new Error(faker.lorem.sentence())),
+        );
+
+        const output = command.run(inputs);
+
+        expect(output.releasedRefs).toStrictEqual([]);
+      });
+    });
+
+    describe('Given the push is rejected on every attempt because the ref moved', () => {
+      const lastError = new Error(faker.lorem.sentence());
+      let thrown: unknown;
+
+      beforeEach(() => {
+        SemverServiceMock.calculateNextVersion.mockReturnValue(semver('1.2.4'));
+        BumperMock.bump.mockReturnValue({ok: true, data: 'OK'});
+        ChangelogServiceMock.applyReleaseChangelog
+          .mockReturnValueOnce(refMoved(new Error(faker.lorem.sentence())))
+          .mockReturnValueOnce(refMoved(new Error(faker.lorem.sentence())))
+          .mockReturnValueOnce(refMoved(lastError))
+          .mockReturnValue(released('1.2.4', faker.git.commitSha()));
+        thrown = undefined;
+
+        try {
+          command.run(inputs);
+        } catch (error) {
+          thrown = error;
+        }
+      });
+
+      it('Should throw the last rejection', () => {
+        expect(thrown).toBe(lastError);
+      });
+
+      it('Should stop after three attempts', () => {
+        expect(
+          ChangelogServiceMock.applyReleaseChangelog,
+        ).toHaveBeenCalledTimes(3);
+      });
+
+      it('Should not sync the targets', () => {
+        expect(SyncServiceMock.cascadeEnvironments).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('Given the push fails for another reason', () => {
+      const error = new Error(faker.lorem.sentence());
+      let thrown: unknown;
+
+      beforeEach(() => {
+        SemverServiceMock.calculateNextVersion.mockReturnValue(semver('1.2.4'));
+        BumperMock.bump.mockReturnValue({ok: true, data: 'OK'});
+        ChangelogServiceMock.applyReleaseChangelog
+          .mockReturnValueOnce({ok: false, error, refMoved: false})
+          .mockReturnValue(released('1.2.4', faker.git.commitSha()));
+        thrown = undefined;
+
+        try {
+          command.run(inputs);
+        } catch (failure) {
+          thrown = failure;
+        }
+      });
+
+      it('Should throw the push error', () => {
+        expect(thrown).toBe(error);
+      });
+
+      it('Should not retry', () => {
+        expect(ChangelogServiceMock.resetToRemote).toHaveBeenCalledTimes(1);
+      });
+    });
+  });
+
   it('Should throw error when a bumper fails', () => {
     const nextVersion = faker.system.semver();
     const major = `${nextVersion.split('.')[0]}`;
@@ -436,7 +731,7 @@ describe('Given a bump command', () => {
     expect(() => command.run(inputs)).toThrow(error);
   });
 
-  it('Should call cascade environments with ref and target', () => {
+  it('Should call cascade environments with ref, released sha and target', () => {
     const nextVersion = faker.system.semver();
     const major = `${nextVersion.split('.')[0]}`;
     const minor = `${nextVersion.split('.')[1]}`;
@@ -456,10 +751,11 @@ describe('Given a bump command', () => {
     const tagMajor = `v${major}`;
     const tagMinor = `v${major}.${minor}`;
     const tagPrefix = faker.string.alpha();
+    const sha = faker.git.commitSha();
 
     ChangelogServiceMock.applyReleaseChangelog.mockReturnValueOnce({
       ok: true,
-      data: {tag, tagMajor, tagMinor},
+      data: {tag, tagMajor, tagMinor, sha},
     });
 
     SyncServiceMock.cascadeEnvironments.mockReturnValueOnce({
@@ -488,6 +784,7 @@ describe('Given a bump command', () => {
 
     expect(SyncServiceMock.cascadeEnvironments).toHaveBeenCalledWith(
       inputs.ref,
+      sha,
       'development',
       undefined,
     );

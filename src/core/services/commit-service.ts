@@ -1,6 +1,7 @@
 import {CommitType, CommitTypeLabels} from '../../core/types/commit-types';
 import {ParsedDescription} from '../../core/types/parsed-commit';
 import {GitService} from '../../infrastructure/git/services/git-service';
+import {BUMP_COMMIT_PREFIX} from '../../infrastructure/git/types/bump-commit-prefix';
 import {COMMIT_RECORD_SEPARATOR} from '../../infrastructure/git/types/commit-record-separator';
 import {Semantic} from '../types/semantic';
 
@@ -39,15 +40,12 @@ export class CommitService {
         .split(COMMIT_RECORD_SEPARATOR)
         .map(record => record.trim())
         .filter(record => record.length > 0)
-        .map(record => {
-          const hash = record.slice(0, 40);
-          const commit = record.slice(41);
-
-          return {
-            hash,
-            ...this.parseCommit(commit),
-          };
-        });
+        .map(record => ({hash: record.slice(0, 40), commit: record.slice(41)}))
+        .filter(({commit}) => !commit.startsWith(BUMP_COMMIT_PREFIX))
+        .map(({hash, commit}) => ({
+          hash,
+          ...this.parseCommit(commit),
+        }));
 
       return {ok: true as const, data: parsedCommits};
     } catch (error) {
@@ -55,21 +53,18 @@ export class CommitService {
     }
   }
 
-  public classifyLastCommit() {
-    try {
-      const lastCommit = this.gitService.getLastCommit();
-      if (!lastCommit.ok) return {ok: false as const, error: lastCommit.error};
+  public classifyDescriptionSince(tagPrefix: string) {
+    const commits = this.parseDescriptionSince(tagPrefix);
+    if (!commits.ok) return {ok: false as const, error: commits.error};
 
-      const commit = this.parseCommit(lastCommit.data);
+    if (!commits.data.length) return {ok: true as const, data: null};
 
-      let data: Semantic = 'patch';
-      if (commit.breaking) data = 'major';
-      else if (commit.type === 'feat') data = 'minor';
+    let data: Semantic = 'patch';
+    if (commits.data.some(commit => commit.breaking)) data = 'major';
+    else if (commits.data.some(commit => commit.type === 'feat'))
+      data = 'minor';
 
-      return {ok: true as const, data};
-    } catch (error) {
-      return {ok: false as const, error};
-    }
+    return {ok: true as const, data};
   }
 
   constructor(private readonly gitService: GitService) {}

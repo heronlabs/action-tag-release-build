@@ -6,7 +6,9 @@
 
 > **GitHub Action** to bump `version.txt`, tag the commit, move floating major/minor tags, publish a GitHub release with a CHANGELOG — and optionally sync `package.json`, Claude Code plugin files, or downstream environment branches.
 
-The bump is driven by the `semantic` input. When `semantic` is omitted, the bump is **inferred from the merge/HEAD commit** using Conventional Commits — a breaking change (`feat!:`, `fix(api)!:`, or a `BREAKING CHANGE:` body) is `major`, a `feat:` commit is `minor`, and everything else (including unclear messages) falls back to `patch`.
+The bump is driven by the `semantic` input. When `semantic` is omitted, the bump is **inferred from every commit since the last tag** using Conventional Commits, and the highest one wins — any breaking change (`feat!:`, `fix(api)!:`, or a `BREAKING CHANGE:` body) is `major`, otherwise any `feat:` commit is `minor`, and everything else (including unclear messages) falls back to `patch`. The action's own `[skip ci] bump` commits are ignored, both for the bump and for the release notes. When no commit remains, the release is skipped: nothing is bumped, tagged, pushed or synced, and the run succeeds with empty outputs.
+
+The action always releases the **current tip of `ref` on the remote**, not the SHA the workflow checked out. Before computing anything it runs `git fetch --force --tags origin <ref>` and `git reset --hard origin/<ref>` in its working copy, so a commit merged after the checkout is classified, listed in the release notes and tagged. If the atomic push is rejected because `ref` moved meanwhile, it resets to the new tip and computes the whole release again, up to three attempts.
 
 ## Contents
 
@@ -54,8 +56,6 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.PAT }}
 
-      - run: git pull --rebase origin main
-
       - uses: heronlabs/action-tag-release-build@v7
         id: version
         with:
@@ -72,7 +72,7 @@ The `id: version` step exposes the `version`, `tag`, `tagMajor`, `tagMinor`, and
 
 ### Minimal
 
-When `semantic` is omitted the bump is inferred from the HEAD commit.
+When `semantic` is omitted the bump is inferred from every commit since the last tag, and the release is skipped when there is none.
 
 ```yaml
 - uses: heronlabs/action-tag-release-build@v7
@@ -122,8 +122,10 @@ After tagging, the released ref can be cascaded into downstream environment bran
 
 Each target is synced in order:
 
-- `mergeCommit: 'false'` (default) — fast-forwards the target ref to the head of `ref` through the GitHub git refs API. Rejected when the target has diverged from `ref`.
-- `mergeCommit: 'true'` — a real merge commit (`Merge <ref> into <target>`) via the GitHub merges API, so the target keeps its own history.
+- `mergeCommit: 'false'` (default) — fast-forwards the target ref to the released sha (the pushed and tagged bump commit) through the GitHub git refs API. Rejected when the target has diverged from `ref`.
+- `mergeCommit: 'true'` — a real merge commit (`Merge <ref> into <target>`) of the released sha via the GitHub merges API, so the target keeps its own history.
+
+Either way the target receives the released sha, never whatever `ref` points to when the sync runs, so a commit merged into `ref` right after the release does not reach the targets unreleased.
 
 When a target cannot be synced, the action opens a pull request from `ref` into that target instead of failing the run. The sync summary is written to the step log — `Environments <targets> synced` for the targets that moved, and one line per failure stating what happened (whether a pull request was already open, was created, or could not be created).
 
@@ -142,7 +144,7 @@ A missing target means either the sync failed or that branch was never requested
 | Name | Description | Required | Default |
 |------|-------------|----------|---------|
 | `ghToken` | Token used to push tags and create the release. Use a PAT to trigger downstream workflows. | Yes | — |
-| `semantic` | Semver bump type: `major`, `minor`, or `patch`. When empty, the bump is inferred from the merge/HEAD commit (Conventional Commits), defaulting to `patch` when unclear. | No | `` (inferred) |
+| `semantic` | Semver bump type: `major`, `minor`, or `patch`. When empty, the bump is the highest inferred from every commit since the last tag (Conventional Commits, `[skip ci] bump` commits ignored), defaulting to `patch` when unclear, and the release is skipped when no commit remains. An explicit value always releases. | No | `` (inferred) |
 | `workingDirectory` | Sub-directory to operate in (for monorepos). | No | `.` |
 | `versionFile` | File to read and write the version number. | No | `version.txt` |
 | `changelogFile` | Changelog file to prepend release notes into. | No | `CHANGELOG.md` |
@@ -165,6 +167,8 @@ Defaults are applied by the action itself (`InputDefaults` in `src/index.ts`), n
 | `tagMajor` | Floating major tag (e.g. `v1`). |
 | `tagMinor` | Floating minor tag (e.g. `v1.0`). |
 | `releasedRefs` | JSON array of released refs, `[{target, sha}]` — the released ref itself plus one entry per target branch synced successfully. Unset when the action fails before the sync step. |
+
+When the release is skipped (no `semantic` and no releasable commit since the last tag), `version`, `tag`, `tagMajor` and `tagMinor` are empty and `releasedRefs` is `[]`, so a job gated on `releasedRefs` does not run.
 
 ## Permissions
 
@@ -194,7 +198,7 @@ src/
       bumper.ts                       # Bumper interface
     services/
       semver-service.ts               # Read version file, calculate next semver, write version file
-      commit-service.ts               # Parse Conventional Commits, classify last commit type
+      commit-service.ts               # Parse Conventional Commits, classify the commits since the last tag
       changelog-service.ts            # Generate release notes, update changelog, tag + push + release
       sync-service.ts                 # Cascade the released ref into existing target environment branches
       bumpers/
@@ -227,23 +231,25 @@ src/
 
 **`CliFactory`** (`src/application/action/action-factory.ts`) — wires all services with their dependencies through the layer factories and builds the `Command`.
 
-**`Command.run()`** — the orchestrator:
+**`Command.run()`** — the orchestrator. Steps 1 to 4 form one attempt; up to three attempts run:
 
-1. **Calculate next version** — `SemverService.calculateNextVersion()` reads `version.txt`, resolves the bump type (explicit `semantic` input or inferred from the HEAD commit via `CommitService.classifyLastCommit()`), computes the next semver, and writes it back to `version.txt`.
-2. **Sync bumpers** — each enabled `Bumper` (npm, claude) syncs the new version into its target file (`package.json`, `plugin.json` + `marketplace.json`).
-3. **Release** — `ChangelogService.applyReleaseChangelog()` runs three steps:
+1. **Reset to the remote tip** — `ChangelogService.resetToRemote()` runs `git fetch --force --tags origin <ref>` and `git reset --hard origin/<ref>`, so the release is computed from the exact tree it tags. Nothing the action needs is lost: the reset runs before any bump, and every later step writes its files again.
+2. **Calculate next version** — `SemverService.calculateNextVersion()` reads `version.txt`, resolves the bump type (explicit `semantic` input, or the highest bump over every commit since the last tag via `CommitService.classifyDescriptionSince()`, `[skip ci] bump` commits excluded), computes the next semver, and writes it back to `version.txt`. Without `semantic` and with no releasable commit left, it writes nothing and `Command` returns empty outputs with `releasedRefs: []` after logging that the release was skipped; the steps below do not run.
+3. **Sync bumpers** — each enabled `Bumper` (npm, claude) syncs the new version into its target file (`package.json`, `plugin.json` + `marketplace.json`).
+4. **Release** — `ChangelogService.applyReleaseChangelog()` runs three steps:
    - **Generate release notes** — parses commits since the last tag via `CommitService.parseDescriptionSince()`, groups by Conventional Commit type, and formats entries with breaking change markers.
    - **Update changelog** — prepends the new entry (with date header) to `CHANGELOG.md`.
-   - **Tag and push** — `GitService.apply()` commits all changes (`[skip ci]`), creates the annotated tag (`vX.Y.Z`), optionally force-moves floating major/minor tags, and pushes with `--follow-tags`.
+   - **Tag and push** — `GitService.applyTags()` commits all changes (`[skip ci] bump vX.Y.Z`), creates the annotated tag (`vX.Y.Z`) and the optional floating major/minor tags with `git tag -fa`, and runs `git push --atomic` with no rebase. A push rejected because `ref` moved (`fetch first`, `non-fast-forward`, `stale info`, `cannot lock ref`) starts a new attempt from step 1, so the commits merged meanwhile are classified and listed; the rejection of the third attempt fails the run. Any other failure (authentication, a hook, the network) fails the run at once.
    - **Create GitHub release** — `ReleaseNotesService.createRelease()` publishes the release with the generated notes.
-4. **Sync environments** — skipped when `target` is empty. `SyncService.cascadeEnvironments()` splits `target` on commas and, for each branch, either merges via `MergeService.mergeWithCommit()` (`mergeCommit: true`) or fast-forwards the target ref via `MergeService.mergeWithoutCommit()`. Both go through the GitHub API against a branch that must already exist; a missing target is reported as a failure, never created. If the sync is rejected, `PullRequestService` opens a pull request from `ref` into that target (unless one is already open) and the run continues.
+5. **Sync environments** — runs once, after a successful push, and is skipped when `target` is empty. `SyncService.cascadeEnvironments()` splits `target` on commas and, for each branch, either merges the released sha via `MergeService.mergeWithCommit()` (`mergeCommit: true`) or fast-forwards the target ref to it via `MergeService.mergeWithoutCommit()`. Both go through the GitHub API against a branch that must already exist; a missing target is reported as a failure, never created. If the sync is rejected, `PullRequestService` opens a pull request from `ref` into that target (unless one is already open) and the run continues.
 
 Outputs `version`, `tag`, `tagMajor`, `tagMinor`, and `releasedRefs` are published with `core.setOutput`. `releasedRefs` is JSON-encoded at the action boundary; `Command` itself returns the array.
 
 ## Notes
 
+- **Working copy** — the action resets its checkout to `origin/<ref>` before every attempt. Local commits and changes to tracked files made by earlier steps of the job are discarded; untracked files are kept. Commit and push anything the release must include before this step.
 - **Node** — only needed when `bumpNpm` is `true`. Set up the toolchain with `actions/setup-node` before this action.
-- **`[skip ci]`** — the bump commit is prefixed `[skip ci]` so it does not re-trigger CI.
+- **`[skip ci]`** — the bump commit is prefixed `[skip ci]` so it does not re-trigger CI. Commits whose subject starts with `[skip ci] bump` are ignored when inferring the bump and writing the release notes, so a queued run that checks out the tip the previous release pushed only releases what was merged since.
 - **Downstream triggers** — a tag pushed with the default `GITHUB_TOKEN` will **not** start other workflows. Pass a PAT as `ghToken` (and to `actions/checkout`) when a downstream pipeline must react to the new tag.
 
 ## License

@@ -22,6 +22,7 @@ permissions:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
+  queue: max
 
 jobs:
   release:
@@ -30,6 +31,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          ref: ${{ github.ref_name }}
 
       - uses: ./
         id: release
@@ -39,6 +41,7 @@ jobs:
           bumpNpm: true
 
       - name: Trigger sanity check
+        if: steps.release.outputs.tag != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

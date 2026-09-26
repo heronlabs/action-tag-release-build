@@ -36,6 +36,24 @@ describe('Given a changelog service', () => {
     );
   });
 
+  it('Should reset the working copy to the remote ref', () => {
+    GitServiceMock.resetToRemote.mockReturnValueOnce({ok: true, data: ''});
+
+    const ref = faker.git.branch();
+    service.resetToRemote(ref);
+
+    expect(GitServiceMock.resetToRemote).toHaveBeenCalledWith(ref);
+  });
+
+  it('Should return the reset result', () => {
+    const result = {ok: false, error: new Error(faker.lorem.sentence())};
+    GitServiceMock.resetToRemote.mockReturnValueOnce(result);
+
+    const output = service.resetToRemote(faker.git.branch());
+
+    expect(output).toBe(result);
+  });
+
   it('Should apply git changes with tags', () => {
     const appliedSha = faker.git.commitSha();
     CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
@@ -488,6 +506,7 @@ describe('Given a changelog service', () => {
     GitServiceMock.apply.mockReturnValueOnce({
       ok: false,
       error,
+      refMoved: false,
     });
 
     const inputs = {
@@ -504,6 +523,49 @@ describe('Given a changelog service', () => {
     expect(output).toStrictEqual({
       ok: false,
       error,
+      refMoved: false,
+    });
+  });
+
+  it('Should flag a push rejected because the ref moved', () => {
+    CommitServiceMock.parseDescriptionSince.mockReturnValueOnce({
+      ok: true,
+      data: [
+        {
+          hash: faker.string.alpha(40),
+          type: 'feat',
+          scope: 'scope',
+          breaking: true,
+          description: 'add some feature',
+        },
+      ],
+    });
+
+    vi.mocked(existsSync).mockReturnValueOnce(false);
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+    const error = new Error(faker.lorem.sentence());
+    GitServiceMock.apply.mockReturnValueOnce({
+      ok: false,
+      error,
+      refMoved: true,
+    });
+
+    const inputs = {
+      tagPrefix: faker.string.alpha(),
+      nextVersion: faker.system.semver(),
+      major: faker.string.alpha(),
+      minor: faker.string.alpha(),
+      changelogFile: `${faker.string.alpha()}.md`,
+      ref: faker.string.alpha(),
+      overrideTag: true,
+    };
+    const output = service.applyReleaseChangelog(inputs);
+
+    expect(output).toStrictEqual({
+      ok: false,
+      error,
+      refMoved: true,
     });
   });
 

@@ -20,6 +20,7 @@ describe('Given a merge service', () => {
 
       const output = service.mergeWithCommit(
         faker.git.branch(),
+        faker.git.commitSha(),
         faker.git.branch(),
       );
 
@@ -35,20 +36,25 @@ describe('Given a merge service', () => {
         data: faker.git.commitSha(),
       });
 
-      service.mergeWithCommit(faker.git.branch(), faker.git.branch());
+      service.mergeWithCommit(
+        faker.git.branch(),
+        faker.git.commitSha(),
+        faker.git.branch(),
+      );
 
       expect(ChildProcessServiceMock.exec).toHaveBeenCalledTimes(1);
     });
 
-    it('Should call exec with gh api merges command', () => {
+    it('Should merge the released sha through the gh api merges command', () => {
       const ref = faker.git.branch();
+      const sha = faker.git.commitSha();
       const environment = faker.git.branch();
       ChildProcessServiceMock.exec.mockReturnValueOnce({
         ok: true,
         data: faker.git.commitSha(),
       });
 
-      service.mergeWithCommit(ref, environment);
+      service.mergeWithCommit(ref, sha, environment);
 
       expect(ChildProcessServiceMock.exec).toHaveBeenNthCalledWith(1, 'gh', [
         'api',
@@ -56,7 +62,7 @@ describe('Given a merge service', () => {
         '-f',
         `base=${environment}`,
         '-f',
-        `head=${ref}`,
+        `head=${sha}`,
         '-f',
         `commit_message=Merge ${ref} into ${environment}`,
         '--jq',
@@ -72,6 +78,7 @@ describe('Given a merge service', () => {
 
       const output = service.mergeWithCommit(
         faker.git.branch(),
+        faker.git.commitSha(),
         faker.git.branch(),
       );
 
@@ -87,7 +94,11 @@ describe('Given a merge service', () => {
         .mockReturnValueOnce({ok: true, data: ''})
         .mockReturnValueOnce({ok: true, data: faker.git.commitSha()});
 
-      service.mergeWithCommit(faker.git.branch(), environment);
+      service.mergeWithCommit(
+        faker.git.branch(),
+        faker.git.commitSha(),
+        environment,
+      );
 
       expect(ChildProcessServiceMock.exec).toHaveBeenNthCalledWith(2, 'gh', [
         'api',
@@ -103,7 +114,11 @@ describe('Given a merge service', () => {
         .mockReturnValueOnce({ok: true, data: ''})
         .mockReturnValueOnce({ok: true, data: faker.git.commitSha()});
 
-      service.mergeWithCommit(faker.git.branch(), `${segment}/next thing`);
+      service.mergeWithCommit(
+        faker.git.branch(),
+        faker.git.commitSha(),
+        `${segment}/next thing`,
+      );
 
       expect(ChildProcessServiceMock.exec).toHaveBeenNthCalledWith(2, 'gh', [
         'api',
@@ -119,6 +134,7 @@ describe('Given a merge service', () => {
 
       const output = service.mergeWithCommit(
         faker.git.branch(),
+        faker.git.commitSha(),
         faker.git.branch(),
       );
 
@@ -134,7 +150,11 @@ describe('Given a merge service', () => {
         error: new Error(faker.lorem.sentence()),
       });
 
-      service.mergeWithCommit(faker.git.branch(), faker.git.branch());
+      service.mergeWithCommit(
+        faker.git.branch(),
+        faker.git.commitSha(),
+        faker.git.branch(),
+      );
 
       expect(ChildProcessServiceMock.exec).toHaveBeenCalledTimes(1);
     });
@@ -147,6 +167,7 @@ describe('Given a merge service', () => {
 
       const output = service.mergeWithCommit(
         faker.git.branch(),
+        faker.git.commitSha(),
         faker.git.branch(),
       );
 
@@ -158,16 +179,11 @@ describe('Given a merge service', () => {
   });
 
   describe('Given merge without commit', () => {
-    it('Should return the fast-forwarded sha', () => {
+    it('Should return the released sha', () => {
       const sha = faker.git.commitSha();
-      ChildProcessServiceMock.exec
-        .mockReturnValueOnce({ok: true, data: sha})
-        .mockReturnValueOnce({ok: true, data: ''});
+      ChildProcessServiceMock.exec.mockReturnValueOnce({ok: true, data: ''});
 
-      const output = service.mergeWithoutCommit(
-        faker.git.branch(),
-        faker.git.branch(),
-      );
+      const output = service.mergeWithoutCommit(sha, faker.git.branch());
 
       expect(output).toStrictEqual({
         ok: true,
@@ -175,32 +191,22 @@ describe('Given a merge service', () => {
       });
     });
 
-    it('Should call exec with gh api ref lookup command', () => {
-      const ref = faker.git.branch();
-      ChildProcessServiceMock.exec
-        .mockReturnValueOnce({ok: true, data: faker.git.commitSha()})
-        .mockReturnValueOnce({ok: true, data: ''});
+    it('Should fast-forward the target without looking up the ref head', () => {
+      ChildProcessServiceMock.exec.mockReturnValueOnce({ok: true, data: ''});
 
-      service.mergeWithoutCommit(ref, faker.git.branch());
+      service.mergeWithoutCommit(faker.git.commitSha(), faker.git.branch());
 
-      expect(ChildProcessServiceMock.exec).toHaveBeenNthCalledWith(1, 'gh', [
-        'api',
-        `repos/{owner}/{repo}/git/ref/heads/${ref}`,
-        '--jq',
-        '.object.sha',
-      ]);
+      expect(ChildProcessServiceMock.exec).toHaveBeenCalledTimes(1);
     });
 
-    it('Should call exec with gh api ref update command', () => {
+    it('Should call exec with gh api ref update command on the released sha', () => {
       const environment = faker.git.branch();
       const sha = faker.git.commitSha();
-      ChildProcessServiceMock.exec
-        .mockReturnValueOnce({ok: true, data: sha})
-        .mockReturnValueOnce({ok: true, data: ''});
+      ChildProcessServiceMock.exec.mockReturnValueOnce({ok: true, data: ''});
 
-      service.mergeWithoutCommit(faker.git.branch(), environment);
+      service.mergeWithoutCommit(sha, environment);
 
-      expect(ChildProcessServiceMock.exec).toHaveBeenNthCalledWith(2, 'gh', [
+      expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith('gh', [
         'api',
         `repos/{owner}/{repo}/git/refs/heads/${environment}`,
         '-X',
@@ -213,13 +219,11 @@ describe('Given a merge service', () => {
     it('Should encode branch path segments on the gh api ref update command', () => {
       const segment = faker.git.branch();
       const sha = faker.git.commitSha();
-      ChildProcessServiceMock.exec
-        .mockReturnValueOnce({ok: true, data: sha})
-        .mockReturnValueOnce({ok: true, data: ''});
+      ChildProcessServiceMock.exec.mockReturnValueOnce({ok: true, data: ''});
 
-      service.mergeWithoutCommit(faker.git.branch(), `${segment}/next thing`);
+      service.mergeWithoutCommit(sha, `${segment}/next thing`);
 
-      expect(ChildProcessServiceMock.exec).toHaveBeenNthCalledWith(2, 'gh', [
+      expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith('gh', [
         'api',
         `repos/{owner}/{repo}/git/refs/heads/${segment}/next%20thing`,
         '-X',
@@ -229,43 +233,12 @@ describe('Given a merge service', () => {
       ]);
     });
 
-    it('Should return error when the ref lookup fails', () => {
-      const error = new Error(faker.lorem.sentence());
-      ChildProcessServiceMock.exec.mockReturnValueOnce({
-        ok: false,
-        error,
-      });
-
-      const output = service.mergeWithoutCommit(
-        faker.git.branch(),
-        faker.git.branch(),
-      );
-
-      expect(output).toStrictEqual({
-        ok: false,
-        error,
-      });
-    });
-
-    it('Should not update the ref when the ref lookup fails', () => {
-      ChildProcessServiceMock.exec.mockReturnValueOnce({
-        ok: false,
-        error: new Error(faker.lorem.sentence()),
-      });
-
-      service.mergeWithoutCommit(faker.git.branch(), faker.git.branch());
-
-      expect(ChildProcessServiceMock.exec).toHaveBeenCalledTimes(1);
-    });
-
     it('Should return error when the ref update fails', () => {
       const error = new Error(faker.lorem.sentence());
-      ChildProcessServiceMock.exec
-        .mockReturnValueOnce({ok: true, data: faker.git.commitSha()})
-        .mockReturnValueOnce({ok: false, error});
+      ChildProcessServiceMock.exec.mockReturnValueOnce({ok: false, error});
 
       const output = service.mergeWithoutCommit(
-        faker.git.branch(),
+        faker.git.commitSha(),
         faker.git.branch(),
       );
 
@@ -282,7 +255,7 @@ describe('Given a merge service', () => {
       });
 
       const output = service.mergeWithoutCommit(
-        faker.git.branch(),
+        faker.git.commitSha(),
         faker.git.branch(),
       );
 

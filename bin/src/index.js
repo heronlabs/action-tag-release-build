@@ -19349,7 +19349,7 @@ var MergeService = class {
   encodeBranch(branch) {
     return branch.split("/").map(encodeURIComponent).join("/");
   }
-  mergeWithCommit(ref, environment) {
+  mergeWithCommit(ref, sha, environment) {
     try {
       const merge = this.childProcessService.exec("gh", [
         "api",
@@ -19357,7 +19357,7 @@ var MergeService = class {
         "-f",
         `base=${environment}`,
         "-f",
-        `head=${ref}`,
+        `head=${sha}`,
         "-f",
         `commit_message=Merge ${ref} into ${environment}`,
         "--jq",
@@ -19375,25 +19375,18 @@ var MergeService = class {
       return { ok: false, error: error2 };
     }
   }
-  mergeWithoutCommit(ref, environment) {
+  mergeWithoutCommit(sha, environment) {
     try {
-      const sha = this.childProcessService.exec("gh", [
-        "api",
-        `repos/{owner}/{repo}/git/ref/heads/${this.encodeBranch(ref)}`,
-        "--jq",
-        ".object.sha"
-      ]);
-      if (!sha.ok) return sha;
       const fastForward = this.childProcessService.exec("gh", [
         "api",
         `repos/{owner}/{repo}/git/refs/heads/${this.encodeBranch(environment)}`,
         "-X",
         "PATCH",
         "-f",
-        `sha=${sha.data}`
+        `sha=${sha}`
       ]);
       if (!fastForward.ok) return fastForward;
-      return { ok: true, data: sha.data };
+      return { ok: true, data: sha };
     } catch (error2) {
       return { ok: false, error: error2 };
     }
@@ -19514,20 +19507,16 @@ var GhFactory = class _GhFactory {
   }
 };
 
+// src/infrastructure/git/types/bump-commit-prefix.ts
+var BUMP_COMMIT_PREFIX = "[skip ci] bump";
+
 // src/infrastructure/git/services/git-service.ts
+var REF_MOVED = /\((?:non-fast-forward|fetch first|stale info)\)|cannot lock ref/;
 var GitService = class {
   constructor(childProcessService) {
     this.childProcessService = childProcessService;
   }
   childProcessService;
-  getLastCommit() {
-    return this.childProcessService.exec("git", [
-      "log",
-      "-1",
-      "--no-merges",
-      "--pretty=%B"
-    ]);
-  }
   getDescriptionSince(tagPrefix) {
     const previousTag = this.childProcessService.exec("git", [
       "describe",
@@ -19545,13 +19534,24 @@ var GitService = class {
       ...range
     ]);
   }
+  resetToRemote(ref) {
+    const result = this.childProcessService.execChain("git", [
+      "fetch",
+      "--force",
+      "--tags",
+      "origin",
+      `refs/heads/${ref}:refs/remotes/origin/${ref}`
+    ]).execChain("git", ["reset", "--hard", `refs/remotes/origin/${ref}`]);
+    if (!result.ok) return { ok: false, error: result.error };
+    return { ok: true, data: result.data };
+  }
   applyTags({
     version,
     tag,
     ref,
     tags
   }) {
-    const commitMessage = `[skip ci] bump ${tag}`;
+    const commitMessage = `${BUMP_COMMIT_PREFIX} ${tag}`;
     const refspecs = [
       `refs/heads/${ref}:refs/heads/${ref}`,
       `refs/tags/${tag}`
@@ -19560,7 +19560,7 @@ var GitService = class {
       "config",
       "user.email",
       "github-actions[bot]@users.noreply.github.com"
-    ]).execChain("git", ["add", "-A"]).execChain("git", ["commit", "-m", commitMessage]).execChain("git", ["pull", "--rebase", "origin", ref]).execChain("git", ["tag", "-a", tag, "-m", `Release ${version}`]);
+    ]).execChain("git", ["add", "-A"]).execChain("git", ["commit", "-m", commitMessage]).execChain("git", ["tag", "-fa", tag, "-m", `Release ${version}`]);
     if (tags) {
       chain = chain.execChain("git", [
         "tag",
@@ -19577,12 +19577,24 @@ var GitService = class {
       ]);
       refspecs.push(`+refs/tags/${tags.major}`, `+refs/tags/${tags.minor}`);
     }
-    const result = chain.execChain("git", ["push", "--atomic", "origin", ...refspecs]).execChain("git", ["rev-parse", "HEAD"]);
-    if (!result.ok) {
-      this.childProcessService.exec("git", ["rebase", "--abort"]);
-      return { ok: false, error: result.error };
-    }
-    return { ok: true, data: result.data };
+    if (!chain.ok)
+      return { ok: false, error: chain.error, refMoved: false };
+    const push = chain.execChain("git", [
+      "push",
+      "--atomic",
+      "origin",
+      ...refspecs
+    ]);
+    if (!push.ok)
+      return {
+        ok: false,
+        error: push.error,
+        refMoved: REF_MOVED.test(String(push.error))
+      };
+    const head = push.execChain("git", ["rev-parse", "HEAD"]);
+    if (!head.ok)
+      return { ok: false, error: head.error, refMoved: false };
+    return { ok: true, data: head.data };
   }
 };
 
@@ -19833,6 +19845,9 @@ ${releaseNotes}
       return { ok: false, error: error2 };
     }
   }
+  resetToRemote(ref) {
+    return this.gitService.resetToRemote(ref);
+  }
   applyReleaseChangelog({
     tagPrefix,
     nextVersion,
@@ -19860,7 +19875,12 @@ ${releaseNotes}
       ref,
       tags: overrideTag ? { major: tagMajor, minor: tagMinor } : void 0
     });
-    if (!gitApply.ok) return { ok: false, error: gitApply.error };
+    if (!gitApply.ok)
+      return {
+        ok: false,
+        error: gitApply.error,
+        refMoved: gitApply.refMoved
+      };
     const ghRelease = this.releaseNotesService.createRelease(
       tag,
       releaseNotes.data
@@ -19905,31 +19925,24 @@ var CommitService = class {
       const lastCommits = this.gitService.getDescriptionSince(tagPrefix);
       if (!lastCommits.ok)
         return { ok: false, error: lastCommits.error };
-      const parsedCommits = lastCommits.data.split(COMMIT_RECORD_SEPARATOR).map((record) => record.trim()).filter((record) => record.length > 0).map((record) => {
-        const hash = record.slice(0, 40);
-        const commit = record.slice(41);
-        return {
-          hash,
-          ...this.parseCommit(commit)
-        };
-      });
+      const parsedCommits = lastCommits.data.split(COMMIT_RECORD_SEPARATOR).map((record) => record.trim()).filter((record) => record.length > 0).map((record) => ({ hash: record.slice(0, 40), commit: record.slice(41) })).filter(({ commit }) => !commit.startsWith(BUMP_COMMIT_PREFIX)).map(({ hash, commit }) => ({
+        hash,
+        ...this.parseCommit(commit)
+      }));
       return { ok: true, data: parsedCommits };
     } catch (error2) {
       return { ok: false, error: error2 };
     }
   }
-  classifyLastCommit() {
-    try {
-      const lastCommit = this.gitService.getLastCommit();
-      if (!lastCommit.ok) return { ok: false, error: lastCommit.error };
-      const commit = this.parseCommit(lastCommit.data);
-      let data = "patch";
-      if (commit.breaking) data = "major";
-      else if (commit.type === "feat") data = "minor";
-      return { ok: true, data };
-    } catch (error2) {
-      return { ok: false, error: error2 };
-    }
+  classifyDescriptionSince(tagPrefix) {
+    const commits = this.parseDescriptionSince(tagPrefix);
+    if (!commits.ok) return { ok: false, error: commits.error };
+    if (!commits.data.length) return { ok: true, data: null };
+    let data = "patch";
+    if (commits.data.some((commit) => commit.breaking)) data = "major";
+    else if (commits.data.some((commit) => commit.type === "feat"))
+      data = "minor";
+    return { ok: true, data };
   }
 };
 
@@ -20016,7 +20029,7 @@ var SemverService = class {
       return { ok: false, error: error2 };
     }
   }
-  calculateNextVersion(versionFile, semantic) {
+  calculateNextVersion(versionFile, tagPrefix, semantic) {
     const version = this.get(versionFile);
     if (!version.ok) return { ok: false, error: version.error };
     if (semantic) {
@@ -20027,10 +20040,11 @@ var SemverService = class {
           error: new Error(`invalid semantic: '${semantic}'`)
         };
     } else {
-      const lastCommitType = this.commitService.classifyLastCommit();
-      if (!lastCommitType.ok)
-        return { ok: false, error: lastCommitType.error };
-      semantic = lastCommitType.data;
+      const commitsType = this.commitService.classifyDescriptionSince(tagPrefix);
+      if (!commitsType.ok)
+        return { ok: false, error: commitsType.error };
+      if (!commitsType.data) return { ok: true, data: null };
+      semantic = commitsType.data;
     }
     const semver = this.calculate(version.data, semantic);
     if (!semver.ok) return { ok: false, error: semver.error };
@@ -20056,10 +20070,10 @@ var SyncService = class {
   }
   pullRequestService;
   mergeService;
-  cascadeEnvironments(ref, targets, mergeCommit) {
+  cascadeEnvironments(ref, sha, targets, mergeCommit) {
     try {
       const results = targets.replace(/\s/g, "").split(",").filter(Boolean).map((target) => {
-        const syncEnvironment = mergeCommit ? this.mergeService.mergeWithCommit(ref, target) : this.mergeService.mergeWithoutCommit(ref, target);
+        const syncEnvironment = mergeCommit ? this.mergeService.mergeWithCommit(ref, sha, target) : this.mergeService.mergeWithoutCommit(sha, target);
         if (syncEnvironment.ok)
           return { ok: true, ref, target, sha: syncEnvironment.data };
         const existingPullRequest = this.pullRequestService.hasPullRequest(
@@ -20146,6 +20160,7 @@ var CoreFactory = class _CoreFactory {
 };
 
 // src/application/action/command/command.ts
+var RELEASE_ATTEMPTS = 3;
 var Command2 = class {
   constructor(bumpers, semverService, changelogService, syncService) {
     this.bumpers = bumpers;
@@ -20158,41 +20173,64 @@ var Command2 = class {
   changelogService;
   syncService;
   run(inputs) {
-    const {
-      versionFile,
-      semantic,
-      tagPrefix,
-      changelogFile,
-      ref,
-      overrideTag,
-      target,
-      mergeCommit
-    } = inputs;
-    const semver = this.semverService.calculateNextVersion(
-      versionFile,
-      semantic
-    );
-    if (!semver.ok) throw semver.error;
-    const { nextVersion, major, minor } = semver.data;
-    for (const bumper of this.bumpers) {
-      const bump = bumper.bump(nextVersion);
-      if (!bump.ok) throw bump.error;
+    const { versionFile, semantic, tagPrefix, changelogFile, ref, overrideTag } = inputs;
+    let refMoved;
+    for (let attempt = 0; attempt < RELEASE_ATTEMPTS; attempt++) {
+      const reset = this.changelogService.resetToRemote(ref);
+      if (!reset.ok) throw reset.error;
+      const semver = this.semverService.calculateNextVersion(
+        versionFile,
+        tagPrefix,
+        semantic
+      );
+      if (!semver.ok) throw semver.error;
+      if (!semver.data) {
+        process.stderr.write(
+          "\u23ED\uFE0F Release skipped: no releasable commit since the last tag\n"
+        );
+        return {
+          version: "",
+          tag: "",
+          tagMajor: "",
+          tagMinor: "",
+          releasedRefs: []
+        };
+      }
+      const { nextVersion, major, minor } = semver.data;
+      for (const bumper of this.bumpers) {
+        const bump = bumper.bump(nextVersion);
+        if (!bump.ok) throw bump.error;
+        process.stderr.write(
+          `\u2705 Bumper ${bumper.constructor.name} ${nextVersion}
+`
+        );
+      }
+      const tags = this.changelogService.applyReleaseChangelog({
+        tagPrefix,
+        nextVersion,
+        major,
+        minor,
+        changelogFile,
+        ref,
+        overrideTag
+      });
+      if (tags.ok) return this.publish(inputs, nextVersion, tags.data);
+      if (!("refMoved" in tags) || !tags.refMoved) throw tags.error;
       process.stderr.write(
-        `\u2705 Bumper ${bumper.constructor.name} ${nextVersion}
+        `\u{1F501} Push rejected: ${ref} moved, releasing again from its new tip
 `
       );
+      refMoved = tags.error;
     }
-    const tags = this.changelogService.applyReleaseChangelog({
-      tagPrefix,
-      nextVersion,
-      major,
-      minor,
-      changelogFile,
-      ref,
-      overrideTag
-    });
-    if (!tags.ok) throw tags.error;
-    const { tag, tagMajor, tagMinor, sha } = tags.data;
+    throw refMoved;
+  }
+  publish(inputs, nextVersion, {
+    tag,
+    tagMajor,
+    tagMinor,
+    sha
+  }) {
+    const { ref, overrideTag, target, mergeCommit } = inputs;
     let tagMessage = `\u{1F3F7}\uFE0F Tagged: ${tag}`;
     if (overrideTag)
       tagMessage += ` with major: ${tagMajor} and minor: ${tagMinor}`;
@@ -20202,6 +20240,7 @@ var Command2 = class {
     if (target) {
       const envsSynced = this.syncService.cascadeEnvironments(
         ref,
+        sha,
         target,
         mergeCommit
       );

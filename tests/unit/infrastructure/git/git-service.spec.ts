@@ -13,55 +13,6 @@ describe('Given a git service', () => {
     service = new GitService(ChildProcessServiceMoq);
   });
 
-  describe('Given get last commit', () => {
-    it('Should get last commit', () => {
-      const data =
-        'feat(scope)!: add some feature\nfix: add some other feature';
-      ChildProcessServiceMock.exec.mockReturnValueOnce({
-        ok: true,
-        data,
-      });
-
-      const output = service.getLastCommit();
-
-      expect(output).toStrictEqual({
-        ok: true,
-        data,
-      });
-    });
-
-    it('Should return error getting last commit', () => {
-      const error = new Error(faker.lorem.sentence());
-      ChildProcessServiceMock.exec.mockReturnValueOnce({
-        ok: false,
-        error,
-      });
-
-      const output = service.getLastCommit();
-
-      expect(output).toStrictEqual({
-        ok: false,
-        error,
-      });
-    });
-
-    it('Should call exec with git log format command', () => {
-      ChildProcessServiceMock.exec.mockReturnValueOnce({
-        ok: true,
-        data: '',
-      });
-
-      service.getLastCommit();
-
-      expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith('git', [
-        'log',
-        '-1',
-        '--no-merges',
-        '--pretty=%B',
-      ]);
-    });
-  });
-
   describe('Given get description since', () => {
     it('Should get descriptions since last version', () => {
       const data = `${faker.string.alpha(40)} feat(scope)!: add some feature\n`;
@@ -185,533 +136,374 @@ describe('Given a git service', () => {
     });
   });
 
-  describe('Given apply', () => {
-    it('Should run eight chain steps without override tags', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      });
-
-      service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
-
-      expect(ChildProcessServiceMock.execChain).toHaveBeenCalledTimes(8);
+  describe('Given reset to remote', () => {
+    const success = (data = 'OK') => ({
+      ok: true as const,
+      data,
+      execChain: (command: string, args: string[] = []) =>
+        ChildProcessServiceMock.execChain(command, args),
     });
 
-    it('Should run ten chain steps with override tags', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      });
+    it('Should fetch the ref and the tags from origin', () => {
+      ChildProcessServiceMock.execChain.mockReturnValue(success());
 
-      service.applyTags({
-        version: '1.2.3',
-        tag: 'v1.2.3',
-        ref: 'main',
-        tags: {major: 'v1', minor: 'v1.2'},
-      });
-
-      expect(ChildProcessServiceMock.execChain).toHaveBeenCalledTimes(10);
-    });
-
-    it('Should call git config user name on first chain step', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      });
-
-      service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
+      service.resetToRemote('main');
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         1,
         'git',
-        ['config', 'user.name', 'github-actions[bot]'],
+        [
+          'fetch',
+          '--force',
+          '--tags',
+          'origin',
+          'refs/heads/main:refs/remotes/origin/main',
+        ],
       );
     });
 
-    it('Should call git config user email on second chain step', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      });
+    it('Should hard reset the working copy to the fetched tip', () => {
+      ChildProcessServiceMock.execChain.mockReturnValue(success());
 
-      service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
+      service.resetToRemote('main');
 
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         2,
         'git',
-        [
-          'config',
-          'user.email',
-          'github-actions[bot]@users.noreply.github.com',
-        ],
+        ['reset', '--hard', 'refs/remotes/origin/main'],
       );
     });
 
-    it('Should call git add on third chain step', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      });
-
-      service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
-
-      expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
-        3,
-        'git',
-        ['add', '-A'],
-      );
-    });
-
-    it('Should call git commit with skip ci message and version tag', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      });
-
-      service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
-
-      expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
-        4,
-        'git',
-        ['commit', '-m', '[skip ci] bump v1.2.3'],
-      );
-    });
-
-    it('Should call git pull rebase with origin and ref name', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      });
-
-      service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
-
-      expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
-        5,
-        'git',
-        ['pull', '--rebase', 'origin', 'main'],
-      );
-    });
-
-    it('Should call git tag with annotated tag and release message', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      });
-
-      service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
-
-      expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
-        6,
-        'git',
-        ['tag', '-a', 'v1.2.3', '-m', 'Release 1.2.3'],
-      );
-    });
-
-    it('Should push branch and exact tag atomically without override tags', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      });
-
-      service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
-
-      expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
-        7,
-        'git',
-        [
-          'push',
-          '--atomic',
-          'origin',
-          'refs/heads/main:refs/heads/main',
-          'refs/tags/v1.2.3',
-        ],
-      );
-    });
-
-    it('Should read head sha on eighth chain step without override tags', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      });
-
-      service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
-
-      expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
-        8,
-        'git',
-        ['rev-parse', 'HEAD'],
-      );
-    });
-
-    it('Should call git tag force for major override on seventh chain step', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      });
-
-      service.applyTags({
-        version: '1.2.3',
-        tag: 'v1.2.3',
-        ref: 'main',
-        tags: {major: 'v1', minor: 'v1.2'},
-      });
-
-      expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
-        7,
-        'git',
-        ['tag', '-fa', 'v1', '-m', 'Latest v1.x.x release'],
-      );
-    });
-
-    it('Should call git tag force for minor override on eighth chain step', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      });
-
-      service.applyTags({
-        version: '1.2.3',
-        tag: 'v1.2.3',
-        ref: 'main',
-        tags: {major: 'v1', minor: 'v1.2'},
-      });
-
-      expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
-        8,
-        'git',
-        ['tag', '-fa', 'v1.2', '-m', 'Latest v1.2.x release'],
-      );
-    });
-
-    it('Should push branch, exact tag and floating tags atomically', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      });
-
-      service.applyTags({
-        version: '1.2.3',
-        tag: 'v1.2.3',
-        ref: 'main',
-        tags: {major: 'v1', minor: 'v1.2'},
-      });
-
-      expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
-        9,
-        'git',
-        [
-          'push',
-          '--atomic',
-          'origin',
-          'refs/heads/main:refs/heads/main',
-          'refs/tags/v1.2.3',
-          '+refs/tags/v1',
-          '+refs/tags/v1.2',
-        ],
-      );
-    });
-
-    it('Should read head sha on tenth chain step with override tags', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      });
-
-      service.applyTags({
-        version: '1.2.3',
-        tag: 'v1.2.3',
-        ref: 'main',
-        tags: {major: 'v1', minor: 'v1.2'},
-      });
-
-      expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
-        10,
-        'git',
-        ['rev-parse', 'HEAD'],
-      );
-    });
-
-    it('Should return the head sha when apply succeeds without override tags', () => {
-      const sha = faker.git.commitSha();
-      const success = {
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      };
+    it('Should return the reset output', () => {
+      const data = faker.lorem.sentence();
       ChildProcessServiceMock.execChain
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce({...success, data: sha});
+        .mockReturnValueOnce(success())
+        .mockReturnValueOnce(success(data));
 
-      const output = service.applyTags({
-        version: '1.2.3',
-        tag: 'v1.2.3',
-        ref: 'main',
-      });
+      const output = service.resetToRemote('main');
 
-      expect(output).toStrictEqual({ok: true, data: sha});
+      expect(output).toStrictEqual({ok: true, data});
     });
 
-    it('Should return the head sha when apply succeeds with override tags', () => {
-      const sha = faker.git.commitSha();
-      const success = {
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      };
-      ChildProcessServiceMock.execChain
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce({...success, data: sha});
-
-      const output = service.applyTags({
-        version: '1.2.3',
-        tag: 'v1.2.3',
-        ref: 'main',
-        tags: {major: 'v1', minor: 'v1.2'},
-      });
-
-      expect(output).toStrictEqual({ok: true, data: sha});
-    });
-
-    it('Should not abort the rebase when apply succeeds', () => {
-      ChildProcessServiceMock.execChain.mockReturnValue({
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      });
-
-      service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
-
-      expect(ChildProcessServiceMock.exec).not.toHaveBeenCalledWith('git', [
-        'rebase',
-        '--abort',
-      ]);
-    });
-
-    it('Should return error tagging', () => {
+    it('Should return the fetch error', () => {
       const error = new Error(faker.lorem.sentence());
-      const failure = {
-        ok: false as const,
-        error,
-        execChain: () => failure,
-      };
-      const success = {
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      };
-      ChildProcessServiceMock.execChain
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValue(failure);
+      const failure = {ok: false as const, error, execChain: () => failure};
+      ChildProcessServiceMock.execChain.mockReturnValueOnce(failure);
 
-      const output = service.applyTags({
-        version: '1.2.3',
-        tag: 'v1.2.3',
-        ref: 'main',
-      });
+      const output = service.resetToRemote('main');
 
       expect(output).toStrictEqual({ok: false, error});
     });
 
-    it('Should stop chaining after the failing step', () => {
+    it('Should not reset when the fetch fails', () => {
       const error = new Error(faker.lorem.sentence());
-      const failure = {
-        ok: false as const,
-        error,
-        execChain: () => failure,
-      };
-      const success = {
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      };
-      ChildProcessServiceMock.execChain
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValue(failure);
+      const failure = {ok: false as const, error, execChain: () => failure};
+      ChildProcessServiceMock.execChain.mockReturnValueOnce(failure);
 
-      service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
+      service.resetToRemote('main');
 
-      expect(ChildProcessServiceMock.execChain).toHaveBeenCalledTimes(6);
+      expect(ChildProcessServiceMock.execChain).toHaveBeenCalledTimes(1);
     });
+  });
 
-    it('Should abort the rebase when a chain step fails', () => {
-      const error = new Error(faker.lorem.sentence());
-      const failure = {
-        ok: false as const,
-        error,
-        execChain: () => failure,
-      };
-      const success = {
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      };
-      ChildProcessServiceMock.execChain
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValue(failure);
+  describe('Given apply', () => {
+    const sha = faker.git.commitSha();
 
-      service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
+    const respond = (failing?: {step: string; error: Error}) =>
+      ChildProcessServiceMock.execChain.mockImplementation(
+        (command: string, args: string[]) => {
+          if (failing && args[0] === failing.step) {
+            const failure = {
+              ok: false as const,
+              error: failing.error,
+              execChain: () => failure,
+            };
+            return failure;
+          }
+          return {
+            ok: true as const,
+            data: args[0] === 'rev-parse' ? sha : 'OK',
+            execChain: (next: string, nextArgs: string[] = []) =>
+              ChildProcessServiceMock.execChain(next, nextArgs),
+          };
+        },
+      );
 
-      expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith('git', [
-        'rebase',
-        '--abort',
-      ]);
-    });
+    const withoutTags = {version: '1.2.3', tag: 'v1.2.3', ref: 'main'};
+    const withTags = {...withoutTags, tags: {major: 'v1', minor: 'v1.2'}};
 
-    it('Should return error for pushing new tag', () => {
-      const error = new Error(faker.lorem.sentence());
-      const failure = {
-        ok: false as const,
-        error,
-        execChain: () => failure,
-      };
-      const success = {
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      };
-      ChildProcessServiceMock.execChain
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValue(failure);
-
-      const output = service.applyTags({
-        version: '1.2.3',
-        tag: 'v1.2.3',
-        ref: 'main',
+    describe('Given every step succeeds without override tags', () => {
+      beforeEach(() => {
+        respond();
       });
 
-      expect(output).toStrictEqual({ok: false, error});
-    });
+      it('Should run seven chain steps', () => {
+        service.applyTags(withoutTags);
 
-    it('Should return error for pushing new override tags', () => {
-      const error = new Error(faker.lorem.sentence());
-      const failure = {
-        ok: false as const,
-        error,
-        execChain: () => failure,
-      };
-      const success = {
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      };
-      ChildProcessServiceMock.execChain
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValue(failure);
-
-      const output = service.applyTags({
-        version: '1.2.3',
-        tag: 'v1.2.3',
-        ref: 'main',
-        tags: {major: 'v1', minor: 'v1.2'},
+        expect(ChildProcessServiceMock.execChain).toHaveBeenCalledTimes(7);
       });
 
-      expect(output).toStrictEqual({ok: false, error});
-    });
+      it('Should set the git user name first', () => {
+        service.applyTags(withoutTags);
 
-    it('Should return error reading the head sha', () => {
-      const error = new Error(faker.lorem.sentence());
-      const failure = {
-        ok: false as const,
-        error,
-        execChain: () => failure,
-      };
-      const success = {
-        ok: true as const,
-        data: 'OK',
-        execChain: (command: string, args: string[] = []) =>
-          ChildProcessServiceMock.execChain(command, args),
-      };
-      ChildProcessServiceMock.execChain
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValueOnce(success)
-        .mockReturnValue(failure);
-
-      const output = service.applyTags({
-        version: '1.2.3',
-        tag: 'v1.2.3',
-        ref: 'main',
+        expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
+          1,
+          'git',
+          ['config', 'user.name', 'github-actions[bot]'],
+        );
       });
 
-      expect(output).toStrictEqual({ok: false, error});
+      it('Should set the git user email second', () => {
+        service.applyTags(withoutTags);
+
+        expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
+          2,
+          'git',
+          [
+            'config',
+            'user.email',
+            'github-actions[bot]@users.noreply.github.com',
+          ],
+        );
+      });
+
+      it('Should stage every change third', () => {
+        service.applyTags(withoutTags);
+
+        expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
+          3,
+          'git',
+          ['add', '-A'],
+        );
+      });
+
+      it('Should commit with the skip ci bump message', () => {
+        service.applyTags(withoutTags);
+
+        expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
+          4,
+          'git',
+          ['commit', '-m', '[skip ci] bump v1.2.3'],
+        );
+      });
+
+      it('Should force the annotated version tag with release message', () => {
+        service.applyTags(withoutTags);
+
+        expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
+          5,
+          'git',
+          ['tag', '-fa', 'v1.2.3', '-m', 'Release 1.2.3'],
+        );
+      });
+
+      it('Should push branch and exact tag atomically', () => {
+        service.applyTags(withoutTags);
+
+        expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
+          6,
+          'git',
+          [
+            'push',
+            '--atomic',
+            'origin',
+            'refs/heads/main:refs/heads/main',
+            'refs/tags/v1.2.3',
+          ],
+        );
+      });
+
+      it('Should read the head sha last', () => {
+        service.applyTags(withoutTags);
+
+        expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
+          7,
+          'git',
+          ['rev-parse', 'HEAD'],
+        );
+      });
+
+      it('Should never pull nor rebase', () => {
+        service.applyTags(withoutTags);
+
+        const pulls = ChildProcessServiceMock.execChain.mock.calls.filter(
+          ([, args]) => args[0] === 'pull' || args[0] === 'rebase',
+        );
+        expect(pulls).toHaveLength(0);
+      });
+
+      it('Should return the head sha', () => {
+        const output = service.applyTags(withoutTags);
+
+        expect(output).toStrictEqual({ok: true, data: sha});
+      });
+    });
+
+    describe('Given every step succeeds with override tags', () => {
+      beforeEach(() => {
+        respond();
+      });
+
+      it('Should run nine chain steps', () => {
+        service.applyTags(withTags);
+
+        expect(ChildProcessServiceMock.execChain).toHaveBeenCalledTimes(9);
+      });
+
+      it('Should force the major tag after the version tag', () => {
+        service.applyTags(withTags);
+
+        expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
+          6,
+          'git',
+          ['tag', '-fa', 'v1', '-m', 'Latest v1.x.x release'],
+        );
+      });
+
+      it('Should force the minor tag after the major tag', () => {
+        service.applyTags(withTags);
+
+        expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
+          7,
+          'git',
+          ['tag', '-fa', 'v1.2', '-m', 'Latest v1.2.x release'],
+        );
+      });
+
+      it('Should push branch, exact tag and floating tags atomically', () => {
+        service.applyTags(withTags);
+
+        expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
+          8,
+          'git',
+          [
+            'push',
+            '--atomic',
+            'origin',
+            'refs/heads/main:refs/heads/main',
+            'refs/tags/v1.2.3',
+            '+refs/tags/v1',
+            '+refs/tags/v1.2',
+          ],
+        );
+      });
+
+      it('Should read the head sha last', () => {
+        service.applyTags(withTags);
+
+        expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
+          9,
+          'git',
+          ['rev-parse', 'HEAD'],
+        );
+      });
+
+      it('Should return the head sha', () => {
+        const output = service.applyTags(withTags);
+
+        expect(output).toStrictEqual({ok: true, data: sha});
+      });
+    });
+
+    describe('Given the commit fails', () => {
+      const error = new Error(faker.lorem.sentence());
+
+      beforeEach(() => {
+        respond({step: 'commit', error});
+      });
+
+      it('Should return the commit error as not a moved ref', () => {
+        const output = service.applyTags(withTags);
+
+        expect(output).toStrictEqual({ok: false, error, refMoved: false});
+      });
+
+      it('Should stop before tagging and pushing', () => {
+        service.applyTags(withTags);
+
+        expect(ChildProcessServiceMock.execChain).toHaveBeenCalledTimes(4);
+      });
+    });
+
+    describe('Given a floating tag fails', () => {
+      const error = new Error(faker.lorem.sentence());
+
+      beforeEach(() => {
+        respond({step: 'tag', error});
+      });
+
+      it('Should return the tag error as not a moved ref', () => {
+        const output = service.applyTags(withTags);
+
+        expect(output).toStrictEqual({ok: false, error, refMoved: false});
+      });
+
+      it('Should not push', () => {
+        service.applyTags(withTags);
+
+        const pushes = ChildProcessServiceMock.execChain.mock.calls.filter(
+          ([, args]) => args[0] === 'push',
+        );
+        expect(pushes).toHaveLength(0);
+      });
+    });
+
+    describe('Given the push is rejected', () => {
+      const pushError = (stderr: string) =>
+        new Error(`Command failed: git push --atomic origin\n${stderr}\n`);
+
+      it.each([
+        ' ! [rejected]        main -> main (fetch first)',
+        ' ! [rejected]        main -> main (non-fast-forward)',
+        ' ! [rejected]        main -> main (stale info)',
+        " ! [remote rejected] main -> main (cannot lock ref 'refs/heads/main': is at 1a2b but expected 3c4d)",
+      ])('Should flag %s as a moved ref', stderr => {
+        const error = pushError(stderr);
+        respond({step: 'push', error});
+
+        const output = service.applyTags(withoutTags);
+
+        expect(output).toStrictEqual({ok: false, error, refMoved: true});
+      });
+
+      it.each([
+        ' ! [remote rejected] main -> main (pre-receive hook declined)',
+        'remote: fetch first, non-fast-forward and stale info are banned words\n ! [remote rejected] main -> main (pre-receive hook declined)',
+        "remote: Permission to heronlabs/repo.git denied to github-actions[bot].\nfatal: unable to access 'https://github.com/heronlabs/repo.git/': The requested URL returned error: 403",
+        "fatal: unable to access 'https://github.com/heronlabs/repo.git/': Could not resolve host: github.com",
+      ])('Should not flag %s as a moved ref', stderr => {
+        const error = pushError(stderr);
+        respond({step: 'push', error});
+
+        const output = service.applyTags(withoutTags);
+
+        expect(output).toStrictEqual({ok: false, error, refMoved: false});
+      });
+
+      it('Should not read the head sha', () => {
+        respond({
+          step: 'push',
+          error: pushError(' ! [rejected] (fetch first)'),
+        });
+
+        service.applyTags(withoutTags);
+
+        expect(ChildProcessServiceMock.execChain).toHaveBeenCalledTimes(6);
+      });
+    });
+
+    describe('Given reading the head sha fails', () => {
+      const error = new Error(faker.lorem.sentence());
+
+      beforeEach(() => {
+        respond({step: 'rev-parse', error});
+      });
+
+      it('Should return the error as not a moved ref', () => {
+        const output = service.applyTags(withoutTags);
+
+        expect(output).toStrictEqual({ok: false, error, refMoved: false});
+      });
     });
   });
 });

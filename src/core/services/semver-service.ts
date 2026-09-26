@@ -89,7 +89,11 @@ export class SemverService {
     }
   }
 
-  public calculateNextVersion(versionFile: string, semantic?: string) {
+  public calculateNextVersion(
+    versionFile: string,
+    tagPrefix: string,
+    semantic?: string,
+  ) {
     const version = this.get(versionFile);
     if (!version.ok) return {ok: false as const, error: version.error};
 
@@ -101,10 +105,12 @@ export class SemverService {
           error: new Error(`invalid semantic: '${semantic}'`),
         };
     } else {
-      const lastCommitType = this.commitService.classifyLastCommit();
-      if (!lastCommitType.ok)
-        return {ok: false as const, error: lastCommitType.error};
-      semantic = lastCommitType.data;
+      const commitsType =
+        this.commitService.classifyDescriptionSince(tagPrefix);
+      if (!commitsType.ok)
+        return {ok: false as const, error: commitsType.error};
+      if (!commitsType.data) return {ok: true as const, data: null};
+      semantic = commitsType.data;
     }
 
     const semver = this.calculate(version.data, semantic);

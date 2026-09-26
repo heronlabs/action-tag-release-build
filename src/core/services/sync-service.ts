@@ -4,6 +4,7 @@ import {PullRequestService} from '../../infrastructure/gh/services/pull-request-
 export class SyncService {
   public cascadeEnvironments(
     ref: string,
+    sha: string,
     targets: string,
     mergeCommit?: boolean,
   ) {
@@ -14,8 +15,8 @@ export class SyncService {
         .filter(Boolean)
         .map(target => {
           const syncEnvironment = mergeCommit
-            ? this.mergeService.mergeWithCommit(ref, target)
-            : this.mergeService.mergeWithoutCommit(ref, target);
+            ? this.mergeService.mergeWithCommit(ref, sha, target)
+            : this.mergeService.mergeWithoutCommit(sha, target);
 
           if (syncEnvironment.ok)
             return {ok: true as const, ref, target, sha: syncEnvironment.data};

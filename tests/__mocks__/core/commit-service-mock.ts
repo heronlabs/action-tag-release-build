@@ -4,12 +4,12 @@ import {CommitService} from '../../../src/core/services/commit-service';
 
 export const CommitServiceMock = {
   parseDescriptionSince: vi.fn(),
-  classifyLastCommit: vi.fn(),
+  classifyDescriptionSince: vi.fn(),
 };
 
 export const CommitServiceMoq = new Mock<CommitService>()
   .setup(x => x.parseDescriptionSince)
   .returns(CommitServiceMock.parseDescriptionSince)
-  .setup(x => x.classifyLastCommit)
-  .returns(CommitServiceMock.classifyLastCommit)
+  .setup(x => x.classifyDescriptionSince)
+  .returns(CommitServiceMock.classifyDescriptionSince)
   .object();

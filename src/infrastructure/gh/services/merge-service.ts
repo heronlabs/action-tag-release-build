@@ -5,7 +5,7 @@ export class MergeService {
     return branch.split('/').map(encodeURIComponent).join('/');
   }
 
-  public mergeWithCommit(ref: string, environment: string) {
+  public mergeWithCommit(ref: string, sha: string, environment: string) {
     try {
       const merge = this.childProcessService.exec('gh', [
         'api',
@@ -13,7 +13,7 @@ export class MergeService {
         '-f',
         `base=${environment}`,
         '-f',
-        `head=${ref}`,
+        `head=${sha}`,
         '-f',
         `commit_message=Merge ${ref} into ${environment}`,
         '--jq',
@@ -34,27 +34,19 @@ export class MergeService {
     }
   }
 
-  public mergeWithoutCommit(ref: string, environment: string) {
+  public mergeWithoutCommit(sha: string, environment: string) {
     try {
-      const sha = this.childProcessService.exec('gh', [
-        'api',
-        `repos/{owner}/{repo}/git/ref/heads/${this.encodeBranch(ref)}`,
-        '--jq',
-        '.object.sha',
-      ]);
-      if (!sha.ok) return sha;
-
       const fastForward = this.childProcessService.exec('gh', [
         'api',
         `repos/{owner}/{repo}/git/refs/heads/${this.encodeBranch(environment)}`,
         '-X',
         'PATCH',
         '-f',
-        `sha=${sha.data}`,
+        `sha=${sha}`,
       ]);
       if (!fastForward.ok) return fastForward;
 
-      return {ok: true as const, data: sha.data};
+      return {ok: true as const, data: sha};
     } catch (error) {
       return {ok: false as const, error};
     }
