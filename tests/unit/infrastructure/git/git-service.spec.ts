@@ -13,55 +13,6 @@ describe('Given a git service', () => {
     service = new GitService(ChildProcessServiceMoq);
   });
 
-  describe('Given get last commit', () => {
-    it('Should get last commit', () => {
-      const data =
-        'feat(scope)!: add some feature\nfix: add some other feature';
-      ChildProcessServiceMock.exec.mockReturnValueOnce({
-        ok: true,
-        data,
-      });
-
-      const output = service.getLastCommit();
-
-      expect(output).toStrictEqual({
-        ok: true,
-        data,
-      });
-    });
-
-    it('Should return error getting last commit', () => {
-      const error = new Error(faker.lorem.sentence());
-      ChildProcessServiceMock.exec.mockReturnValueOnce({
-        ok: false,
-        error,
-      });
-
-      const output = service.getLastCommit();
-
-      expect(output).toStrictEqual({
-        ok: false,
-        error,
-      });
-    });
-
-    it('Should call exec with git log format command', () => {
-      ChildProcessServiceMock.exec.mockReturnValueOnce({
-        ok: true,
-        data: '',
-      });
-
-      service.getLastCommit();
-
-      expect(ChildProcessServiceMock.exec).toHaveBeenCalledWith('git', [
-        'log',
-        '-1',
-        '--no-merges',
-        '--pretty=%B',
-      ]);
-    });
-  });
-
   describe('Given get description since', () => {
     it('Should get descriptions since last version', () => {
       const data = `${faker.string.alpha(40)} feat(scope)!: add some feature\n`;
@@ -306,7 +257,7 @@ describe('Given a git service', () => {
       );
     });
 
-    it('Should call git tag with annotated tag and release message', () => {
+    it('Should force the annotated version tag with release message', () => {
       ChildProcessServiceMock.execChain.mockReturnValue({
         ok: true as const,
         data: 'OK',
@@ -319,7 +270,7 @@ describe('Given a git service', () => {
       expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
         6,
         'git',
-        ['tag', '-a', 'v1.2.3', '-m', 'Release 1.2.3'],
+        ['tag', '-fa', 'v1.2.3', '-m', 'Release 1.2.3'],
       );
     });
 
@@ -562,7 +513,7 @@ describe('Given a git service', () => {
       expect(output).toStrictEqual({ok: false, error});
     });
 
-    it('Should stop chaining after the failing step', () => {
+    it('Should stop each attempt at its failing step', () => {
       const error = new Error(faker.lorem.sentence());
       const failure = {
         ok: false as const,
@@ -585,7 +536,7 @@ describe('Given a git service', () => {
 
       service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
 
-      expect(ChildProcessServiceMock.execChain).toHaveBeenCalledTimes(6);
+      expect(ChildProcessServiceMock.execChain).toHaveBeenCalledTimes(8);
     });
 
     it('Should abort the rebase when a chain step fails', () => {
@@ -712,6 +663,180 @@ describe('Given a git service', () => {
       });
 
       expect(output).toStrictEqual({ok: false, error});
+    });
+
+    describe('Given the commit fails', () => {
+      const error = new Error(faker.lorem.sentence());
+
+      beforeEach(() => {
+        const failure = {
+          ok: false as const,
+          error,
+          execChain: () => failure,
+        };
+        const success = {
+          ok: true as const,
+          data: 'OK',
+          execChain: (command: string, args: string[] = []) =>
+            ChildProcessServiceMock.execChain(command, args),
+        };
+        ChildProcessServiceMock.execChain
+          .mockReturnValueOnce(success)
+          .mockReturnValueOnce(success)
+          .mockReturnValueOnce(success)
+          .mockReturnValueOnce(failure)
+          .mockReturnValue(success);
+      });
+
+      it('Should return the commit error', () => {
+        const output = service.applyTags({
+          version: '1.2.3',
+          tag: 'v1.2.3',
+          ref: 'main',
+        });
+
+        expect(output).toStrictEqual({ok: false, error});
+      });
+
+      it('Should not pull, tag or push', () => {
+        service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
+
+        expect(ChildProcessServiceMock.execChain).toHaveBeenCalledTimes(4);
+      });
+    });
+
+    describe('Given the push is rejected once', () => {
+      const sha = faker.git.commitSha();
+      const error = new Error(faker.lorem.sentence());
+
+      beforeEach(() => {
+        let rejections = 1;
+        ChildProcessServiceMock.execChain.mockImplementation(
+          (command: string, args: string[]) => {
+            if (args[0] === 'push' && rejections-- > 0) {
+              const failure = {
+                ok: false as const,
+                error,
+                execChain: () => failure,
+              };
+              return failure;
+            }
+            return {
+              ok: true as const,
+              data: args[0] === 'rev-parse' ? sha : 'OK',
+              execChain: (next: string, nextArgs: string[] = []) =>
+                ChildProcessServiceMock.execChain(next, nextArgs),
+            };
+          },
+        );
+      });
+
+      it('Should return the head sha of the second attempt', () => {
+        const output = service.applyTags({
+          version: '1.2.3',
+          tag: 'v1.2.3',
+          ref: 'main',
+        });
+
+        expect(output).toStrictEqual({ok: true, data: sha});
+      });
+
+      it('Should commit once and run two attempts', () => {
+        service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
+
+        expect(ChildProcessServiceMock.execChain).toHaveBeenCalledTimes(11);
+      });
+
+      it('Should pull again before the second push', () => {
+        service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
+
+        expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
+          8,
+          'git',
+          ['pull', '--rebase', 'origin', 'main'],
+        );
+      });
+
+      it('Should recreate the version tag on the new head', () => {
+        service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
+
+        expect(ChildProcessServiceMock.execChain).toHaveBeenNthCalledWith(
+          9,
+          'git',
+          ['tag', '-fa', 'v1.2.3', '-m', 'Release 1.2.3'],
+        );
+      });
+
+      it('Should abort the rebase once', () => {
+        service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
+
+        expect(ChildProcessServiceMock.exec).toHaveBeenCalledTimes(1);
+      });
+
+      it('Should commit a single bump', () => {
+        service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
+
+        const commits = ChildProcessServiceMock.execChain.mock.calls.filter(
+          ([, args]) => args[0] === 'commit',
+        );
+        expect(commits).toHaveLength(1);
+      });
+    });
+
+    describe('Given the push is rejected on every attempt', () => {
+      const error = new Error(faker.lorem.sentence());
+
+      beforeEach(() => {
+        ChildProcessServiceMock.execChain.mockImplementation(
+          (command: string, args: string[]) => {
+            if (args[0] === 'push') {
+              const failure = {
+                ok: false as const,
+                error,
+                execChain: () => failure,
+              };
+              return failure;
+            }
+            return {
+              ok: true as const,
+              data: 'OK',
+              execChain: (next: string, nextArgs: string[] = []) =>
+                ChildProcessServiceMock.execChain(next, nextArgs),
+            };
+          },
+        );
+      });
+
+      it('Should return the push error after the last attempt', () => {
+        const output = service.applyTags({
+          version: '1.2.3',
+          tag: 'v1.2.3',
+          ref: 'main',
+        });
+
+        expect(output).toStrictEqual({ok: false, error});
+      });
+
+      it('Should stop after three attempts', () => {
+        service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
+
+        const pushes = ChildProcessServiceMock.execChain.mock.calls.filter(
+          ([, args]) => args[0] === 'push',
+        );
+        expect(pushes).toHaveLength(3);
+      });
+
+      it('Should commit once and run three attempts', () => {
+        service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
+
+        expect(ChildProcessServiceMock.execChain).toHaveBeenCalledTimes(13);
+      });
+
+      it('Should abort the rebase after each attempt', () => {
+        service.applyTags({version: '1.2.3', tag: 'v1.2.3', ref: 'main'});
+
+        expect(ChildProcessServiceMock.exec).toHaveBeenCalledTimes(3);
+      });
     });
   });
 });

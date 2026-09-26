@@ -19514,20 +19514,16 @@ var GhFactory = class _GhFactory {
   }
 };
 
+// src/infrastructure/git/types/bump-commit-prefix.ts
+var BUMP_COMMIT_PREFIX = "[skip ci] bump";
+
 // src/infrastructure/git/services/git-service.ts
+var PUSH_ATTEMPTS = 3;
 var GitService = class {
   constructor(childProcessService) {
     this.childProcessService = childProcessService;
   }
   childProcessService;
-  getLastCommit() {
-    return this.childProcessService.exec("git", [
-      "log",
-      "-1",
-      "--no-merges",
-      "--pretty=%B"
-    ]);
-  }
   getDescriptionSince(tagPrefix) {
     const previousTag = this.childProcessService.exec("git", [
       "describe",
@@ -19551,38 +19547,43 @@ var GitService = class {
     ref,
     tags
   }) {
-    const commitMessage = `[skip ci] bump ${tag}`;
+    const commitMessage = `${BUMP_COMMIT_PREFIX} ${tag}`;
     const refspecs = [
       `refs/heads/${ref}:refs/heads/${ref}`,
       `refs/tags/${tag}`
     ];
-    let chain = this.childProcessService.execChain("git", ["config", "user.name", "github-actions[bot]"]).execChain("git", [
+    const commit = this.childProcessService.execChain("git", ["config", "user.name", "github-actions[bot]"]).execChain("git", [
       "config",
       "user.email",
       "github-actions[bot]@users.noreply.github.com"
-    ]).execChain("git", ["add", "-A"]).execChain("git", ["commit", "-m", commitMessage]).execChain("git", ["pull", "--rebase", "origin", ref]).execChain("git", ["tag", "-a", tag, "-m", `Release ${version}`]);
-    if (tags) {
-      chain = chain.execChain("git", [
-        "tag",
-        "-fa",
-        tags.major,
-        "-m",
-        `Latest ${tags.major}.x.x release`
-      ]).execChain("git", [
-        "tag",
-        "-fa",
-        tags.minor,
-        "-m",
-        `Latest ${tags.minor}.x release`
-      ]);
+    ]).execChain("git", ["add", "-A"]).execChain("git", ["commit", "-m", commitMessage]);
+    if (!commit.ok) return { ok: false, error: commit.error };
+    if (tags)
       refspecs.push(`+refs/tags/${tags.major}`, `+refs/tags/${tags.minor}`);
-    }
-    const result = chain.execChain("git", ["push", "--atomic", "origin", ...refspecs]).execChain("git", ["rev-parse", "HEAD"]);
-    if (!result.ok) {
+    let error2;
+    for (let attempt = 0; attempt < PUSH_ATTEMPTS; attempt++) {
+      let chain = this.childProcessService.execChain("git", ["pull", "--rebase", "origin", ref]).execChain("git", ["tag", "-fa", tag, "-m", `Release ${version}`]);
+      if (tags) {
+        chain = chain.execChain("git", [
+          "tag",
+          "-fa",
+          tags.major,
+          "-m",
+          `Latest ${tags.major}.x.x release`
+        ]).execChain("git", [
+          "tag",
+          "-fa",
+          tags.minor,
+          "-m",
+          `Latest ${tags.minor}.x release`
+        ]);
+      }
+      const result = chain.execChain("git", ["push", "--atomic", "origin", ...refspecs]).execChain("git", ["rev-parse", "HEAD"]);
+      if (result.ok) return { ok: true, data: result.data };
       this.childProcessService.exec("git", ["rebase", "--abort"]);
-      return { ok: false, error: result.error };
+      error2 = result.error;
     }
-    return { ok: true, data: result.data };
+    return { ok: false, error: error2 };
   }
 };
 
@@ -19905,31 +19906,24 @@ var CommitService = class {
       const lastCommits = this.gitService.getDescriptionSince(tagPrefix);
       if (!lastCommits.ok)
         return { ok: false, error: lastCommits.error };
-      const parsedCommits = lastCommits.data.split(COMMIT_RECORD_SEPARATOR).map((record) => record.trim()).filter((record) => record.length > 0).map((record) => {
-        const hash = record.slice(0, 40);
-        const commit = record.slice(41);
-        return {
-          hash,
-          ...this.parseCommit(commit)
-        };
-      });
+      const parsedCommits = lastCommits.data.split(COMMIT_RECORD_SEPARATOR).map((record) => record.trim()).filter((record) => record.length > 0).map((record) => ({ hash: record.slice(0, 40), commit: record.slice(41) })).filter(({ commit }) => !commit.startsWith(BUMP_COMMIT_PREFIX)).map(({ hash, commit }) => ({
+        hash,
+        ...this.parseCommit(commit)
+      }));
       return { ok: true, data: parsedCommits };
     } catch (error2) {
       return { ok: false, error: error2 };
     }
   }
-  classifyLastCommit() {
-    try {
-      const lastCommit = this.gitService.getLastCommit();
-      if (!lastCommit.ok) return { ok: false, error: lastCommit.error };
-      const commit = this.parseCommit(lastCommit.data);
-      let data = "patch";
-      if (commit.breaking) data = "major";
-      else if (commit.type === "feat") data = "minor";
-      return { ok: true, data };
-    } catch (error2) {
-      return { ok: false, error: error2 };
-    }
+  classifyDescriptionSince(tagPrefix) {
+    const commits = this.parseDescriptionSince(tagPrefix);
+    if (!commits.ok) return { ok: false, error: commits.error };
+    if (!commits.data.length) return { ok: true, data: null };
+    let data = "patch";
+    if (commits.data.some((commit) => commit.breaking)) data = "major";
+    else if (commits.data.some((commit) => commit.type === "feat"))
+      data = "minor";
+    return { ok: true, data };
   }
 };
 
@@ -20016,7 +20010,7 @@ var SemverService = class {
       return { ok: false, error: error2 };
     }
   }
-  calculateNextVersion(versionFile, semantic) {
+  calculateNextVersion(versionFile, tagPrefix, semantic) {
     const version = this.get(versionFile);
     if (!version.ok) return { ok: false, error: version.error };
     if (semantic) {
@@ -20027,10 +20021,11 @@ var SemverService = class {
           error: new Error(`invalid semantic: '${semantic}'`)
         };
     } else {
-      const lastCommitType = this.commitService.classifyLastCommit();
-      if (!lastCommitType.ok)
-        return { ok: false, error: lastCommitType.error };
-      semantic = lastCommitType.data;
+      const commitsType = this.commitService.classifyDescriptionSince(tagPrefix);
+      if (!commitsType.ok)
+        return { ok: false, error: commitsType.error };
+      if (!commitsType.data) return { ok: true, data: null };
+      semantic = commitsType.data;
     }
     const semver = this.calculate(version.data, semantic);
     if (!semver.ok) return { ok: false, error: semver.error };
@@ -20170,9 +20165,22 @@ var Command2 = class {
     } = inputs;
     const semver = this.semverService.calculateNextVersion(
       versionFile,
+      tagPrefix,
       semantic
     );
     if (!semver.ok) throw semver.error;
+    if (!semver.data) {
+      process.stderr.write(
+        "\u23ED\uFE0F Release skipped: no releasable commit since the last tag\n"
+      );
+      return {
+        version: "",
+        tag: "",
+        tagMajor: "",
+        tagMinor: "",
+        releasedRefs: []
+      };
+    }
     const { nextVersion, major, minor } = semver.data;
     for (const bumper of this.bumpers) {
       const bump = bumper.bump(nextVersion);

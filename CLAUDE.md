@@ -34,12 +34,12 @@
 | `src/application/action/action-factory.ts` | CliFactory (wires all services) |
 | `src/application/action/command/command.ts` | Command — orchestrates the full pipeline |
 | `src/core/services/semver-service.ts` | Read version file, calculate next semver, write version file |
-| `src/core/services/commit-service.ts` | Parse Conventional Commits, classify last commit type |
+| `src/core/services/commit-service.ts` | Parse Conventional Commits, classify the commits since the last tag (`[skip ci] bump` commits ignored) |
 | `src/core/services/changelog-service.ts` | Generate release notes, update changelog, tag + push + release |
 | `src/core/services/bumpers/npm-bumper-service.ts` | Sync version into package.json |
 | `src/core/services/bumpers/claude-bumper-service.ts` | Sync version into Claude Code plugin files |
 | `src/core/services/sync-service.ts` | Cascade released ref into target environment branches (merge or fast-forward, PR fallback) — targets must already exist on the remote |
-| `src/infrastructure/git/services/git-service.ts` | Git commands: log, describe, tag, push |
+| `src/infrastructure/git/services/git-service.ts` | Git commands: log, describe, tag, push (up to 3 pull --rebase + push attempts) |
 | `src/infrastructure/gh/services/release-notes-service.ts` | GitHub CLI: release create |
 | `src/infrastructure/gh/services/merge-service.ts` | GitHub merges API (merge commit) + git refs API (fast-forward) — sync ref into an existing target branch |
 | `src/infrastructure/gh/services/pull-request-service.ts` | GitHub CLI: list / create the sync fallback pull request |

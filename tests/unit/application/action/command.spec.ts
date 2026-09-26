@@ -373,6 +373,92 @@ describe('Given a bump command', () => {
     expect(() => command.run(inputs)).toThrow(error);
   });
 
+  it('Should calculate next version with the version file, tag prefix and semantic', () => {
+    SemverServiceMock.calculateNextVersion.mockReturnValueOnce({
+      ok: true,
+      data: null,
+    });
+
+    const inputs: Inputs = {
+      semantic: 'minor',
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref: faker.string.alpha(4),
+      overrideTag: true,
+      tagPrefix: faker.string.alpha(),
+    };
+
+    command.run(inputs);
+
+    expect(SemverServiceMock.calculateNextVersion).toHaveBeenCalledWith(
+      'version.txt',
+      inputs.tagPrefix,
+      'minor',
+    );
+  });
+
+  describe('Given no releasable commit since the last tag', () => {
+    const inputs: Inputs = {
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref: 'main',
+      overrideTag: true,
+      tagPrefix: 'v',
+      target: 'development,sandbox',
+    };
+
+    beforeEach(() => {
+      SemverServiceMock.calculateNextVersion.mockReturnValueOnce({
+        ok: true,
+        data: null,
+      });
+    });
+
+    it('Should return empty outputs and no released ref', () => {
+      const output = command.run(inputs);
+
+      expect(output).toStrictEqual({
+        version: '',
+        tag: '',
+        tagMajor: '',
+        tagMinor: '',
+        releasedRefs: [],
+      });
+    });
+
+    it('Should log that the release was skipped', () => {
+      command.run(inputs);
+
+      expect(vi.mocked(process.stderr.write)).toHaveBeenCalledWith(
+        '⏭️ Release skipped: no releasable commit since the last tag\n',
+      );
+    });
+
+    it('Should log a single line', () => {
+      command.run(inputs);
+
+      expect(vi.mocked(process.stderr.write)).toHaveBeenCalledTimes(1);
+    });
+
+    it('Should not run the bumpers', () => {
+      command.run(inputs);
+
+      expect(BumperMock.bump).not.toHaveBeenCalled();
+    });
+
+    it('Should not tag nor push', () => {
+      command.run(inputs);
+
+      expect(ChangelogServiceMock.applyReleaseChangelog).not.toHaveBeenCalled();
+    });
+
+    it('Should not sync the targets', () => {
+      command.run(inputs);
+
+      expect(SyncServiceMock.cascadeEnvironments).not.toHaveBeenCalled();
+    });
+  });
+
   it('Should throw error when a bumper fails', () => {
     const nextVersion = faker.system.semver();
     const major = `${nextVersion.split('.')[0]}`;

@@ -13,7 +13,7 @@ inputs:
     description: GitHub token for creating tags
     required: true
   semantic:
-    description: Semver bump type (major, minor, patch). Inferred from the HEAD commit when empty
+    description: Semver bump type (major, minor, patch). When empty, the highest bump inferred from every commit since the last tag, and the release is skipped when there is none
     required: false
   workingDirectory:
     description: Working directory (for monorepo sub-directories). Defaults to `.`
@@ -56,7 +56,7 @@ outputs:
   tagMinor:
     description: The minor version tag (e.g., v1.0)
   releasedRefs:
-    description: 'JSON array of released refs: [{target, sha}]. Always contains the released ref itself, plus one entry per target branch synced successfully. Unset when the action fails before the sync step'
+    description: 'JSON array of released refs: [{target, sha}]. Contains the released ref itself, plus one entry per target branch synced successfully. [] when the release is skipped. Unset when the action fails before the sync step'
 
 runs:
   using: node24

@@ -470,190 +470,230 @@ describe('Given a commit service', () => {
         error: expect.any(Error),
       });
     });
+
+    it('Should parse a commit with an empty message as other', () => {
+      const hash = faker.string.alpha(40);
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: `${hash} \n${COMMIT_RECORD_SEPARATOR}`,
+      });
+
+      const output = service.parseDescriptionSince(faker.string.alpha());
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: [
+          {
+            hash,
+            type: 'other',
+            scope: undefined,
+            breaking: false,
+            breakingDescription: undefined,
+            description: '',
+          },
+        ],
+      });
+    });
+
+    it('Should drop the bump commits pushed by a previous release', () => {
+      const hash = faker.string.alpha(40);
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: [
+          `${faker.string.alpha(40)} [skip ci] bump v1.2.4`,
+          `${hash} fix: fix bug`,
+        ].join(COMMIT_RECORD_SEPARATOR),
+      });
+
+      const output = service.parseDescriptionSince(faker.string.alpha());
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: [
+          {
+            hash,
+            type: 'fix',
+            scope: undefined,
+            breaking: false,
+            breakingDescription: undefined,
+            description: 'fix bug',
+          },
+        ],
+      });
+    });
+
+    it('Should keep a commit that only mentions a bump after its subject start', () => {
+      const hash = faker.string.alpha(40);
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: `${hash} chore: [skip ci] bump v1.2.4`,
+      });
+
+      const output = service.parseDescriptionSince(faker.string.alpha());
+
+      expect(output).toStrictEqual({
+        ok: true,
+        data: [
+          {
+            hash,
+            type: 'other',
+            scope: undefined,
+            breaking: false,
+            breakingDescription: undefined,
+            description: '[skip ci] bump v1.2.4',
+          },
+        ],
+      });
+    });
   });
 
-  describe('Given classify last commit method', () => {
-    it('Should get last commit for major', () => {
-      GitServiceMock.getLastCommit.mockReturnValueOnce({
+  describe('Given classify description since method', () => {
+    const records = (...subjects: string[]) =>
+      subjects
+        .map(subject => `${faker.string.alpha(40)} ${subject}`)
+        .join(COMMIT_RECORD_SEPARATOR);
+
+    it('Should get major when any commit since the last tag is breaking', () => {
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
         ok: true,
-        data: 'feat(scope)!: add some feature\nfix: add some other feature',
+        data: records('fix: first', 'feat(scope)!: second', 'fix: third'),
       });
 
-      const output = service.classifyLastCommit();
+      const output = service.classifyDescriptionSince('v');
 
-      expect(output).toStrictEqual({
-        ok: true,
-        data: 'major',
-      });
+      expect(output).toStrictEqual({ok: true, data: 'major'});
     });
 
-    it('Should get major from a BREAKING CHANGE footer in the body', () => {
-      GitServiceMock.getLastCommit.mockReturnValueOnce({
+    it('Should get major from a BREAKING CHANGE footer in an earlier commit', () => {
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
         ok: true,
-        data: 'feat: drop node 18\n\nBREAKING CHANGE: node 18 is no longer supported\n',
+        data: records(
+          'fix: rename output\n\nBREAKING CHANGE: the output is now called version\n',
+          'feat: add thing',
+        ),
       });
 
-      const output = service.classifyLastCommit();
+      const output = service.classifyDescriptionSince('v');
 
-      expect(output).toStrictEqual({
-        ok: true,
-        data: 'major',
-      });
-    });
-
-    it('Should get major from a hyphenated BREAKING-CHANGE footer', () => {
-      GitServiceMock.getLastCommit.mockReturnValueOnce({
-        ok: true,
-        data: 'fix: rename output\n\nBREAKING-CHANGE: the output is now called version\n',
-      });
-
-      const output = service.classifyLastCommit();
-
-      expect(output).toStrictEqual({
-        ok: true,
-        data: 'major',
-      });
+      expect(output).toStrictEqual({ok: true, data: 'major'});
     });
 
     it('Should get major from an indented BREAKING CHANGE footer', () => {
-      GitServiceMock.getLastCommit.mockReturnValueOnce({
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
         ok: true,
-        data: 'feat: drop node 18\n\n  BREAKING CHANGE : node 18 is no longer supported\n',
+        data: records(
+          'fix: drop node 18\n\n  BREAKING CHANGE : node 18 is no longer supported\n',
+        ),
       });
 
-      const output = service.classifyLastCommit();
+      const output = service.classifyDescriptionSince('v');
 
-      expect(output).toStrictEqual({
+      expect(output).toStrictEqual({ok: true, data: 'major'});
+    });
+
+    it('Should skip whitespace-only lines before the subject', () => {
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
         ok: true,
-        data: 'major',
+        data: `${faker.string.alpha(40)}    \nfeat: add feature`,
       });
+
+      const output = service.classifyDescriptionSince('v');
+
+      expect(output).toStrictEqual({ok: true, data: 'minor'});
+    });
+
+    it('Should get minor when a feat precedes the last commit', () => {
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: records('fix: first', 'feat: second', 'fix: third'),
+      });
+
+      const output = service.classifyDescriptionSince('v');
+
+      expect(output).toStrictEqual({ok: true, data: 'minor'});
+    });
+
+    it('Should get patch when no commit is a feat or breaking', () => {
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: records('chore: first', 'fix: second', 'random update'),
+      });
+
+      const output = service.classifyDescriptionSince('v');
+
+      expect(output).toStrictEqual({ok: true, data: 'patch'});
     });
 
     it('Should get patch when the breaking phrase appears mid sentence', () => {
-      GitServiceMock.getLastCommit.mockReturnValueOnce({
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
         ok: true,
-        data: 'fix: tighten validation\n\nThe reviewer asked whether this is a BREAKING CHANGE: for old\nclients, but it is not.\n',
+        data: records(
+          'fix: tighten validation\n\nThe reviewer asked whether this is a BREAKING CHANGE: for old\nclients, but it is not.\n',
+        ),
       });
 
-      const output = service.classifyLastCommit();
+      const output = service.classifyDescriptionSince('v');
 
-      expect(output).toStrictEqual({
-        ok: true,
-        data: 'patch',
-      });
+      expect(output).toStrictEqual({ok: true, data: 'patch'});
     });
 
-    it('Should get last commit for minor', () => {
-      GitServiceMock.getLastCommit.mockReturnValueOnce({
+    it('Should ignore the bump commit when classifying', () => {
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
         ok: true,
-        data: 'feat(scope): add some feature\nfix: add some other feature',
+        data: records('feat: add thing', '[skip ci] bump v1.2.4'),
       });
 
-      const output = service.classifyLastCommit();
+      const output = service.classifyDescriptionSince('v');
 
-      expect(output).toStrictEqual({
-        ok: true,
-        data: 'minor',
-      });
+      expect(output).toStrictEqual({ok: true, data: 'minor'});
     });
 
-    it('Should get last commit for patch', () => {
-      GitServiceMock.getLastCommit.mockReturnValueOnce({
-        ok: true,
-        data: 'fix(scope): add some feature\nfix: add some other feature',
-      });
-
-      const output = service.classifyLastCommit();
-
-      expect(output).toStrictEqual({
-        ok: true,
-        data: 'patch',
-      });
-    });
-
-    it('Should get patch for unknown commit type', () => {
-      GitServiceMock.getLastCommit.mockReturnValueOnce({
-        ok: true,
-        data: 'chore: update dependencies',
-      });
-
-      const output = service.classifyLastCommit();
-
-      expect(output).toStrictEqual({
-        ok: true,
-        data: 'patch',
-      });
-    });
-
-    it('Should get patch for empty last commit', () => {
-      GitServiceMock.getLastCommit.mockReturnValueOnce({
+    it('Should get nothing when there is no commit since the last tag', () => {
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
         ok: true,
         data: '',
       });
 
-      const output = service.classifyLastCommit();
+      const output = service.classifyDescriptionSince('v');
 
-      expect(output).toStrictEqual({
-        ok: true,
-        data: 'patch',
-      });
+      expect(output).toStrictEqual({ok: true, data: null});
     });
 
-    it('Should return error getting last commit', () => {
+    it('Should get nothing when only bump commits remain since the last tag', () => {
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: records('[skip ci] bump v1.2.4', '[skip ci] bump v1.2.5'),
+      });
+
+      const output = service.classifyDescriptionSince('v');
+
+      expect(output).toStrictEqual({ok: true, data: null});
+    });
+
+    it('Should read the commits since the last tag with the tag prefix', () => {
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: '',
+      });
+
+      const tagPrefix = faker.string.alpha();
+      service.classifyDescriptionSince(tagPrefix);
+
+      expect(GitServiceMock.getDescriptionSince).toHaveBeenCalledWith(
+        tagPrefix,
+      );
+    });
+
+    it('Should return error reading the commits since the last tag', () => {
       const error = new Error(faker.lorem.sentence());
-      GitServiceMock.getLastCommit.mockReturnValueOnce({
+      GitServiceMock.getDescriptionSince.mockReturnValueOnce({
         ok: false,
         error,
       });
 
-      const output = service.classifyLastCommit();
+      const output = service.classifyDescriptionSince('v');
 
-      expect(output).toStrictEqual({
-        ok: false,
-        error,
-      });
-    });
-
-    it('Should filter whitespace-only lines in last commit', () => {
-      GitServiceMock.getLastCommit.mockReturnValueOnce({
-        ok: true,
-        data: '   \nfeat: add feature',
-      });
-
-      const output = service.classifyLastCommit();
-
-      expect(output).toStrictEqual({
-        ok: true,
-        data: 'minor',
-      });
-    });
-
-    it('Should return patch when all lines are whitespace only', () => {
-      GitServiceMock.getLastCommit.mockReturnValueOnce({
-        ok: true,
-        data: '   \n\t\n',
-      });
-
-      const output = service.classifyLastCommit();
-
-      expect(output).toStrictEqual({
-        ok: true,
-        data: 'patch',
-      });
-    });
-
-    it('Should return error parsing last commit', () => {
-      GitServiceMock.getLastCommit.mockReturnValueOnce({
-        ok: true,
-        data: {},
-      });
-
-      const output = service.classifyLastCommit();
-
-      expect(output).toStrictEqual({
-        ok: false,
-        error: expect.any(Error),
-      });
+      expect(output).toStrictEqual({ok: false, error});
     });
   });
 });

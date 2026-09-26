@@ -1424,7 +1424,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Corrupt git HEAD fails classifyLastCommit with empty semantic', () => {
+  describe('Corrupt git HEAD fails classifyDescriptionSince with empty semantic', () => {
     it('Should throw error when git HEAD is missing and semantic is empty', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
@@ -1897,8 +1897,8 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Defensive catch: classifyLastCommit unexpected exception', () => {
-    it('Should throw error when getLastCommit throws unexpectedly', () => {
+  describe('Defensive catch: classifyDescriptionSince unexpected exception', () => {
+    it('Should throw error when getDescriptionSince throws unexpectedly with empty semantic', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['fix: typo'],
@@ -1910,7 +1910,7 @@ describe('Full tag-release-build pipeline', () => {
       });
       const command = testingCliFactory(workDir, {
         patchServices: ({gitService}) => {
-          gitService.getLastCommit = () => {
+          gitService.getDescriptionSince = () => {
             throw new Error('simulated internal exception');
           };
         },
@@ -2800,6 +2800,353 @@ describe('Full tag-release-build pipeline', () => {
       expect(process.stderr.write).toHaveBeenCalledWith(
         expect.stringContaining('Then PR creation failed;'),
       );
+    });
+  });
+
+  describe('Semantic from every commit since the last tag', () => {
+    const run = (commits: string[]) => {
+      testRepo = createTestRepo({version: '1.2.3', commits});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      testingCliFactory(testRepo.workDir).run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: false,
+      });
+      return testRepo.workDir;
+    };
+
+    it('Should bump minor when a feat precedes the last fix commit', () => {
+      const workDir = run(['feat: add thing', 'fix: typo']);
+
+      const version = readFileSync(join(workDir, 'version.txt'), 'utf8').trim();
+      expect(version).toBe('1.3.0');
+    });
+
+    it('Should bump major when a breaking commit precedes the last fix commit', () => {
+      const workDir = run(['feat!: drop thing', 'fix: typo']);
+
+      const version = readFileSync(join(workDir, 'version.txt'), 'utf8').trim();
+      expect(version).toBe('2.0.0');
+    });
+
+    it('Should ignore a bump commit at the tip when classifying', () => {
+      const workDir = run(['feat: add thing', '[skip ci] bump v1.2.4']);
+
+      const version = readFileSync(join(workDir, 'version.txt'), 'utf8').trim();
+      expect(version).toBe('1.3.0');
+    });
+
+    it('Should leave the bump commit out of CHANGELOG.md', () => {
+      const workDir = run(['fix: typo', '[skip ci] bump v1.2.4']);
+
+      const changelog = readFileSync(join(workDir, 'CHANGELOG.md'), 'utf8');
+      expect(changelog).not.toContain('[skip ci] bump');
+    });
+  });
+
+  describe('Queued run starting from the previous release tip', () => {
+    const inputs: Inputs = {
+      semantic: '',
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref: 'main',
+      tagPrefix: 'v',
+      overrideTag: true,
+    };
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      testingCliFactory(testRepo.workDir).run(inputs);
+    });
+
+    it('Should skip the release when nothing was merged since', () => {
+      const output = testingCliFactory(testRepo.workDir).run(inputs);
+
+      expect(output).toStrictEqual({
+        version: '',
+        tag: '',
+        tagMajor: '',
+        tagMinor: '',
+        releasedRefs: [],
+      });
+    });
+
+    it('Should release only the commit merged since', () => {
+      execSync("git commit --allow-empty -m 'fix: typo'", {
+        cwd: testRepo.workDir,
+        stdio: 'pipe',
+      });
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+
+      const output = testingCliFactory(testRepo.workDir).run(inputs);
+
+      expect(output.version).toBe('1.3.1');
+    });
+  });
+
+  describe('No releasable commit since the last tag', () => {
+    const inputs: Inputs = {
+      semantic: '',
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref: 'main',
+      tagPrefix: 'v',
+      overrideTag: true,
+      target: 'development',
+    };
+
+    it('Should return empty outputs and no released ref', () => {
+      testRepo = createTestRepo({version: '1.2.3', commits: []});
+
+      const output = testingCliFactory(testRepo.workDir).run(inputs);
+
+      expect(output).toStrictEqual({
+        version: '',
+        tag: '',
+        tagMajor: '',
+        tagMinor: '',
+        releasedRefs: [],
+      });
+    });
+
+    it('Should return empty outputs when only a bump commit follows the tag', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['[skip ci] bump v1.2.3'],
+      });
+
+      const output = testingCliFactory(testRepo.workDir).run(inputs);
+
+      expect(output.releasedRefs).toStrictEqual([]);
+    });
+
+    it('Should log that the release was skipped', () => {
+      testRepo = createTestRepo({version: '1.2.3', commits: []});
+
+      testingCliFactory(testRepo.workDir).run(inputs);
+
+      expect(vi.mocked(process.stderr.write)).toHaveBeenCalledWith(
+        '⏭️ Release skipped: no releasable commit since the last tag\n',
+      );
+    });
+
+    it('Should keep version.txt unchanged', () => {
+      testRepo = createTestRepo({version: '1.2.3', commits: []});
+
+      testingCliFactory(testRepo.workDir).run(inputs);
+
+      const version = readFileSync(
+        join(testRepo.workDir, 'version.txt'),
+        'utf8',
+      ).trim();
+      expect(version).toBe('1.2.3');
+    });
+
+    it('Should create no tag', () => {
+      testRepo = createTestRepo({version: '1.2.3', commits: []});
+
+      testingCliFactory(testRepo.workDir).run(inputs);
+
+      const tags = execSync('git tag -l', {
+        cwd: testRepo.workDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      })
+        .trim()
+        .split('\n');
+      expect(tags).toStrictEqual(['v1.2.3']);
+    });
+
+    it('Should push nothing to the remote', () => {
+      testRepo = createTestRepo({version: '1.2.3', commits: []});
+      const before = execSync('git rev-parse main', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      });
+
+      testingCliFactory(testRepo.workDir).run(inputs);
+
+      const after = execSync('git rev-parse main', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      });
+      expect(after).toBe(before);
+    });
+
+    it('Should still release when an explicit semantic is given', () => {
+      testRepo = createTestRepo({version: '1.2.3', commits: []});
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+
+      const output = testingCliFactory(testRepo.workDir).run({
+        ...inputs,
+        semantic: 'patch',
+        target: undefined,
+      });
+
+      expect(output.version).toBe('1.2.4');
+    });
+  });
+
+  describe('Push rejected by a commit merged during the release', () => {
+    const remote = (args: string) =>
+      execSync(`git ${args}`, {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+
+    let output: ReturnType<ReturnType<typeof testingCliFactory>['run']>;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      const concurrentDir = join(testRepo.bareDir, '..', 'concurrent');
+      testRepo.gh.enqueue({
+        stdout: 'https://github.com/test/releases/tag/mock',
+      });
+      let merged = false;
+      const command = testingCliFactory(testRepo.workDir, {
+        patchServices: ({childProcessService}) => {
+          const execChain =
+            childProcessService.execChain.bind(childProcessService);
+          childProcessService.execChain = (cmd: string, args: string[]) => {
+            if (!merged && args[0] === 'push') {
+              merged = true;
+              execSync(
+                `git clone -b main "${testRepo.bareDir}" "${concurrentDir}"`,
+                {stdio: 'pipe'},
+              );
+              execSync(
+                "git -c user.name=Test -c user.email=test@test.com commit --allow-empty -m 'fix: merged meanwhile'",
+                {cwd: concurrentDir, stdio: 'pipe'},
+              );
+              execSync('git push origin main', {
+                cwd: concurrentDir,
+                stdio: 'pipe',
+              });
+            }
+            return execChain(cmd, args);
+          };
+        },
+      });
+
+      output = command.run({
+        semantic: '',
+        versionFile: 'version.txt',
+        changelogFile: 'CHANGELOG.md',
+        ref: 'main',
+        tagPrefix: 'v',
+        overrideTag: true,
+      });
+    });
+
+    it('Should keep the concurrent commit on the remote branch', () => {
+      expect(remote('log main --format=%s')).toContain('fix: merged meanwhile');
+    });
+
+    it('Should push the bump commit on top of the concurrent commit', () => {
+      expect(remote('log -1 main --format=%s')).toBe('[skip ci] bump v1.3.0');
+    });
+
+    it('Should point the version tag at the remote branch head', () => {
+      expect(remote('rev-parse v1.3.0^{commit}')).toBe(
+        remote('rev-parse main'),
+      );
+    });
+
+    it('Should point the floating major tag at the remote branch head', () => {
+      expect(remote('rev-parse v1^{commit}')).toBe(remote('rev-parse main'));
+    });
+
+    it('Should report the remote branch head as the released sha', () => {
+      expect(output.releasedRefs).toStrictEqual([
+        {target: 'main', sha: remote('rev-parse main')},
+      ]);
+    });
+  });
+
+  describe('Bump commit rejected by a local hook', () => {
+    it('Should throw error when the bump commit fails', () => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      const hookPath = join(testRepo.workDir, '.git', 'hooks', 'pre-commit');
+      writeFileSync(hookPath, '#!/bin/sh\nexit 1\n');
+      chmodSync(hookPath, 0o755);
+      const command = testingCliFactory(testRepo.workDir);
+
+      expect(() =>
+        command.run({
+          semantic: '',
+          versionFile: 'version.txt',
+          changelogFile: 'CHANGELOG.md',
+          ref: 'main',
+          tagPrefix: 'v',
+          overrideTag: false,
+        }),
+      ).toThrow();
+    });
+  });
+
+  describe('Push rejected on every attempt', () => {
+    let counterFile: string;
+    let thrown: unknown;
+
+    beforeEach(() => {
+      testRepo = createTestRepo({
+        version: '1.2.3',
+        commits: ['feat: add thing'],
+      });
+      counterFile = join(testRepo.bareDir, '..', 'push-attempts');
+      const hookPath = join(testRepo.bareDir, 'hooks', 'pre-receive');
+      writeFileSync(
+        hookPath,
+        `#!/bin/sh\necho attempt >> "${counterFile}"\nexit 1\n`,
+      );
+      chmodSync(hookPath, 0o755);
+      thrown = undefined;
+
+      try {
+        testingCliFactory(testRepo.workDir).run({
+          semantic: '',
+          versionFile: 'version.txt',
+          changelogFile: 'CHANGELOG.md',
+          ref: 'main',
+          tagPrefix: 'v',
+          overrideTag: false,
+        });
+      } catch (error) {
+        thrown = error;
+      }
+    });
+
+    it('Should throw the push error', () => {
+      expect(thrown).toBeInstanceOf(Error);
+    });
+
+    it('Should give up after three attempts', () => {
+      const attempts = readFileSync(counterFile, 'utf8').trim().split('\n');
+      expect(attempts).toHaveLength(3);
     });
   });
 });

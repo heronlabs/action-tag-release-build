@@ -27,7 +27,7 @@ describe('Given a semver service', () => {
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    const output = service.calculateNextVersion('version.txt', 'major');
+    const output = service.calculateNextVersion('version.txt', 'v', 'major');
 
     expect(output).toStrictEqual({
       ok: true,
@@ -45,7 +45,7 @@ describe('Given a semver service', () => {
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    const output = service.calculateNextVersion('version.txt', 'minor');
+    const output = service.calculateNextVersion('version.txt', 'v', 'minor');
 
     expect(output).toStrictEqual({
       ok: true,
@@ -63,7 +63,7 @@ describe('Given a semver service', () => {
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    const output = service.calculateNextVersion('version.txt', 'patch');
+    const output = service.calculateNextVersion('version.txt', 'v', 'patch');
 
     expect(output).toStrictEqual({
       ok: true,
@@ -81,7 +81,7 @@ describe('Given a semver service', () => {
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    const output = service.calculateNextVersion('version.txt', 'major');
+    const output = service.calculateNextVersion('version.txt', 'v', 'major');
 
     expect(output).toStrictEqual({
       ok: true,
@@ -99,7 +99,7 @@ describe('Given a semver service', () => {
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    const output = service.calculateNextVersion('version.txt', 'minor');
+    const output = service.calculateNextVersion('version.txt', 'v', 'minor');
 
     expect(output).toStrictEqual({
       ok: true,
@@ -117,7 +117,7 @@ describe('Given a semver service', () => {
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    const output = service.calculateNextVersion('version.txt', 'patch');
+    const output = service.calculateNextVersion('version.txt', 'v', 'patch');
 
     expect(output).toStrictEqual({
       ok: true,
@@ -135,7 +135,7 @@ describe('Given a semver service', () => {
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    const output = service.calculateNextVersion('version.txt', 'major');
+    const output = service.calculateNextVersion('version.txt', 'v', 'major');
 
     expect(output).toStrictEqual({
       ok: true,
@@ -152,7 +152,7 @@ describe('Given a semver service', () => {
     const versionFileContent = 'v';
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
 
-    const output = service.calculateNextVersion('version.txt', 'major');
+    const output = service.calculateNextVersion('version.txt', 'v', 'major');
 
     expect(output).toStrictEqual({
       ok: false,
@@ -164,7 +164,7 @@ describe('Given a semver service', () => {
     const versionFileContent = '1.x.0';
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
 
-    const output = service.calculateNextVersion('version.txt', 'patch');
+    const output = service.calculateNextVersion('version.txt', 'v', 'patch');
 
     expect(output).toStrictEqual({
       ok: false,
@@ -176,7 +176,7 @@ describe('Given a semver service', () => {
     const versionFileContent = '1.2.3foo';
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
 
-    const output = service.calculateNextVersion('version.txt', 'patch');
+    const output = service.calculateNextVersion('version.txt', 'v', 'patch');
 
     expect(output).toStrictEqual({
       ok: false,
@@ -188,7 +188,7 @@ describe('Given a semver service', () => {
     const versionFileContent = '1.a2.3';
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
 
-    const output = service.calculateNextVersion('version.txt', 'patch');
+    const output = service.calculateNextVersion('version.txt', 'v', 'patch');
 
     expect(output).toStrictEqual({
       ok: false,
@@ -201,7 +201,7 @@ describe('Given a semver service', () => {
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    const output = service.calculateNextVersion('version.txt', 'patch');
+    const output = service.calculateNextVersion('version.txt', 'v', 'patch');
 
     expect(output).toStrictEqual({
       ok: true,
@@ -218,7 +218,7 @@ describe('Given a semver service', () => {
     const versionFileContent = '1.x.0';
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
 
-    service.calculateNextVersion('version.txt', 'patch');
+    service.calculateNextVersion('version.txt', 'v', 'patch');
 
     expect(writeFileSync).not.toHaveBeenCalled();
   });
@@ -228,7 +228,7 @@ describe('Given a semver service', () => {
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    const output = service.calculateNextVersion('version.txt', 'patch');
+    const output = service.calculateNextVersion('version.txt', 'v', 'patch');
 
     expect(output).toStrictEqual({
       ok: true,
@@ -246,7 +246,7 @@ describe('Given a semver service', () => {
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    const output = service.calculateNextVersion('version.txt', 'patch');
+    const output = service.calculateNextVersion('version.txt', 'v', 'patch');
 
     expect(output).toStrictEqual({
       ok: true,
@@ -264,7 +264,7 @@ describe('Given a semver service', () => {
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
 
     const versionFile = faker.string.alpha();
-    const output = service.calculateNextVersion(versionFile, 'major');
+    const output = service.calculateNextVersion(versionFile, 'v', 'major');
 
     const path = join(cwd, versionFile);
 
@@ -279,7 +279,7 @@ describe('Given a semver service', () => {
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    const output = service.calculateNextVersion('version.txt', 'patch');
+    const output = service.calculateNextVersion('version.txt', 'v', 'patch');
 
     expect(output).toStrictEqual({
       ok: true,
@@ -297,7 +297,7 @@ describe('Given a semver service', () => {
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    service.calculateNextVersion('version.txt', 'major');
+    service.calculateNextVersion('version.txt', 'v', 'major');
 
     const path = join(cwd, 'version.txt');
     expect(readFileSync).toHaveBeenCalledWith(path, 'utf8');
@@ -308,24 +308,24 @@ describe('Given a semver service', () => {
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    service.calculateNextVersion('version.txt', 'major');
+    service.calculateNextVersion('version.txt', 'v', 'major');
 
     const path = join(cwd, 'version.txt');
     expect(writeFileSync).toHaveBeenCalledWith(path, '2.0.0\n');
   });
 
-  it('Should calculate next version based on last commmit for major', () => {
+  it('Should calculate next version based on the commits since the last tag for major', () => {
     const versionFileContent = '1.2.3';
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
 
-    CommitServiceMock.classifyLastCommit.mockReturnValueOnce({
+    CommitServiceMock.classifyDescriptionSince.mockReturnValueOnce({
       ok: true,
       data: 'major',
     });
 
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    const output = service.calculateNextVersion('version.txt');
+    const output = service.calculateNextVersion('version.txt', 'v');
 
     expect(output).toStrictEqual({
       ok: true,
@@ -338,18 +338,18 @@ describe('Given a semver service', () => {
     });
   });
 
-  it('Should calculate next version based on last commmit for minor', () => {
+  it('Should calculate next version based on the commits since the last tag for minor', () => {
     const versionFileContent = '1.2.3';
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
 
-    CommitServiceMock.classifyLastCommit.mockReturnValueOnce({
+    CommitServiceMock.classifyDescriptionSince.mockReturnValueOnce({
       ok: true,
       data: 'minor',
     });
 
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
-    const output = service.calculateNextVersion('version.txt');
+    const output = service.calculateNextVersion('version.txt', 'v');
 
     expect(output).toStrictEqual({
       ok: true,
@@ -362,6 +362,53 @@ describe('Given a semver service', () => {
     });
   });
 
+  it('Should classify the commits since the last tag with the tag prefix', () => {
+    vi.mocked(readFileSync).mockReturnValueOnce('1.2.3');
+    CommitServiceMock.classifyDescriptionSince.mockReturnValueOnce({
+      ok: true,
+      data: 'patch',
+    });
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+    const tagPrefix = faker.string.alpha();
+    service.calculateNextVersion('version.txt', tagPrefix);
+
+    expect(CommitServiceMock.classifyDescriptionSince).toHaveBeenCalledWith(
+      tagPrefix,
+    );
+  });
+
+  it('Should not classify the commits when an explicit semantic is given', () => {
+    vi.mocked(readFileSync).mockReturnValueOnce('1.2.3');
+    vi.mocked(writeFileSync).mockImplementationOnce(() => {});
+
+    service.calculateNextVersion('version.txt', 'v', 'patch');
+
+    expect(CommitServiceMock.classifyDescriptionSince).not.toHaveBeenCalled();
+  });
+
+  describe('Given no releasable commit since the last tag', () => {
+    beforeEach(() => {
+      vi.mocked(readFileSync).mockReturnValueOnce('1.2.3');
+      CommitServiceMock.classifyDescriptionSince.mockReturnValueOnce({
+        ok: true,
+        data: null,
+      });
+    });
+
+    it('Should return no next version', () => {
+      const output = service.calculateNextVersion('version.txt', 'v');
+
+      expect(output).toStrictEqual({ok: true, data: null});
+    });
+
+    it('Should not write the version file', () => {
+      service.calculateNextVersion('version.txt', 'v');
+
+      expect(writeFileSync).not.toHaveBeenCalled();
+    });
+  });
+
   it('Should return error version file not found error', () => {
     const error = new Error(faker.lorem.sentence());
     vi.mocked(readFileSync).mockImplementationOnce(() => {
@@ -369,7 +416,7 @@ describe('Given a semver service', () => {
     });
 
     const versionFile = faker.string.alpha();
-    const output = service.calculateNextVersion(versionFile, 'major');
+    const output = service.calculateNextVersion(versionFile, 'v', 'major');
 
     expect(output).toStrictEqual({
       ok: false,
@@ -382,7 +429,7 @@ describe('Given a semver service', () => {
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
 
     const versionFile = faker.string.alpha();
-    const output = service.calculateNextVersion(versionFile, 'major');
+    const output = service.calculateNextVersion(versionFile, 'v', 'major');
 
     const path = join(cwd, versionFile);
     expect(output).toStrictEqual({
@@ -397,7 +444,7 @@ describe('Given a semver service', () => {
     vi.mocked(writeFileSync).mockImplementationOnce(() => {});
 
     const semantic = faker.string.alpha();
-    const output = service.calculateNextVersion('version.txt', semantic);
+    const output = service.calculateNextVersion('version.txt', 'v', semantic);
 
     expect(output).toStrictEqual({
       ok: false,
@@ -405,17 +452,17 @@ describe('Given a semver service', () => {
     });
   });
 
-  it('Should return error error for getting last commit', () => {
+  it('Should return error error for classifying the commits since the last tag', () => {
     const versionFileContent = '1.2.3';
     vi.mocked(readFileSync).mockReturnValueOnce(versionFileContent);
 
     const error = new Error(faker.lorem.sentence());
-    CommitServiceMock.classifyLastCommit.mockReturnValueOnce({
+    CommitServiceMock.classifyDescriptionSince.mockReturnValueOnce({
       ok: false,
       error,
     });
 
-    const output = service.calculateNextVersion('version.txt');
+    const output = service.calculateNextVersion('version.txt', 'v');
 
     expect(output).toStrictEqual({
       ok: false,
@@ -432,7 +479,7 @@ describe('Given a semver service', () => {
       throw error;
     });
 
-    const output = service.calculateNextVersion('version.txt', 'major');
+    const output = service.calculateNextVersion('version.txt', 'v', 'major');
 
     expect(output).toStrictEqual({
       ok: false,
@@ -449,7 +496,7 @@ describe('Given a semver service', () => {
       throw error;
     });
 
-    const output = service.calculateNextVersion('version.txt', 'major');
+    const output = service.calculateNextVersion('version.txt', 'v', 'major');
 
     expect(output).toStrictEqual({
       ok: false,

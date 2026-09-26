@@ -20,9 +20,23 @@ export class Command {
 
     const semver = this.semverService.calculateNextVersion(
       versionFile,
+      tagPrefix,
       semantic,
     );
     if (!semver.ok) throw semver.error;
+
+    if (!semver.data) {
+      process.stderr.write(
+        '⏭️ Release skipped: no releasable commit since the last tag\n',
+      );
+      return {
+        version: '',
+        tag: '',
+        tagMajor: '',
+        tagMinor: '',
+        releasedRefs: [],
+      };
+    }
 
     const {nextVersion, major, minor} = semver.data;
 
