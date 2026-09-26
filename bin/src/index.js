@@ -19349,7 +19349,7 @@ var MergeService = class {
   encodeBranch(branch) {
     return branch.split("/").map(encodeURIComponent).join("/");
   }
-  mergeWithCommit(ref, environment) {
+  mergeWithCommit(ref, sha, environment) {
     try {
       const merge = this.childProcessService.exec("gh", [
         "api",
@@ -19357,7 +19357,7 @@ var MergeService = class {
         "-f",
         `base=${environment}`,
         "-f",
-        `head=${ref}`,
+        `head=${sha}`,
         "-f",
         `commit_message=Merge ${ref} into ${environment}`,
         "--jq",
@@ -19375,25 +19375,18 @@ var MergeService = class {
       return { ok: false, error: error2 };
     }
   }
-  mergeWithoutCommit(ref, environment) {
+  mergeWithoutCommit(sha, environment) {
     try {
-      const sha = this.childProcessService.exec("gh", [
-        "api",
-        `repos/{owner}/{repo}/git/ref/heads/${this.encodeBranch(ref)}`,
-        "--jq",
-        ".object.sha"
-      ]);
-      if (!sha.ok) return sha;
       const fastForward = this.childProcessService.exec("gh", [
         "api",
         `repos/{owner}/{repo}/git/refs/heads/${this.encodeBranch(environment)}`,
         "-X",
         "PATCH",
         "-f",
-        `sha=${sha.data}`
+        `sha=${sha}`
       ]);
       if (!fastForward.ok) return fastForward;
-      return { ok: true, data: sha.data };
+      return { ok: true, data: sha };
     } catch (error2) {
       return { ok: false, error: error2 };
     }
@@ -19518,7 +19511,7 @@ var GhFactory = class _GhFactory {
 var BUMP_COMMIT_PREFIX = "[skip ci] bump";
 
 // src/infrastructure/git/services/git-service.ts
-var PUSH_ATTEMPTS = 3;
+var REF_MOVED = /\((?:non-fast-forward|fetch first|stale info)\)|cannot lock ref/;
 var GitService = class {
   constructor(childProcessService) {
     this.childProcessService = childProcessService;
@@ -19541,6 +19534,17 @@ var GitService = class {
       ...range
     ]);
   }
+  resetToRemote(ref) {
+    const result = this.childProcessService.execChain("git", [
+      "fetch",
+      "--force",
+      "--tags",
+      "origin",
+      `refs/heads/${ref}:refs/remotes/origin/${ref}`
+    ]).execChain("git", ["reset", "--hard", `refs/remotes/origin/${ref}`]);
+    if (!result.ok) return { ok: false, error: result.error };
+    return { ok: true, data: result.data };
+  }
   applyTags({
     version,
     tag,
@@ -19552,38 +19556,45 @@ var GitService = class {
       `refs/heads/${ref}:refs/heads/${ref}`,
       `refs/tags/${tag}`
     ];
-    const commit = this.childProcessService.execChain("git", ["config", "user.name", "github-actions[bot]"]).execChain("git", [
+    let chain = this.childProcessService.execChain("git", ["config", "user.name", "github-actions[bot]"]).execChain("git", [
       "config",
       "user.email",
       "github-actions[bot]@users.noreply.github.com"
-    ]).execChain("git", ["add", "-A"]).execChain("git", ["commit", "-m", commitMessage]);
-    if (!commit.ok) return { ok: false, error: commit.error };
-    if (tags)
+    ]).execChain("git", ["add", "-A"]).execChain("git", ["commit", "-m", commitMessage]).execChain("git", ["tag", "-fa", tag, "-m", `Release ${version}`]);
+    if (tags) {
+      chain = chain.execChain("git", [
+        "tag",
+        "-fa",
+        tags.major,
+        "-m",
+        `Latest ${tags.major}.x.x release`
+      ]).execChain("git", [
+        "tag",
+        "-fa",
+        tags.minor,
+        "-m",
+        `Latest ${tags.minor}.x release`
+      ]);
       refspecs.push(`+refs/tags/${tags.major}`, `+refs/tags/${tags.minor}`);
-    let error2;
-    for (let attempt = 0; attempt < PUSH_ATTEMPTS; attempt++) {
-      let chain = this.childProcessService.execChain("git", ["pull", "--rebase", "origin", ref]).execChain("git", ["tag", "-fa", tag, "-m", `Release ${version}`]);
-      if (tags) {
-        chain = chain.execChain("git", [
-          "tag",
-          "-fa",
-          tags.major,
-          "-m",
-          `Latest ${tags.major}.x.x release`
-        ]).execChain("git", [
-          "tag",
-          "-fa",
-          tags.minor,
-          "-m",
-          `Latest ${tags.minor}.x release`
-        ]);
-      }
-      const result = chain.execChain("git", ["push", "--atomic", "origin", ...refspecs]).execChain("git", ["rev-parse", "HEAD"]);
-      if (result.ok) return { ok: true, data: result.data };
-      this.childProcessService.exec("git", ["rebase", "--abort"]);
-      error2 = result.error;
     }
-    return { ok: false, error: error2 };
+    if (!chain.ok)
+      return { ok: false, error: chain.error, refMoved: false };
+    const push = chain.execChain("git", [
+      "push",
+      "--atomic",
+      "origin",
+      ...refspecs
+    ]);
+    if (!push.ok)
+      return {
+        ok: false,
+        error: push.error,
+        refMoved: REF_MOVED.test(String(push.error))
+      };
+    const head = push.execChain("git", ["rev-parse", "HEAD"]);
+    if (!head.ok)
+      return { ok: false, error: head.error, refMoved: false };
+    return { ok: true, data: head.data };
   }
 };
 
@@ -19834,6 +19845,9 @@ ${releaseNotes}
       return { ok: false, error: error2 };
     }
   }
+  resetToRemote(ref) {
+    return this.gitService.resetToRemote(ref);
+  }
   applyReleaseChangelog({
     tagPrefix,
     nextVersion,
@@ -19861,7 +19875,12 @@ ${releaseNotes}
       ref,
       tags: overrideTag ? { major: tagMajor, minor: tagMinor } : void 0
     });
-    if (!gitApply.ok) return { ok: false, error: gitApply.error };
+    if (!gitApply.ok)
+      return {
+        ok: false,
+        error: gitApply.error,
+        refMoved: gitApply.refMoved
+      };
     const ghRelease = this.releaseNotesService.createRelease(
       tag,
       releaseNotes.data
@@ -20051,10 +20070,10 @@ var SyncService = class {
   }
   pullRequestService;
   mergeService;
-  cascadeEnvironments(ref, targets, mergeCommit) {
+  cascadeEnvironments(ref, sha, targets, mergeCommit) {
     try {
       const results = targets.replace(/\s/g, "").split(",").filter(Boolean).map((target) => {
-        const syncEnvironment = mergeCommit ? this.mergeService.mergeWithCommit(ref, target) : this.mergeService.mergeWithoutCommit(ref, target);
+        const syncEnvironment = mergeCommit ? this.mergeService.mergeWithCommit(ref, sha, target) : this.mergeService.mergeWithoutCommit(sha, target);
         if (syncEnvironment.ok)
           return { ok: true, ref, target, sha: syncEnvironment.data };
         const existingPullRequest = this.pullRequestService.hasPullRequest(
@@ -20141,6 +20160,7 @@ var CoreFactory = class _CoreFactory {
 };
 
 // src/application/action/command/command.ts
+var RELEASE_ATTEMPTS = 3;
 var Command2 = class {
   constructor(bumpers, semverService, changelogService, syncService) {
     this.bumpers = bumpers;
@@ -20153,54 +20173,64 @@ var Command2 = class {
   changelogService;
   syncService;
   run(inputs) {
-    const {
-      versionFile,
-      semantic,
-      tagPrefix,
-      changelogFile,
-      ref,
-      overrideTag,
-      target,
-      mergeCommit
-    } = inputs;
-    const semver = this.semverService.calculateNextVersion(
-      versionFile,
-      tagPrefix,
-      semantic
-    );
-    if (!semver.ok) throw semver.error;
-    if (!semver.data) {
-      process.stderr.write(
-        "\u23ED\uFE0F Release skipped: no releasable commit since the last tag\n"
+    const { versionFile, semantic, tagPrefix, changelogFile, ref, overrideTag } = inputs;
+    let refMoved;
+    for (let attempt = 0; attempt < RELEASE_ATTEMPTS; attempt++) {
+      const reset = this.changelogService.resetToRemote(ref);
+      if (!reset.ok) throw reset.error;
+      const semver = this.semverService.calculateNextVersion(
+        versionFile,
+        tagPrefix,
+        semantic
       );
-      return {
-        version: "",
-        tag: "",
-        tagMajor: "",
-        tagMinor: "",
-        releasedRefs: []
-      };
-    }
-    const { nextVersion, major, minor } = semver.data;
-    for (const bumper of this.bumpers) {
-      const bump = bumper.bump(nextVersion);
-      if (!bump.ok) throw bump.error;
+      if (!semver.ok) throw semver.error;
+      if (!semver.data) {
+        process.stderr.write(
+          "\u23ED\uFE0F Release skipped: no releasable commit since the last tag\n"
+        );
+        return {
+          version: "",
+          tag: "",
+          tagMajor: "",
+          tagMinor: "",
+          releasedRefs: []
+        };
+      }
+      const { nextVersion, major, minor } = semver.data;
+      for (const bumper of this.bumpers) {
+        const bump = bumper.bump(nextVersion);
+        if (!bump.ok) throw bump.error;
+        process.stderr.write(
+          `\u2705 Bumper ${bumper.constructor.name} ${nextVersion}
+`
+        );
+      }
+      const tags = this.changelogService.applyReleaseChangelog({
+        tagPrefix,
+        nextVersion,
+        major,
+        minor,
+        changelogFile,
+        ref,
+        overrideTag
+      });
+      if (tags.ok) return this.publish(inputs, nextVersion, tags.data);
+      if (!("refMoved" in tags) || !tags.refMoved) throw tags.error;
       process.stderr.write(
-        `\u2705 Bumper ${bumper.constructor.name} ${nextVersion}
+        `\u{1F501} Push rejected: ${ref} moved, releasing again from its new tip
 `
       );
+      refMoved = tags.error;
     }
-    const tags = this.changelogService.applyReleaseChangelog({
-      tagPrefix,
-      nextVersion,
-      major,
-      minor,
-      changelogFile,
-      ref,
-      overrideTag
-    });
-    if (!tags.ok) throw tags.error;
-    const { tag, tagMajor, tagMinor, sha } = tags.data;
+    throw refMoved;
+  }
+  publish(inputs, nextVersion, {
+    tag,
+    tagMajor,
+    tagMinor,
+    sha
+  }) {
+    const { ref, overrideTag, target, mergeCommit } = inputs;
     let tagMessage = `\u{1F3F7}\uFE0F Tagged: ${tag}`;
     if (overrideTag)
       tagMessage += ` with major: ${tagMajor} and minor: ${tagMinor}`;
@@ -20210,6 +20240,7 @@ var Command2 = class {
     if (target) {
       const envsSynced = this.syncService.cascadeEnvironments(
         ref,
+        sha,
         target,
         mergeCommit
       );

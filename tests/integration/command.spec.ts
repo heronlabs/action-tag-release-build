@@ -9,11 +9,21 @@ import {
 import {join} from 'node:path';
 
 import {Inputs} from '../../src/application/action/command/types/inputs';
+import {ChildProcessService} from '../../src/infrastructure/terminal/services/child-process-service';
 import {testingCliFactory} from '../__mocks__/setups/setup-action-factory';
 import {createTestRepo, TestRepo} from '../__mocks__/setups/setup-github';
 
 describe('Full tag-release-build pipeline', () => {
   let testRepo: TestRepo;
+
+  const pushMain = (workDir: string) =>
+    execSync('git push origin main', {cwd: workDir, stdio: 'pipe'});
+
+  const publish = (workDir: string, message: string) => {
+    execSync('git add -A', {cwd: workDir, stdio: 'pipe'});
+    execSync(`git commit -m '${message}'`, {cwd: workDir, stdio: 'pipe'});
+    pushMain(workDir);
+  };
 
   beforeEach(() => {
     vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
@@ -916,6 +926,7 @@ describe('Full tag-release-build pipeline', () => {
         "git merge --no-ff feat-thing -m 'Merge pull request #4 from heronlabs/feat-thing'",
         {cwd: workDir, stdio: 'pipe'},
       );
+      pushMain(workDir);
       testRepo.gh.enqueue({
         stdout: 'https://github.com/test/releases/tag/mock',
       });
@@ -947,6 +958,7 @@ describe('Full tag-release-build pipeline', () => {
         "git merge --no-ff fix-thing -m 'Merge pull request #4 from heronlabs/fix-thing' -m 'BREAKING CHANGE: none'",
         {cwd: workDir, stdio: 'pipe'},
       );
+      pushMain(workDir);
       testRepo.gh.enqueue({
         stdout: 'https://github.com/test/releases/tag/mock',
       });
@@ -979,6 +991,7 @@ describe('Full tag-release-build pipeline', () => {
         "git merge --no-ff feat-thing -m 'Merge pull request #4 from heronlabs/feat-thing'",
         {cwd: workDir, stdio: 'pipe'},
       );
+      pushMain(workDir);
       testRepo.gh.enqueue({
         stdout: 'https://github.com/test/releases/tag/mock',
       });
@@ -1084,6 +1097,7 @@ describe('Full tag-release-build pipeline', () => {
       });
       const workDir = testRepo.workDir;
       writeFileSync(join(workDir, 'version.txt'), '');
+      publish(workDir, 'chore: corrupt version');
       testRepo.gh.enqueue({
         stdout: 'https://github.com/test/releases/tag/mock',
       });
@@ -1155,8 +1169,8 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Git apply failure propagates error', () => {
-    it('Should throw error when git pull fails with non-existent branch', () => {
+  describe('Missing remote ref propagates error', () => {
+    it('Should throw error when the ref cannot be fetched from the remote', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
         commits: ['feat: add thing'],
@@ -1188,6 +1202,7 @@ describe('Full tag-release-build pipeline', () => {
       });
       const workDir = testRepo.workDir;
       writeFileSync(join(workDir, 'version.txt'), 'abc');
+      publish(workDir, 'chore: corrupt version');
       testRepo.gh.enqueue({
         stdout: 'https://github.com/test/releases/tag/mock',
       });
@@ -1212,6 +1227,7 @@ describe('Full tag-release-build pipeline', () => {
       });
       const workDir = testRepo.workDir;
       writeFileSync(join(workDir, 'version.txt'), '1.x.0');
+      publish(workDir, 'chore: corrupt version');
       testRepo.gh.enqueue({
         stdout: 'https://github.com/test/releases/tag/mock',
       });
@@ -1378,6 +1394,7 @@ describe('Full tag-release-build pipeline', () => {
       const versionPath = join(workDir, 'version.txt');
       rmSync(versionPath);
       mkdirSync(versionPath);
+      publish(workDir, 'chore: drop version file');
       testRepo.gh.enqueue({
         stdout: 'https://github.com/test/releases/tag/mock',
       });
@@ -1405,6 +1422,7 @@ describe('Full tag-release-build pipeline', () => {
       const workDir = testRepo.workDir;
       const versionPath = join(workDir, 'version.txt');
       writeFileSync(versionPath, '1.2.3');
+      publish(workDir, 'chore: trim version file');
       chmodSync(versionPath, 0o444);
       testRepo.gh.enqueue({
         stdout: 'https://github.com/test/releases/tag/mock',
@@ -1424,7 +1442,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Corrupt git HEAD fails classifyDescriptionSince with empty semantic', () => {
+  describe('Corrupt git HEAD fails the reset to the remote ref with empty semantic', () => {
     it('Should throw error when git HEAD is missing and semantic is empty', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
@@ -1450,7 +1468,7 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Corrupt git HEAD fails changelog generation with explicit semantic', () => {
+  describe('Corrupt git HEAD fails the reset to the remote ref with explicit semantic', () => {
     it('Should throw error when git HEAD is missing and semantic is explicit', () => {
       testRepo = createTestRepo({
         version: '1.2.3',
@@ -2001,6 +2019,7 @@ describe('Full tag-release-build pipeline', () => {
         cwd: workDir,
         stdio: 'pipe',
       });
+      pushMain(workDir);
       testRepo.gh.enqueue({
         stdout: 'https://github.com/test/releases/tag/mock',
       });
@@ -2112,9 +2131,7 @@ describe('Full tag-release-build pipeline', () => {
       });
       testRepo.gh.enqueueAll([
         {stdout: 'https://github.com/test/releases/tag/mock'},
-        {stdout: 'abc123'},
         {stdout: ''},
-        {stdout: 'abc123'},
         {stdout: ''},
       ]);
       const command = testingCliFactory(testRepo.workDir);
@@ -2142,9 +2159,7 @@ describe('Full tag-release-build pipeline', () => {
       });
       testRepo.gh.enqueueAll([
         {stdout: 'https://github.com/test/releases/tag/mock'},
-        {stdout: 'abc123'},
         {stdout: ''},
-        {stdout: 'abc123'},
         {stdout: ''},
       ]);
       const command = testingCliFactory(testRepo.workDir);
@@ -2159,10 +2174,15 @@ describe('Full tag-release-build pipeline', () => {
         target: 'development, sandbox',
       });
 
+      const releasedSha = execSync('git rev-parse main', {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
       expect(output.releasedRefs).toStrictEqual([
-        {target: 'main', sha: expect.any(String)},
-        {target: 'development', sha: 'abc123'},
-        {target: 'sandbox', sha: 'abc123'},
+        {target: 'main', sha: releasedSha},
+        {target: 'development', sha: releasedSha},
+        {target: 'sandbox', sha: releasedSha},
       ]);
     });
 
@@ -2174,9 +2194,7 @@ describe('Full tag-release-build pipeline', () => {
       });
       testRepo.gh.enqueueAll([
         {stdout: 'https://github.com/test/releases/tag/mock'},
-        {stdout: 'abc123'},
         {stdout: ''},
-        {stdout: 'abc123'},
         {stdout: ''},
       ]);
       const command = testingCliFactory(testRepo.workDir);
@@ -2515,37 +2533,7 @@ describe('Full tag-release-build pipeline', () => {
       });
       testRepo.gh.enqueueAll([
         {stdout: 'https://github.com/test/releases/tag/mock'},
-        {stdout: 'abc123'},
         {exitCode: 1, stderr: 'HTTP 422: Update is not a fast forward'},
-        {stdout: '0'},
-        {stdout: 'https://github.com/test/pull/1'},
-      ]);
-      const command = testingCliFactory(testRepo.workDir);
-
-      command.run({
-        semantic: '',
-        versionFile: 'version.txt',
-        changelogFile: 'CHANGELOG.md',
-        ref: 'main',
-        tagPrefix: 'v',
-        overrideTag: false,
-        target: 'development',
-      });
-
-      expect(process.stderr.write).toHaveBeenCalledWith(
-        expect.stringContaining('failed, no PR found. PR created;'),
-      );
-    });
-
-    it('Should open a new PR when the ref lookup fails', () => {
-      testRepo = createTestRepo({
-        version: '1.2.3',
-        commits: ['feat: add thing'],
-        targets: [{name: 'development', conflict: true}],
-      });
-      testRepo.gh.enqueueAll([
-        {stdout: 'https://github.com/test/releases/tag/mock'},
-        {exitCode: 1, stderr: 'HTTP 404: Not Found'},
         {stdout: '0'},
         {stdout: 'https://github.com/test/pull/1'},
       ]);
@@ -2576,7 +2564,6 @@ describe('Full tag-release-build pipeline', () => {
       });
       testRepo.gh.enqueueAll([
         {stdout: 'https://github.com/test/releases/tag/mock'},
-        {stdout: 'abc123'},
         {exitCode: 1, stderr: 'HTTP 422: Update is not a fast forward'},
         {stdout: '1'},
       ]);
@@ -2605,7 +2592,6 @@ describe('Full tag-release-build pipeline', () => {
       });
       testRepo.gh.enqueueAll([
         {stdout: 'https://github.com/test/releases/tag/mock'},
-        {stdout: 'abc123'},
         {exitCode: 1, stderr: 'HTTP 422: Update is not a fast forward'},
         {stdout: '1'},
       ]);
@@ -2671,7 +2657,6 @@ describe('Full tag-release-build pipeline', () => {
       });
       testRepo.gh.enqueueAll([
         {stdout: 'https://github.com/test/releases/tag/mock'},
-        {stdout: 'abc123'},
         {exitCode: 1, stderr: 'HTTP 422: Update is not a fast forward'},
         {exitCode: 1, stderr: 'gh pr list failed'},
       ]);
@@ -2700,7 +2685,6 @@ describe('Full tag-release-build pipeline', () => {
       });
       testRepo.gh.enqueueAll([
         {stdout: 'https://github.com/test/releases/tag/mock'},
-        {stdout: 'abc123'},
         {exitCode: 1, stderr: 'HTTP 422: Update is not a fast forward'},
         {stdout: 'gh: could not read the pull request list'},
       ]);
@@ -2731,7 +2715,6 @@ describe('Full tag-release-build pipeline', () => {
       });
       testRepo.gh.enqueueAll([
         {stdout: 'https://github.com/test/releases/tag/mock'},
-        {stdout: 'abc123'},
         {exitCode: 1, stderr: 'HTTP 422: Update is not a fast forward'},
       ]);
 
@@ -2770,7 +2753,6 @@ describe('Full tag-release-build pipeline', () => {
       });
       testRepo.gh.enqueueAll([
         {stdout: 'https://github.com/test/releases/tag/mock'},
-        {stdout: 'abc123'},
         {exitCode: 1, stderr: 'HTTP 422: Update is not a fast forward'},
         {stdout: '0'},
       ]);
@@ -2887,6 +2869,7 @@ describe('Full tag-release-build pipeline', () => {
         cwd: testRepo.workDir,
         stdio: 'pipe',
       });
+      pushMain(testRepo.workDir);
       testRepo.gh.enqueue({
         stdout: 'https://github.com/test/releases/tag/mock',
       });
@@ -3004,86 +2987,6 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Push rejected by a commit merged during the release', () => {
-    const remote = (args: string) =>
-      execSync(`git ${args}`, {
-        cwd: testRepo.bareDir,
-        encoding: 'utf8',
-        stdio: 'pipe',
-      }).trim();
-
-    let output: ReturnType<ReturnType<typeof testingCliFactory>['run']>;
-
-    beforeEach(() => {
-      testRepo = createTestRepo({
-        version: '1.2.3',
-        commits: ['feat: add thing'],
-      });
-      const concurrentDir = join(testRepo.bareDir, '..', 'concurrent');
-      testRepo.gh.enqueue({
-        stdout: 'https://github.com/test/releases/tag/mock',
-      });
-      let merged = false;
-      const command = testingCliFactory(testRepo.workDir, {
-        patchServices: ({childProcessService}) => {
-          const execChain =
-            childProcessService.execChain.bind(childProcessService);
-          childProcessService.execChain = (cmd: string, args: string[]) => {
-            if (!merged && args[0] === 'push') {
-              merged = true;
-              execSync(
-                `git clone -b main "${testRepo.bareDir}" "${concurrentDir}"`,
-                {stdio: 'pipe'},
-              );
-              execSync(
-                "git -c user.name=Test -c user.email=test@test.com commit --allow-empty -m 'fix: merged meanwhile'",
-                {cwd: concurrentDir, stdio: 'pipe'},
-              );
-              execSync('git push origin main', {
-                cwd: concurrentDir,
-                stdio: 'pipe',
-              });
-            }
-            return execChain(cmd, args);
-          };
-        },
-      });
-
-      output = command.run({
-        semantic: '',
-        versionFile: 'version.txt',
-        changelogFile: 'CHANGELOG.md',
-        ref: 'main',
-        tagPrefix: 'v',
-        overrideTag: true,
-      });
-    });
-
-    it('Should keep the concurrent commit on the remote branch', () => {
-      expect(remote('log main --format=%s')).toContain('fix: merged meanwhile');
-    });
-
-    it('Should push the bump commit on top of the concurrent commit', () => {
-      expect(remote('log -1 main --format=%s')).toBe('[skip ci] bump v1.3.0');
-    });
-
-    it('Should point the version tag at the remote branch head', () => {
-      expect(remote('rev-parse v1.3.0^{commit}')).toBe(
-        remote('rev-parse main'),
-      );
-    });
-
-    it('Should point the floating major tag at the remote branch head', () => {
-      expect(remote('rev-parse v1^{commit}')).toBe(remote('rev-parse main'));
-    });
-
-    it('Should report the remote branch head as the released sha', () => {
-      expect(output.releasedRefs).toStrictEqual([
-        {target: 'main', sha: remote('rev-parse main')},
-      ]);
-    });
-  });
-
   describe('Bump commit rejected by a local hook', () => {
     it('Should throw error when the bump commit fails', () => {
       testRepo = createTestRepo({
@@ -3108,7 +3011,329 @@ describe('Full tag-release-build pipeline', () => {
     });
   });
 
-  describe('Push rejected on every attempt', () => {
+  describe('Release racing a merge into the remote ref', () => {
+    const remote = (args: string) =>
+      execSync(`git ${args}`, {
+        cwd: testRepo.bareDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+
+    const mergeIntoRemote = (subject: string) => {
+      const concurrentDir = join(testRepo.bareDir, '..', 'concurrent');
+      execSync(
+        `rm -rf "${concurrentDir}" && git clone -b main "${testRepo.bareDir}" "${concurrentDir}"`,
+        {stdio: 'pipe'},
+      );
+      execSync(
+        `git -c user.name=Test -c user.email=test@test.com commit --allow-empty -m '${subject}'`,
+        {cwd: concurrentDir, stdio: 'pipe'},
+      );
+      execSync('git push origin main', {cwd: concurrentDir, stdio: 'pipe'});
+    };
+
+    const raceEachPush = (subjects: string[]) => {
+      const pending = [...subjects];
+      const pushes: string[][] = [];
+      const options = {
+        patchServices: ({
+          childProcessService,
+        }: {
+          childProcessService: ChildProcessService;
+        }) => {
+          const execChain =
+            childProcessService.execChain.bind(childProcessService);
+          childProcessService.execChain = (cmd: string, args: string[]) => {
+            if (args[0] === 'push') {
+              pushes.push(args);
+              const subject = pending.shift();
+              if (subject) mergeIntoRemote(subject);
+            }
+            return execChain(cmd, args);
+          };
+        },
+      };
+      return {options, pushes};
+    };
+
+    const inputs: Inputs = {
+      semantic: '',
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref: 'main',
+      tagPrefix: 'v',
+      overrideTag: true,
+    };
+
+    describe('Given a feat merged before the first push', () => {
+      let output: ReturnType<ReturnType<typeof testingCliFactory>['run']>;
+
+      beforeEach(() => {
+        testRepo = createTestRepo({version: '1.2.3', commits: ['fix: typo']});
+        testRepo.gh.enqueue({
+          stdout: 'https://github.com/test/releases/tag/mock',
+        });
+        const race = raceEachPush(['feat: merged meanwhile']);
+
+        output = testingCliFactory(testRepo.workDir, race.options).run(inputs);
+      });
+
+      it('Should release a minor version computed on the new tip', () => {
+        expect(output.version).toBe('1.3.0');
+      });
+
+      it('Should list the commit released first in the pushed CHANGELOG.md', () => {
+        expect(remote('show main:CHANGELOG.md')).toContain('fix: typo');
+      });
+
+      it('Should list the merged feat in the pushed CHANGELOG.md', () => {
+        expect(remote('show main:CHANGELOG.md')).toContain(
+          'feat: merged meanwhile',
+        );
+      });
+
+      it('Should push the minor version in version.txt', () => {
+        expect(remote('show main:version.txt')).toBe('1.3.0');
+      });
+
+      it('Should push the bump commit on top of the merged feat', () => {
+        expect(remote('log -2 main --format=%s')).toBe(
+          '[skip ci] bump v1.3.0\nfeat: merged meanwhile',
+        );
+      });
+
+      it('Should point the version tag at the remote branch head', () => {
+        expect(remote('rev-parse v1.3.0^{commit}')).toBe(
+          remote('rev-parse main'),
+        );
+      });
+
+      it('Should point the floating minor tag at the remote branch head', () => {
+        expect(remote('rev-parse v1.3^{commit}')).toBe(
+          remote('rev-parse main'),
+        );
+      });
+
+      it('Should not push the patch tag of the rejected attempt', () => {
+        expect(remote('tag -l v1.2.4')).toBe('');
+      });
+
+      it('Should report the remote branch head as the released sha', () => {
+        expect(output.releasedRefs).toStrictEqual([
+          {target: 'main', sha: remote('rev-parse main')},
+        ]);
+      });
+    });
+
+    describe('Given a breaking change merged before the first push', () => {
+      let output: ReturnType<ReturnType<typeof testingCliFactory>['run']>;
+
+      beforeEach(() => {
+        testRepo = createTestRepo({version: '1.2.3', commits: ['fix: typo']});
+        testRepo.gh.enqueue({
+          stdout: 'https://github.com/test/releases/tag/mock',
+        });
+        const race = raceEachPush(['feat!: drop legacy input']);
+
+        output = testingCliFactory(testRepo.workDir, race.options).run(inputs);
+      });
+
+      it('Should release a major version', () => {
+        expect(output.version).toBe('2.0.0');
+      });
+
+      it('Should list the breaking change in the pushed CHANGELOG.md', () => {
+        expect(remote('show main:CHANGELOG.md')).toContain(
+          '### ⚠ BREAKING CHANGES\n\n* feat!: drop legacy input',
+        );
+      });
+
+      it('Should list the commit released first in the pushed CHANGELOG.md', () => {
+        expect(remote('show main:CHANGELOG.md')).toContain('fix: typo');
+      });
+
+      it('Should head the pushed CHANGELOG.md with the major version', () => {
+        expect(remote('show main:CHANGELOG.md')).toMatch(/^## v2\.0\.0 /);
+      });
+    });
+
+    describe('Given the remote ref moves before every push', () => {
+      let thrown: unknown;
+      let pushes: string[][];
+
+      beforeEach(() => {
+        testRepo = createTestRepo({version: '1.2.3', commits: ['fix: typo']});
+        const race = raceEachPush([
+          'fix: first merge',
+          'fix: second merge',
+          'fix: third merge',
+        ]);
+        pushes = race.pushes;
+        thrown = undefined;
+
+        try {
+          testingCliFactory(testRepo.workDir, race.options).run(inputs);
+        } catch (error) {
+          thrown = error;
+        }
+      });
+
+      it('Should throw the last push rejection', () => {
+        expect(String(thrown)).toContain('fetch first');
+      });
+
+      it('Should give up after three attempts', () => {
+        expect(pushes).toHaveLength(3);
+      });
+
+      it('Should leave no bump commit on the remote branch', () => {
+        expect(remote('log -1 main --format=%s')).toBe('fix: third merge');
+      });
+    });
+
+    describe('Given main moves after the release push and before the sync', () => {
+      const syncRacing = (calls: string[][]) => ({
+        patchServices: ({
+          childProcessService,
+        }: {
+          childProcessService: ChildProcessService;
+        }) => {
+          const exec = childProcessService.exec.bind(childProcessService);
+          childProcessService.exec = (cmd: string, args: string[]) => {
+            if (cmd === 'gh' && args[0] === 'api') {
+              if (!calls.length) mergeIntoRemote('feat: merged after release');
+              calls.push(args);
+            }
+            return exec(cmd, args);
+          };
+        },
+      });
+
+      it('Should fast-forward the target to the released sha', () => {
+        testRepo = createTestRepo({
+          version: '1.2.3',
+          commits: ['feat: add thing'],
+          targets: [{name: 'development'}],
+        });
+        testRepo.gh.enqueueAll([
+          {stdout: 'https://github.com/test/releases/tag/mock'},
+          {stdout: ''},
+        ]);
+        const calls: string[][] = [];
+
+        testingCliFactory(testRepo.workDir, syncRacing(calls)).run({
+          ...inputs,
+          target: 'development',
+        });
+
+        expect(calls[0]).toContain(
+          `sha=${remote('rev-parse v1.3.0^{commit}')}`,
+        );
+      });
+
+      it('Should merge the released sha into the target', () => {
+        testRepo = createTestRepo({
+          version: '1.2.3',
+          commits: ['feat: add thing'],
+          targets: [{name: 'development'}],
+        });
+        testRepo.gh.enqueueAll([
+          {stdout: 'https://github.com/test/releases/tag/mock'},
+          {stdout: 'abc123'},
+        ]);
+        const calls: string[][] = [];
+
+        testingCliFactory(testRepo.workDir, syncRacing(calls)).run({
+          ...inputs,
+          target: 'development',
+          mergeCommit: true,
+        });
+
+        expect(calls[0]).toContain(
+          `head=${remote('rev-parse v1.3.0^{commit}')}`,
+        );
+      });
+
+      it('Should report the released sha for the fast-forwarded target', () => {
+        testRepo = createTestRepo({
+          version: '1.2.3',
+          commits: ['feat: add thing'],
+          targets: [{name: 'development'}],
+        });
+        testRepo.gh.enqueueAll([
+          {stdout: 'https://github.com/test/releases/tag/mock'},
+          {stdout: ''},
+        ]);
+
+        const output = testingCliFactory(testRepo.workDir, syncRacing([])).run({
+          ...inputs,
+          target: 'development',
+        });
+
+        expect(output.releasedRefs[1]).toStrictEqual({
+          target: 'development',
+          sha: remote('rev-parse v1.3.0^{commit}'),
+        });
+      });
+    });
+  });
+
+  describe('Git log failure fails the release', () => {
+    it('Should throw error when the commits since the last tag cannot be read', () => {
+      testRepo = createTestRepo({version: '1.2.3', commits: ['fix: typo']});
+      const command = testingCliFactory(testRepo.workDir, {
+        patchServices: ({gitService}) => {
+          gitService.getDescriptionSince = () => ({
+            ok: false as const,
+            error: new Error('simulated git log failure'),
+          });
+        },
+      });
+
+      expect(() =>
+        command.run({
+          semantic: '',
+          versionFile: 'version.txt',
+          changelogFile: 'CHANGELOG.md',
+          ref: 'main',
+          tagPrefix: 'v',
+          overrideTag: false,
+        }),
+      ).toThrow('simulated git log failure');
+    });
+  });
+
+  describe('Head sha unreadable after the release push', () => {
+    it('Should throw error when the head sha cannot be read', () => {
+      testRepo = createTestRepo({version: '1.2.3', commits: ['fix: typo']});
+      const command = testingCliFactory(testRepo.workDir, {
+        patchServices: ({childProcessService}) => {
+          const execChain =
+            childProcessService.execChain.bind(childProcessService);
+          childProcessService.execChain = (cmd: string, args: string[]) =>
+            execChain(
+              cmd,
+              args[0] === 'rev-parse'
+                ? ['rev-parse', '--verify', 'refs/heads/missing']
+                : args,
+            );
+        },
+      });
+
+      expect(() =>
+        command.run({
+          semantic: '',
+          versionFile: 'version.txt',
+          changelogFile: 'CHANGELOG.md',
+          ref: 'main',
+          tagPrefix: 'v',
+          overrideTag: false,
+        }),
+      ).toThrow();
+    });
+  });
+
+  describe('Push rejected by a pre-receive hook', () => {
     let counterFile: string;
     let thrown: unknown;
 
@@ -3140,13 +3365,13 @@ describe('Full tag-release-build pipeline', () => {
       }
     });
 
-    it('Should throw the push error', () => {
-      expect(thrown).toBeInstanceOf(Error);
+    it('Should throw the hook rejection', () => {
+      expect(String(thrown)).toContain('pre-receive hook declined');
     });
 
-    it('Should give up after three attempts', () => {
+    it('Should not retry a rejection that is not a moved ref', () => {
       const attempts = readFileSync(counterFile, 'utf8').trim().split('\n');
-      expect(attempts).toHaveLength(3);
+      expect(attempts).toHaveLength(1);
     });
   });
 });

@@ -2,7 +2,7 @@ name: Tag Release Build
 
 author: Heron Labs
 
-description: Tag and release based on semver spec input
+description: Tag and release the current tip of the pushed branch based on semver spec input
 
 branding:
   icon: tag

@@ -1,7 +1,8 @@
 import {ChildProcessService} from '../../terminal/services/child-process-service';
 import {BUMP_COMMIT_PREFIX} from '../types/bump-commit-prefix';
 
-const PUSH_ATTEMPTS = 3;
+const REF_MOVED =
+  /\((?:non-fast-forward|fetch first|stale info)\)|cannot lock ref/;
 
 export class GitService {
   public getDescriptionSince(tagPrefix: string) {
@@ -21,6 +22,22 @@ export class GitService {
       '--pretty=format:%H %s%n%b%x1e',
       ...range,
     ]);
+  }
+
+  public resetToRemote(ref: string) {
+    const result = this.childProcessService
+      .execChain('git', [
+        'fetch',
+        '--force',
+        '--tags',
+        'origin',
+        `refs/heads/${ref}:refs/remotes/origin/${ref}`,
+      ])
+      .execChain('git', ['reset', '--hard', `refs/remotes/origin/${ref}`]);
+
+    if (!result.ok) return {ok: false as const, error: result.error};
+
+    return {ok: true as const, data: result.data};
   }
 
   public applyTags({
@@ -43,7 +60,7 @@ export class GitService {
       `refs/tags/${tag}`,
     ];
 
-    const commit = this.childProcessService
+    let chain = this.childProcessService
       .execChain('git', ['config', 'user.name', 'github-actions[bot]'])
       .execChain('git', [
         'config',
@@ -51,47 +68,50 @@ export class GitService {
         'github-actions[bot]@users.noreply.github.com',
       ])
       .execChain('git', ['add', '-A'])
-      .execChain('git', ['commit', '-m', commitMessage]);
-    if (!commit.ok) return {ok: false as const, error: commit.error};
+      .execChain('git', ['commit', '-m', commitMessage])
+      .execChain('git', ['tag', '-fa', tag, '-m', `Release ${version}`]);
 
-    if (tags)
+    if (tags) {
+      chain = chain
+        .execChain('git', [
+          'tag',
+          '-fa',
+          tags.major,
+          '-m',
+          `Latest ${tags.major}.x.x release`,
+        ])
+        .execChain('git', [
+          'tag',
+          '-fa',
+          tags.minor,
+          '-m',
+          `Latest ${tags.minor}.x release`,
+        ]);
+
       refspecs.push(`+refs/tags/${tags.major}`, `+refs/tags/${tags.minor}`);
-
-    let error: unknown;
-    for (let attempt = 0; attempt < PUSH_ATTEMPTS; attempt++) {
-      let chain = this.childProcessService
-        .execChain('git', ['pull', '--rebase', 'origin', ref])
-        .execChain('git', ['tag', '-fa', tag, '-m', `Release ${version}`]);
-
-      if (tags) {
-        chain = chain
-          .execChain('git', [
-            'tag',
-            '-fa',
-            tags.major,
-            '-m',
-            `Latest ${tags.major}.x.x release`,
-          ])
-          .execChain('git', [
-            'tag',
-            '-fa',
-            tags.minor,
-            '-m',
-            `Latest ${tags.minor}.x release`,
-          ]);
-      }
-
-      const result = chain
-        .execChain('git', ['push', '--atomic', 'origin', ...refspecs])
-        .execChain('git', ['rev-parse', 'HEAD']);
-
-      if (result.ok) return {ok: true as const, data: result.data};
-
-      this.childProcessService.exec('git', ['rebase', '--abort']);
-      error = result.error;
     }
 
-    return {ok: false as const, error};
+    if (!chain.ok)
+      return {ok: false as const, error: chain.error, refMoved: false};
+
+    const push = chain.execChain('git', [
+      'push',
+      '--atomic',
+      'origin',
+      ...refspecs,
+    ]);
+    if (!push.ok)
+      return {
+        ok: false as const,
+        error: push.error,
+        refMoved: REF_MOVED.test(String(push.error)),
+      };
+
+    const head = push.execChain('git', ['rev-parse', 'HEAD']);
+    if (!head.ok)
+      return {ok: false as const, error: head.error, refMoved: false};
+
+    return {ok: true as const, data: head.data};
   }
 
   constructor(private readonly childProcessService: ChildProcessService) {}

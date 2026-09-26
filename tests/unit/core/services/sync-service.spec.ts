@@ -18,6 +18,8 @@ describe('Given a sync service', () => {
   });
 
   describe('Given cascade environments', () => {
+    const released = faker.git.commitSha();
+
     it('Should sync single environment', () => {
       const ref = faker.git.branch();
       const environment = faker.git.branch();
@@ -27,7 +29,7 @@ describe('Given a sync service', () => {
         data: sha,
       });
 
-      const output = service.cascadeEnvironments(ref, environment);
+      const output = service.cascadeEnvironments(ref, released, environment);
 
       expect(output).toStrictEqual({
         ok: true,
@@ -52,6 +54,7 @@ describe('Given a sync service', () => {
 
       const output = service.cascadeEnvironments(
         ref,
+        released,
         ` ${environment}, ${otherEnvironment} `,
       );
 
@@ -64,7 +67,7 @@ describe('Given a sync service', () => {
       });
     });
 
-    it('Should call merge without commit with ref and environment', () => {
+    it('Should call merge without commit with the released sha and environment', () => {
       const ref = faker.git.branch();
       const environment = faker.git.branch();
       MergeServiceMock.mergeWithoutCommit.mockReturnValueOnce({
@@ -72,10 +75,10 @@ describe('Given a sync service', () => {
         data: '',
       });
 
-      service.cascadeEnvironments(ref, environment);
+      service.cascadeEnvironments(ref, released, environment);
 
       expect(MergeServiceMock.mergeWithoutCommit).toHaveBeenCalledWith(
-        ref,
+        released,
         environment,
       );
     });
@@ -89,7 +92,12 @@ describe('Given a sync service', () => {
         data: sha,
       });
 
-      const output = service.cascadeEnvironments(ref, environment, true);
+      const output = service.cascadeEnvironments(
+        ref,
+        released,
+        environment,
+        true,
+      );
 
       expect(output).toStrictEqual({
         ok: true,
@@ -97,7 +105,7 @@ describe('Given a sync service', () => {
       });
     });
 
-    it('Should call merge with commit with ref and environment', () => {
+    it('Should call merge with commit with ref, released sha and environment', () => {
       const ref = faker.git.branch();
       const environment = faker.git.branch();
       MergeServiceMock.mergeWithCommit.mockReturnValueOnce({
@@ -105,10 +113,11 @@ describe('Given a sync service', () => {
         data: 'OK',
       });
 
-      service.cascadeEnvironments(ref, environment, true);
+      service.cascadeEnvironments(ref, released, environment, true);
 
       expect(MergeServiceMock.mergeWithCommit).toHaveBeenCalledWith(
         ref,
+        released,
         environment,
       );
     });
@@ -119,7 +128,12 @@ describe('Given a sync service', () => {
         data: 'OK',
       });
 
-      service.cascadeEnvironments(faker.git.branch(), faker.git.branch(), true);
+      service.cascadeEnvironments(
+        faker.git.branch(),
+        released,
+        faker.git.branch(),
+        true,
+      );
 
       expect(MergeServiceMock.mergeWithoutCommit).not.toHaveBeenCalled();
     });
@@ -136,7 +150,7 @@ describe('Given a sync service', () => {
         data: true,
       });
 
-      const output = service.cascadeEnvironments(ref, environment);
+      const output = service.cascadeEnvironments(ref, released, environment);
 
       expect(output).toStrictEqual({
         ok: true,
@@ -165,7 +179,7 @@ describe('Given a sync service', () => {
         data: 'OK',
       });
 
-      service.cascadeEnvironments(ref, environment);
+      service.cascadeEnvironments(ref, released, environment);
 
       expect(PullRequestServiceMock.createPullRequest).toHaveBeenCalledWith(
         ref,
@@ -189,7 +203,7 @@ describe('Given a sync service', () => {
         data: 'OK',
       });
 
-      const output = service.cascadeEnvironments(ref, environment);
+      const output = service.cascadeEnvironments(ref, released, environment);
 
       expect(output).toStrictEqual({
         ok: true,
@@ -218,7 +232,7 @@ describe('Given a sync service', () => {
         error: new Error(faker.lorem.sentence()),
       });
 
-      const output = service.cascadeEnvironments(ref, environment);
+      const output = service.cascadeEnvironments(ref, released, environment);
 
       expect(output).toStrictEqual({
         ok: true,
@@ -241,7 +255,11 @@ describe('Given a sync service', () => {
         data: true,
       });
 
-      service.cascadeEnvironments(faker.git.branch(), faker.git.branch());
+      service.cascadeEnvironments(
+        faker.git.branch(),
+        released,
+        faker.git.branch(),
+      );
 
       expect(PullRequestServiceMock.createPullRequest).not.toHaveBeenCalled();
     });
@@ -256,7 +274,11 @@ describe('Given a sync service', () => {
         error: new Error(faker.lorem.sentence()),
       });
 
-      service.cascadeEnvironments(faker.git.branch(), faker.git.branch());
+      service.cascadeEnvironments(
+        faker.git.branch(),
+        released,
+        faker.git.branch(),
+      );
 
       expect(PullRequestServiceMock.createPullRequest).not.toHaveBeenCalled();
     });
@@ -273,7 +295,7 @@ describe('Given a sync service', () => {
         error: new Error(faker.lorem.sentence()),
       });
 
-      const output = service.cascadeEnvironments(ref, environment);
+      const output = service.cascadeEnvironments(ref, released, environment);
 
       expect(output).toStrictEqual({
         ok: true,
@@ -303,6 +325,7 @@ describe('Given a sync service', () => {
 
       const output = service.cascadeEnvironments(
         ref,
+        released,
         `${environment},,${otherEnvironment}`,
       );
 
@@ -323,6 +346,7 @@ describe('Given a sync service', () => {
 
       const output = service.cascadeEnvironments(
         faker.git.branch(),
+        released,
         faker.git.branch(),
       );
 
