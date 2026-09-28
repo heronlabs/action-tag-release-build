@@ -955,4 +955,137 @@ describe('Given a bump command', () => {
     );
     expect(output.releasedRefs).toStrictEqual([{target: ref, sha}]);
   });
+
+  it('Should return only the synced targets with empty tags when only sync is enabled', () => {
+    const ref = faker.string.alpha(4);
+    const syncedSha = faker.git.commitSha();
+
+    SyncServiceMock.cascadeEnvironments.mockReturnValueOnce({
+      ok: true,
+      data: [{ok: true, ref, target: 'development', sha: syncedSha}],
+    });
+
+    const inputs: Inputs = {
+      semantic: 'major',
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref,
+      overrideTag: false,
+      tagPrefix: faker.string.alpha(),
+      target: 'development',
+      onlySync: true,
+    };
+
+    const output = command.run(inputs);
+
+    expect(output).toStrictEqual({
+      version: '',
+      tag: '',
+      tagMajor: '',
+      tagMinor: '',
+      releasedRefs: [{target: 'development', sha: syncedSha}],
+    });
+  });
+
+  it('Should skip the release pipeline when only sync is enabled', () => {
+    const ref = faker.string.alpha(4);
+
+    SyncServiceMock.cascadeEnvironments.mockReturnValueOnce({
+      ok: true,
+      data: [
+        {ok: true, ref, target: 'development', sha: faker.git.commitSha()},
+      ],
+    });
+
+    const inputs: Inputs = {
+      semantic: 'major',
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref,
+      overrideTag: false,
+      tagPrefix: faker.string.alpha(),
+      target: 'development',
+      mergeCommit: true,
+      onlySync: true,
+    };
+
+    command.run(inputs);
+
+    expect(SemverServiceMock.calculateNextVersion).not.toHaveBeenCalled();
+    expect(BumperMock.bump).not.toHaveBeenCalled();
+    expect(ChangelogServiceMock.applyReleaseChangelog).not.toHaveBeenCalled();
+    expect(SyncServiceMock.cascadeEnvironments).toHaveBeenCalledWith(
+      ref,
+      'development',
+      true,
+    );
+  });
+
+  it('Should log sync only when only sync is enabled', () => {
+    const ref = faker.string.alpha(4);
+
+    SyncServiceMock.cascadeEnvironments.mockReturnValueOnce({
+      ok: true,
+      data: [
+        {ok: true, ref, target: 'development', sha: faker.git.commitSha()},
+      ],
+    });
+
+    const inputs: Inputs = {
+      semantic: 'major',
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref,
+      overrideTag: false,
+      tagPrefix: faker.string.alpha(),
+      target: 'development',
+      onlySync: true,
+    };
+
+    command.run(inputs);
+
+    expect(vi.mocked(process.stderr.write)).toHaveBeenNthCalledWith(
+      1,
+      `🔗 Sync only: skipping tag and release for ${ref}\n`,
+    );
+  });
+
+  it('Should throw error when only sync is enabled without target', () => {
+    const inputs: Inputs = {
+      semantic: 'major',
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref: faker.string.alpha(4),
+      overrideTag: false,
+      tagPrefix: faker.string.alpha(),
+      onlySync: true,
+    };
+
+    expect(() => command.run(inputs)).toThrow(
+      'onlySync requires at least one target branch',
+    );
+    expect(SyncServiceMock.cascadeEnvironments).not.toHaveBeenCalled();
+  });
+
+  it('Should return no released refs when only sync synchronization fails', () => {
+    SyncServiceMock.cascadeEnvironments.mockReturnValueOnce({
+      ok: false,
+      error: new Error(faker.lorem.sentence()),
+    });
+
+    const inputs: Inputs = {
+      semantic: 'major',
+      versionFile: 'version.txt',
+      changelogFile: 'CHANGELOG.md',
+      ref: faker.string.alpha(4),
+      overrideTag: false,
+      tagPrefix: faker.string.alpha(),
+      target: 'development',
+      onlySync: true,
+    };
+
+    const output = command.run(inputs);
+
+    expect(output.releasedRefs).toStrictEqual([]);
+  });
 });

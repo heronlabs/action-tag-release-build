@@ -16,7 +16,25 @@ export class Command {
       overrideTag,
       target,
       mergeCommit,
+      onlySync,
     } = inputs;
+
+    if (onlySync) {
+      if (!target)
+        throw new Error('onlySync requires at least one target branch');
+
+      process.stderr.write(
+        `🔗 Sync only: skipping tag and release for ${ref}\n`,
+      );
+
+      return {
+        version: '',
+        tag: '',
+        tagMajor: '',
+        tagMinor: '',
+        releasedRefs: this.syncTargets(ref, target, mergeCommit),
+      };
+    }
 
     const semver = this.semverService.calculateNextVersion(
       versionFile,
@@ -54,41 +72,8 @@ export class Command {
 
     const releasedRefs: ReleasedRef[] = [{target: ref, sha}];
 
-    if (target) {
-      const envsSynced = this.syncService.cascadeEnvironments(
-        ref,
-        target,
-        mergeCommit,
-      );
-
-      if (!envsSynced.ok) {
-        process.stderr.write(
-          `🔗 Sync: Error during environments synchronization: ${String(envsSynced.error)}\n`,
-        );
-      } else if (!envsSynced.data.length) {
-        process.stderr.write(
-          `🔗 Sync: No target branch parsed from "${target}"\n`,
-        );
-      } else {
-        const synced = envsSynced.data.filter(result => result.ok);
-        const failed = envsSynced.data.filter(result => !result.ok);
-
-        if (synced.length) {
-          const syncedTargets = synced.map(env => env.target).join(',');
-          process.stderr.write(
-            `🔗 Sync: Environments ${syncedTargets} synced\n`,
-          );
-        }
-
-        failed.forEach(failure =>
-          process.stderr.write(`🔗 Sync: ${failure.error}\n`),
-        );
-
-        releasedRefs.push(
-          ...synced.map(env => ({target: env.target, sha: env.sha})),
-        );
-      }
-    }
+    if (target)
+      releasedRefs.push(...this.syncTargets(ref, target, mergeCommit));
 
     return {
       version: nextVersion,
@@ -97,6 +82,46 @@ export class Command {
       tagMinor: tagMinor,
       releasedRefs: releasedRefs,
     };
+  }
+
+  private syncTargets(
+    ref: string,
+    target: string,
+    mergeCommit?: boolean,
+  ): ReleasedRef[] {
+    const envsSynced = this.syncService.cascadeEnvironments(
+      ref,
+      target,
+      mergeCommit,
+    );
+
+    if (!envsSynced.ok) {
+      process.stderr.write(
+        `🔗 Sync: Error during environments synchronization: ${String(envsSynced.error)}\n`,
+      );
+      return [];
+    }
+
+    if (!envsSynced.data.length) {
+      process.stderr.write(
+        `🔗 Sync: No target branch parsed from "${target}"\n`,
+      );
+      return [];
+    }
+
+    const synced = envsSynced.data.filter(result => result.ok);
+    const failed = envsSynced.data.filter(result => !result.ok);
+
+    if (synced.length) {
+      const syncedTargets = synced.map(env => env.target).join(',');
+      process.stderr.write(`🔗 Sync: Environments ${syncedTargets} synced\n`);
+    }
+
+    failed.forEach(failure =>
+      process.stderr.write(`🔗 Sync: ${failure.error}\n`),
+    );
+
+    return synced.map(env => ({target: env.target, sha: env.sha}));
   }
 
   constructor(

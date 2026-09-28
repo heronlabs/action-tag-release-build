@@ -20166,8 +20166,24 @@ var Command2 = class {
       ref,
       overrideTag,
       target,
-      mergeCommit
+      mergeCommit,
+      onlySync
     } = inputs;
+    if (onlySync) {
+      if (!target)
+        throw new Error("onlySync requires at least one target branch");
+      process.stderr.write(
+        `\u{1F517} Sync only: skipping tag and release for ${ref}
+`
+      );
+      return {
+        version: "",
+        tag: "",
+        tagMajor: "",
+        tagMinor: "",
+        releasedRefs: this.syncTargets(ref, target, mergeCommit)
+      };
+    }
     const semver = this.semverService.calculateNextVersion(
       versionFile,
       semantic
@@ -20199,41 +20215,8 @@ var Command2 = class {
     process.stderr.write(`${tagMessage}
 `);
     const releasedRefs = [{ target: ref, sha }];
-    if (target) {
-      const envsSynced = this.syncService.cascadeEnvironments(
-        ref,
-        target,
-        mergeCommit
-      );
-      if (!envsSynced.ok) {
-        process.stderr.write(
-          `\u{1F517} Sync: Error during environments synchronization: ${String(envsSynced.error)}
-`
-        );
-      } else if (!envsSynced.data.length) {
-        process.stderr.write(
-          `\u{1F517} Sync: No target branch parsed from "${target}"
-`
-        );
-      } else {
-        const synced = envsSynced.data.filter((result) => result.ok);
-        const failed = envsSynced.data.filter((result) => !result.ok);
-        if (synced.length) {
-          const syncedTargets = synced.map((env) => env.target).join(",");
-          process.stderr.write(
-            `\u{1F517} Sync: Environments ${syncedTargets} synced
-`
-          );
-        }
-        failed.forEach(
-          (failure) => process.stderr.write(`\u{1F517} Sync: ${failure.error}
-`)
-        );
-        releasedRefs.push(
-          ...synced.map((env) => ({ target: env.target, sha: env.sha }))
-        );
-      }
-    }
+    if (target)
+      releasedRefs.push(...this.syncTargets(ref, target, mergeCommit));
     return {
       version: nextVersion,
       tag,
@@ -20241,6 +20224,39 @@ var Command2 = class {
       tagMinor,
       releasedRefs
     };
+  }
+  syncTargets(ref, target, mergeCommit) {
+    const envsSynced = this.syncService.cascadeEnvironments(
+      ref,
+      target,
+      mergeCommit
+    );
+    if (!envsSynced.ok) {
+      process.stderr.write(
+        `\u{1F517} Sync: Error during environments synchronization: ${String(envsSynced.error)}
+`
+      );
+      return [];
+    }
+    if (!envsSynced.data.length) {
+      process.stderr.write(
+        `\u{1F517} Sync: No target branch parsed from "${target}"
+`
+      );
+      return [];
+    }
+    const synced = envsSynced.data.filter((result) => result.ok);
+    const failed = envsSynced.data.filter((result) => !result.ok);
+    if (synced.length) {
+      const syncedTargets = synced.map((env) => env.target).join(",");
+      process.stderr.write(`\u{1F517} Sync: Environments ${syncedTargets} synced
+`);
+    }
+    failed.forEach(
+      (failure) => process.stderr.write(`\u{1F517} Sync: ${failure.error}
+`)
+    );
+    return synced.map((env) => ({ target: env.target, sha: env.sha }));
   }
 };
 
@@ -20274,7 +20290,8 @@ var InputDefaults = {
   bumpNpm: false,
   bumpClaude: false,
   pluginDir: ".claude-plugin",
-  mergeCommit: false
+  mergeCommit: false,
+  onlySync: false
 };
 var input = (name) => getInput(name) || InputDefaults[name];
 var booleanInput = (name) => getInput(name) ? getBooleanInput(name) : InputDefaults[name];
@@ -20299,7 +20316,8 @@ try {
     overrideTag: booleanInput("overrideTag"),
     tagPrefix: input("tagPrefix"),
     target: getInput("target") || void 0,
-    mergeCommit: booleanInput("mergeCommit")
+    mergeCommit: booleanInput("mergeCommit"),
+    onlySync: booleanInput("onlySync")
   };
   const { version, tag, tagMajor, tagMinor, releasedRefs } = command.run(inputs);
   setOutput("version", version);
